@@ -1,70 +1,28 @@
-import requests
-import scraper.dospara_scraper as ds
+﻿"""Motherboard 繧ｹ繧ｯ繝ｬ繧､繝斐Φ繧ｰ (PC蟾･謌ｿ) 窶・AMD + Intel 蜈ｨ繝槭じ繝ｼ繝懊・繝牙叙蠕・
+譌ｧ: dospara AMD繝槭じ繝ｼ繝懊・繝峨ヵ繧｣繝ｫ繧ｿ繝ｼ逕ｨ縲１C蟾･謌ｿ縺ｯAMD+Intel繧貞挨URL縺ｧ蜿門ｾ励・
+"""
+import os, sys, django
+sys.path.insert(0, os.path.dirname(__file__))
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "myportfolio_django.settings")
+django.setup()
+
+from scraper.pckoubou_scraper import scrape_pckoubou_category
 from scraper.models import PCPart
 
-URL = "https://www.dospara.co.jp/mb-amd?srule=01&includeNotInventory=false"
-
-config = ds.get_dospara_scraper_config()
-session = requests.Session()
-
-resp = session.get(URL, headers=config["headers"], timeout=30)
-resp.raise_for_status()
-
-codes = ds._collect_ic_codes_from_category_pages(
-    html=resp.text,
-    category_url=URL,
-    headers=config["headers"],
-    timeout=20,
-    session=session,
-    max_codes=2000,
-)
-
-products_map = ds._fetch_products_by_codes(
-    codes=codes,
-    api_url=config["products_api_url"],
-    headers=config["headers"],
-    timeout=20,
-    batch_size=config["batch_size"],
-    session=session,
-)
-
-parts = ds._build_parts_from_products_map(products_map, URL, max_items=2000)
-
-created = 0
-updated = 0
-skipped = 0
-
+parts = scrape_pckoubou_category("motherboard")
+created = updated = 0
 for p in parts:
-    if p.get("part_type") != "motherboard":
-        skipped += 1
-        continue
-
     _, is_created = PCPart.objects.update_or_create(
-        url=p.get("url"),
-        defaults={
-            "name": p.get("name"),
-            "price": p.get("price"),
-            "specs": p.get("specs", {}),
-            "part_type": "motherboard",
-        },
+        part_type=p["part_type"], name=p["name"],
+        defaults={"price": p["price"], "url": p["url"],
+                  "specs": p.get("specs", {"source": "pckoubou"}),
+                  "stock_status": p.get("stock_status", "unknown"), "is_active": True},
     )
-    if is_created:
-        created += 1
-    else:
-        updated += 1
+    if is_created: created += 1
+    else: updated += 1
 
 mb_qs = PCPart.objects.filter(part_type="motherboard")
-
-print(
-    {
-        "status": "success",
-        "source_url": URL,
-        "codes_found": len(codes),
-        "fetched_parts": len(parts),
-        "saved_mb_created": created,
-        "saved_mb_updated": updated,
-        "skipped_non_motherboard": skipped,
-        "motherboard_total_in_db": mb_qs.count(),
-        "sample_names": list(mb_qs.order_by("price").values_list("name", flat=True)[:10]),
-    }
-)
+print({"status": "success", "part_type": "motherboard", "fetched": len(parts),
+       "created": created, "updated": updated,
+       "motherboard_total_in_db": mb_qs.count(),
+       "sample_names": list(mb_qs.order_by("price").values_list("name", flat=True)[:10])})

@@ -6,14 +6,14 @@ from celery import shared_task
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
-from .dospara_scraper import (
+from .pckoubou_scraper import (
     _infer_part_type,
+    scrape_pckoubou_all,
+)
+from .dospara_scraper import (
     fetch_dospara_cpu_selection_material,
     fetch_dospara_gpu_performance_table,
     fetch_dospara_market_price_range,
-    get_dospara_scraper_config,
-    scrape_dospara_parts,
-    scrape_dospara_category_parts,
 )
 from .models import (
     CPUCoolerDetail,
@@ -433,7 +433,7 @@ def _normalize_part_types():
     changed = 0
     merged = 0
     for part in PCPart.objects.all().order_by('id'):
-        inferred = _infer_part_type(part.name, part.url)
+        inferred = _infer_part_type(part.name)
         if not inferred or inferred == part.part_type:
             continue
 
@@ -459,35 +459,13 @@ def _normalize_part_types():
 @shared_task
 def run_scraper_task():
     """
-    定期的に実行されるスクレイパータスク
+    定期的に実行されるスクレイパータスク（PC工房版）
     """
     status, _ = ScraperStatus.objects.get_or_create(id=1)
-    scraper_config = get_dospara_scraper_config()
 
     try:
-        logger.info(
-            'scraper_task_started source=dospara_parts env=%s url=%s timeout=%s max_items=%s',
-            scraper_config.get('env', 'unknown'),
-            scraper_config['url'],
-            scraper_config['timeout'],
-            scraper_config['max_items'],
-        )
-        scraped_parts = scrape_dospara_parts(
-            timeout=scraper_config['timeout'],
-            max_items=scraper_config['max_items'],
-        )
-
-        # カテゴリ別ページからも取得し、各パーツ種別の価格帯を網羅する
-        category_parts = scrape_dospara_category_parts(
-            timeout=scraper_config['timeout'],
-            max_items_per_category=80,
-        )
-        # メインスクレイプ結果とマージ（重複は name+part_type でスキップ）
-        main_keys = {(p['part_type'], p['name']) for p in scraped_parts}
-        for part in category_parts:
-            if (part['part_type'], part['name']) not in main_keys:
-                scraped_parts.append(part)
-                main_keys.add((part['part_type'], part['name']))
+        logger.info('scraper_task_started source=pckoubou_parts')
+        scraped_parts = scrape_pckoubou_all(max_items_per_category=500)
 
         saved_count = 0
         normalized_count = 0
@@ -501,7 +479,7 @@ def run_scraper_task():
                     defaults={
                         'price': part['price'],
                         'url': part['url'],
-                        'specs': part.get('specs', {'source': 'dospara'}),
+                        'specs': part.get('specs', {'source': 'pckoubou'}),
                         'stock_status': part.get('stock_status', 'unknown'),
                         'is_active': part.get('is_active', True),
                     },
@@ -516,19 +494,19 @@ def run_scraper_task():
         market_range_result = {}
         cpu_selection_result = {}
         try:
-            gpu_perf_result = import_gpu_performance_scores_task(timeout=scraper_config['timeout'])
+            gpu_perf_result = import_gpu_performance_scores_task(timeout=20)
         except Exception:
             logger.exception('gpu_perf_import_failed source=dospara_gpu_performance')
             gpu_perf_result = {'status': 'error'}
 
         try:
-            market_range_result = import_market_price_range_task(timeout=scraper_config['timeout'])
+            market_range_result = import_market_price_range_task(timeout=20)
         except Exception:
             logger.exception('market_range_import_failed source=dospara_tc30_market')
             market_range_result = {'status': 'error'}
 
         try:
-            cpu_selection_result = import_cpu_selection_material_task(timeout=scraper_config['timeout'])
+            cpu_selection_result = import_cpu_selection_material_task(timeout=20)
         except Exception:
             logger.exception('cpu_selection_import_failed source=dospara_cpu_comparison_pages')
             cpu_selection_result = {'status': 'error'}
@@ -541,7 +519,7 @@ def run_scraper_task():
 
         updated_count = len(scraped_parts) - saved_count
         logger.info(
-            'scraper_task_completed source=dospara_parts fetched=%s created=%s updated=%s normalized=%s merged=%s gpu_perf=%s market_range=%s cpu_selection=%s',
+            'scraper_task_completed source=pckoubou_parts fetched=%s created=%s updated=%s normalized=%s merged=%s gpu_perf=%s market_range=%s cpu_selection=%s',
             len(scraped_parts),
             saved_count,
             updated_count,
@@ -554,7 +532,7 @@ def run_scraper_task():
 
         return {
             'status': 'success',
-            'source': 'dospara_parts',
+            'source': 'pckoubou_parts',
             'fetched': len(scraped_parts),
             'created': saved_count,
             'updated': updated_count,
@@ -568,7 +546,7 @@ def run_scraper_task():
         status.last_run = timezone.now()
         status.error_count += 1
         status.save(update_fields=['last_run', 'error_count', 'updated_at'])
-        logger.exception('scraper_task_failed source=dospara_parts error=%s', e)
+        logger.exception('scraper_task_failed source=pckoubou_parts error=%s', e)
         return {'status': 'error', 'message': str(e)}
 
 

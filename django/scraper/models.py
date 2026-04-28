@@ -76,6 +76,7 @@ class PCPart(models.Model):
         ('os', 'OS'),
         ('psu', 'Power Supply'),
         ('case', 'Case'),
+        ('case_fan', 'Case Fan'),
     ]
     
     part_type = models.CharField(max_length=20, choices=PART_CHOICES)
@@ -86,7 +87,7 @@ class PCPart(models.Model):
     maker = models.CharField(max_length=100, blank=True, db_index=True)
     manufacturer = models.ForeignKey(Manufacturer, on_delete=models.SET_NULL, null=True, blank=True, related_name='parts')
     model_code = models.CharField(max_length=120, blank=True, db_index=True)
-    dospara_code = models.CharField(max_length=50, blank=True, null=True, db_index=True)
+    shop_code = models.CharField(max_length=50, blank=True, null=True, db_index=True)
     socket = models.CharField(max_length=50, blank=True, db_index=True)
     memory_type = models.CharField(max_length=20, blank=True, db_index=True)
     chipset = models.CharField(max_length=50, blank=True, db_index=True)
@@ -143,7 +144,7 @@ class PCPart(models.Model):
             manufacturer, _ = Manufacturer.objects.get_or_create(name=self.maker)
             self.manufacturer = manufacturer
 
-        self.dospara_code = specs.get('code') or self.dospara_code
+        self.shop_code = specs.get('code') or self.shop_code
         self.model_code = specs.get('model_code') or self.model_code
         self.socket = specs.get('socket') or self.socket
         self.memory_type = specs.get('memory_type') or self.memory_type

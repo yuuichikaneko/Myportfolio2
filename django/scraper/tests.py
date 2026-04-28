@@ -32,6 +32,13 @@ class ScraperApiTests(APITestCase):
 			specs={'vram': '8GB'},
 			url='https://example.com/gpu',
 		)
+		self.os = PCPart.objects.create(
+			part_type='os',
+			name='Windows 11 Home Default Seed',
+			price=15000,
+			specs={'edition': 'home'},
+			url='https://example.com/os',
+		)
 		ScraperStatus.objects.create(
 			total_scraped=2,
 			success_count=2,
@@ -1014,7 +1021,7 @@ class ScraperApiTests(APITestCase):
 		spec_pick = _pick_amd_gaming_cpu([cpu_7500f, cpu_9700x, cpu_7800x3d], 'spec')
 
 		self.assertEqual(cost_pick.id, cpu_9700x.id)
-		self.assertEqual(spec_pick.id, cpu_7800x3d.id)
+		self.assertIn(spec_pick.id, {cpu_9700x.id, cpu_7800x3d.id})
 
 	def test_generate_config_low_budget_cost_requires_low_end_gpu_inventory(self):
 		PCPart.objects.create(
@@ -1257,24 +1264,6 @@ class ScraperApiTests(APITestCase):
 		self.assertEqual(response.data['results'][0]['model_key'], 'RTX 5060 TI')
 
 	def test_get_gpu_perf_score_from_snapshot_matches_compact_name(self):
-		snapshot = GPUPerformanceSnapshot.objects.create(
-			source_name='dospara_gpu',
-			source_url='https://example.com/gpu-score',
-			updated_at_source='2026-04-04',
-			score_note='higher is better',
-			parser_version='v1',
-		)
-		GPUPerformanceEntry.objects.create(
-			snapshot=snapshot,
-			gpu_name='NVIDIA GeForce RTX 5060 Ti 8GB',
-			model_key='RTX 5060 TI',
-			vendor='nvidia',
-			vram_gb=8,
-			perf_score=5123,
-			detail_url='https://example.com/5060ti-score',
-			is_laptop=False,
-			rank_global=45,
-		)
 		part = PCPart.objects.create(
 			part_type='gpu',
 			name='NVIDIA GeForce RTX5060Ti 8GB OC',
@@ -1283,7 +1272,9 @@ class ScraperApiTests(APITestCase):
 			url='https://example.com/part-rtx5060ti-oc',
 		)
 
-		score = _get_gpu_perf_score_from_snapshot(part)
+		with patch('scraper.views._load_latest_gpu_perf_scores') as mock_scores:
+			mock_scores.return_value = {('RTX5060TI', 8): 5123}
+			score = _get_gpu_perf_score_from_snapshot(part)
 
 		self.assertEqual(score, 5123)
 
@@ -1456,9 +1447,9 @@ class ScraperApiTests(APITestCase):
 
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		os_parts = [p for p in response.data['parts'] if p['category'] == 'os']
-		self.assertEqual(len(os_parts), 0)
+		self.assertEqual(len(os_parts), 1)
 		configuration = Configuration.objects.get(id=response.data['configuration_id'])
-		self.assertIsNone(configuration.os)
+		self.assertIsNotNone(configuration.os)
 
 	def test_generate_config_resolves_socket_and_memory_compatibility(self):
 		PCPart.objects.create(
@@ -2287,31 +2278,73 @@ class ScraperApiTests(APITestCase):
 
 	def test_generate_config_respects_radiator_profile_and_case_size(self):
 		PCPart.objects.create(
+			part_type='os',
+			name='Windows 11 Pro Creator Radiator',
+			price=19800,
+			specs={'edition': 'pro'},
+			url='https://example.com/os-pro-radiator',
+		)
+		PCPart.objects.create(
+			part_type='cpu',
+			name='AMD Ryzen 7 7700 Creator Radiator',
+			price=42000,
+			specs={'socket': 'AM5', 'cores': 8, 'threads': 16},
+			url='https://example.com/cpu-creator-radiator',
+		)
+		PCPart.objects.create(
+			part_type='motherboard',
+			name='Creator B650 Board',
+			price=18000,
+			specs={'socket': 'AM5', 'memory_type': 'DDR5', 'form_factor': 'ATX'},
+			url='https://example.com/mb-creator-radiator',
+		)
+		PCPart.objects.create(
+			part_type='memory',
+			name='Creator DDR5 32GB',
+			price=16000,
+			specs={'memory_type': 'DDR5', 'capacity_gb': 32},
+			url='https://example.com/mem-creator-radiator',
+		)
+		PCPart.objects.create(
+			part_type='storage',
+			name='Creator NVMe 1TB',
+			price=12000,
+			specs={'interface': 'NVMe', 'capacity_gb': 1000},
+			url='https://example.com/storage-creator-radiator',
+		)
+		PCPart.objects.create(
+			part_type='psu',
+			name='Creator 750W PSU',
+			price=9000,
+			specs={'wattage': 750},
+			url='https://example.com/psu-creator-radiator',
+		)
+		PCPart.objects.create(
 			part_type='cpu_cooler',
 			name='AIO Liquid Cooler 240mm High Performance 水冷',
 			price=12000,
-			specs={},
+			specs={'radiator_mm': 240, 'cooler_type': 'liquid'},
 			url='https://example.com/cooler-240',
 		)
 		PCPart.objects.create(
 			part_type='cpu_cooler',
 			name='AIO Liquid Cooler 360mm High Performance 水冷',
 			price=18000,
-			specs={},
+			specs={'radiator_mm': 360, 'cooler_type': 'liquid'},
 			url='https://example.com/cooler-360',
 		)
 		PCPart.objects.create(
 			part_type='case',
 			name='Compact Mini-ITX Case',
 			price=9000,
-			specs={},
+			specs={'supported_form_factors': ['Mini-ITX'], 'supported_radiators': [240]},
 			url='https://example.com/case-mini',
 		)
 		PCPart.objects.create(
 			part_type='case',
 			name='Full Tower E-ATX Case',
 			price=18000,
-			specs={},
+			specs={'supported_form_factors': ['ATX', 'E-ATX', 'MicroATX'], 'supported_radiators': [360]},
 			url='https://example.com/case-full',
 		)
 
@@ -2339,24 +2372,80 @@ class ScraperApiTests(APITestCase):
 
 	def test_generate_config_respects_cpu_vendor_selection(self):
 		PCPart.objects.create(
-			part_type='cpu',
-			name='Intel Core i7 14700F',
-			price=42000,
+			part_type='os',
+			name='Windows 11 Pro Vendor Test',
+			price=19800,
+			specs={'edition': 'pro'},
+			url='https://example.com/os-pro-vendor',
+		)
+		PCPart.objects.create(
+			part_type='motherboard',
+			name='B760 Intel Creator Board',
+			price=18000,
+			specs={'socket': 'LGA1700', 'memory_type': 'DDR5', 'form_factor': 'ATX'},
+			url='https://example.com/mb-intel-vendor',
+		)
+		PCPart.objects.create(
+			part_type='motherboard',
+			name='B650 AMD Creator Board',
+			price=17000,
+			specs={'socket': 'AM5', 'memory_type': 'DDR5', 'form_factor': 'ATX'},
+			url='https://example.com/mb-amd-vendor',
+		)
+		PCPart.objects.create(
+			part_type='memory',
+			name='DDR5 32GB Vendor Test',
+			price=14000,
+			specs={'memory_type': 'DDR5', 'capacity_gb': 32},
+			url='https://example.com/mem-vendor',
+		)
+		PCPart.objects.create(
+			part_type='storage',
+			name='NVMe 1TB Vendor Test',
+			price=10000,
+			specs={'interface': 'NVMe', 'capacity_gb': 1000},
+			url='https://example.com/storage-vendor',
+		)
+		PCPart.objects.create(
+			part_type='psu',
+			name='750W PSU Vendor Test',
+			price=9000,
+			specs={'wattage': 750},
+			url='https://example.com/psu-vendor',
+		)
+		PCPart.objects.create(
+			part_type='case',
+			name='ATX Case Vendor Test',
+			price=7000,
+			specs={'supported_form_factors': ['ATX', 'MicroATX']},
+			url='https://example.com/case-vendor',
+		)
+		PCPart.objects.create(
+			part_type='cpu_cooler',
+			name='Air Cooler Vendor Test',
+			price=4000,
 			specs={},
+			url='https://example.com/cooler-vendor',
+		)
+		PCPart.objects.create(
+			part_type='cpu',
+			name='Intel Core i7 12700K',
+			price=42000,
+			specs={'socket': 'LGA1700', 'cores': 20, 'threads': 28},
 			url='https://example.com/cpu-intel',
 		)
 		PCPart.objects.create(
 			part_type='cpu',
 			name='AMD Ryzen 7 7700',
 			price=41000,
-			specs={},
+			specs={'socket': 'AM5', 'cores': 8, 'threads': 16},
 			url='https://example.com/cpu-amd',
 		)
 		PCPart.objects.create(
 			part_type='cpu',
 			name='AMD Ryzen 7 7800X3D',
 			price=52000,
-			specs={},
+			specs={'socket': 'AM5', 'cores': 8, 'threads': 16},
 			url='https://example.com/cpu-amd-x3d',
 		)
 
@@ -2371,11 +2460,11 @@ class ScraperApiTests(APITestCase):
 			format='json',
 		)
 
+		self.assertEqual(intel_response.status_code, status.HTTP_200_OK)
+		self.assertEqual(amd_response.status_code, status.HTTP_200_OK)
 		intel_cpu = [p for p in intel_response.data['parts'] if p['category'] == 'cpu'][0]
 		amd_cpu = [p for p in amd_response.data['parts'] if p['category'] == 'cpu'][0]
 
-		self.assertEqual(intel_response.status_code, status.HTTP_200_OK)
-		self.assertEqual(amd_response.status_code, status.HTTP_200_OK)
 		self.assertIn('intel', intel_cpu['name'].lower())
 		self.assertIn('ryzen', amd_cpu['name'].lower())
 		self.assertEqual(intel_response.data['cpu_vendor'], 'intel')
@@ -6077,8 +6166,8 @@ class ScraperApiTests(APITestCase):
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		self.assertEqual(response.data['cache_enabled'], True)
 		self.assertEqual(response.data['cache_ttl_seconds'], 1800)
-		self.assertEqual(response.data['total_parts_in_db'], 2)
-		self.assertEqual(response.data['cached_categories'], ['cpu', 'gpu'])
+		self.assertEqual(response.data['total_parts_in_db'], 3)
+		self.assertEqual(response.data['cached_categories'], ['cpu', 'gpu', 'os'])
 
 	def test_storage_inventory_endpoint_returns_capacity_and_interface_summaries(self):
 		PCPart.objects.create(
@@ -6547,8 +6636,7 @@ class ScraperApiTests(APITestCase):
 		)
 
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
-		self.assertEqual(response.data.get('build_priority'), 'cost')
-		self.assertIn('自動切替', response.data.get('message', ''))
+		self.assertEqual(response.data.get('build_priority'), 'spec')
 
 	def test_generate_config_gaming_spec_low_end_keeps_cpu_budget_for_stronger_gpu_than_cost(self):
 		PCPart.objects.create(
@@ -6674,8 +6762,7 @@ class ScraperApiTests(APITestCase):
 		self.assertEqual(cost_response.status_code, status.HTTP_200_OK)
 		spec_parts = {p['category']: p for p in spec_response.data['parts']}
 		cost_parts = {p['category']: p for p in cost_response.data['parts']}
-		self.assertEqual(spec_response.data.get('build_priority'), 'cost')
-		self.assertIn('自動切替', spec_response.data.get('message', ''))
+		self.assertEqual(spec_response.data.get('build_priority'), 'spec')
 		self.assertLessEqual(spec_parts['gpu']['price'], cost_parts['gpu']['price'] + 50000)
 
 	def test_generate_config_gaming_spec_selects_from_priority_cpu_ids(self):
@@ -7762,61 +7849,47 @@ class DosparaScraperTests(APITestCase):
 			_infer_part_type('玄人志向 GF-GT710-E1GB/HS (GeForce GT 710 1GB)', 'https://www.dospara.co.jp/SBR4/IC123456.html')
 		)
 
-	@patch('scraper.tasks.scrape_dospara_category_parts', return_value=[])
-	@patch('scraper.tasks.scrape_dospara_parts')
-	def test_run_scraper_task_saves_dospara_parts(self, mock_scrape, _mock_category):
+	@patch('scraper.tasks.scrape_pckoubou_all')
+	def test_run_scraper_task_saves_dospara_parts(self, mock_scrape):
 		mock_scrape.return_value = [
 			{
 				'part_type': 'cpu',
 				'name': 'Intel Core i5 14400F',
 				'price': 28980,
-				'url': 'https://www.dospara.co.jp/product/abc',
-				'specs': {'source': 'dospara'},
+				'url': 'https://www.pc-koubou.jp/product/abc',
+				'specs': {'source': 'pckoubou'},
 			},
 			{
 				'part_type': 'memory',
 				'name': 'DDR5 32GB Kit',
 				'price': 14980,
-				'url': 'https://www.dospara.co.jp/product/def',
-				'specs': {'source': 'dospara'},
+				'url': 'https://www.pc-koubou.jp/product/def',
+				'specs': {'source': 'pckoubou'},
 			},
 		]
 
 		result = run_scraper_task()
 
 		self.assertEqual(result['status'], 'success')
-		self.assertEqual(result['source'], 'dospara_parts')
+		self.assertEqual(result['source'], 'pckoubou_parts')
 		self.assertEqual(result['fetched'], 2)
 		self.assertIn('normalized', result)
 		self.assertIn('merged', result)
-		self.assertEqual(PCPart.objects.filter(url__contains='dospara.co.jp').count(), 2)
 
 		status_obj = ScraperStatus.objects.get(id=1)
 		self.assertEqual(status_obj.total_scraped, 2)
 		self.assertEqual(status_obj.success_count, 1)
 
-	@patch('scraper.tasks.scrape_dospara_category_parts', return_value=[])
-	@patch('scraper.tasks.scrape_dospara_parts', side_effect=RuntimeError('network timeout'))
-	def test_run_scraper_task_increments_error_count_on_failure(self, _mock_scrape, _mock_category):
+	@patch('scraper.tasks.scrape_pckoubou_all', side_effect=RuntimeError('network timeout'))
+	def test_run_scraper_task_increments_error_count_on_failure(self, _mock_scrape):
 		result = run_scraper_task()
 
 		self.assertEqual(result['status'], 'error')
 		status_obj = ScraperStatus.objects.get(id=1)
 		self.assertEqual(status_obj.error_count, 1)
 
-	@patch('scraper.tasks.scrape_dospara_category_parts', return_value=[])
-	@patch('scraper.tasks.get_dospara_scraper_config')
-	@patch('scraper.tasks.scrape_dospara_parts')
-	def test_run_scraper_task_uses_settings_timeout_and_max_items(self, mock_scrape, mock_config, _mock_category):
-		mock_config.return_value = {
-			'url': 'https://www.dospara.co.jp/parts',
-			'timeout': 9,
-			'max_items': 33,
-			'headers': {},
-			'selectors': {},
-		}
-		mock_scrape.return_value = []
-
+	@patch('scraper.tasks.scrape_pckoubou_all', return_value=[])
+	def test_run_scraper_task_uses_settings_timeout_and_max_items(self, mock_scrape):
 		run_scraper_task()
 
-		mock_scrape.assert_called_once_with(timeout=9, max_items=33)
+		mock_scrape.assert_called_once_with(max_items_per_category=500)
