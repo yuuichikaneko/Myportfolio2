@@ -844,6 +844,166 @@ export function ResultView({ config, onBack, onSavedConfiguration }: ResultProps
     }
   };
 
+  const handleExportPdf = () => {
+    const CATEGORY_LABELS: Record<string, string> = {
+      cpu: "CPU",
+      cpu_cooler: "CPUクーラー",
+      gpu: "GPU",
+      motherboard: "マザーボード",
+      memory: "メモリ",
+      storage: "ストレージ",
+      storage2: "ストレージ 2",
+      storage3: "ストレージ 3",
+      os: "OS",
+      psu: "電源",
+      case: "ケース",
+    };
+
+    const partsForPdf = activeDisplayParts.filter((p) => !p.isPlaceholder && p.price > 0);
+    const totalPrice = partsForPdf.reduce((sum, p) => sum + p.price, 0);
+    const issueDate = new Date().toLocaleDateString("ja-JP", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+
+    const partsRows = partsForPdf
+      .map(
+        (part) => `
+        <tr>
+          <td>${CATEGORY_LABELS[part.category] ?? part.category}</td>
+          <td>${part.name.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</td>
+          <td class="price">¥${part.price.toLocaleString("ja-JP")}</td>
+        </tr>`,
+      )
+      .join("");
+
+    const html = `<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>PC構成見積書</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Yu Gothic UI", "Hiragino Sans", "Noto Sans JP", "Segoe UI", sans-serif;
+      font-size: 12pt;
+      color: #111;
+      background: #fff;
+      padding: 32px 40px;
+    }
+    h1 { font-size: 22pt; margin-bottom: 4px; }
+    .meta { font-size: 10pt; color: #555; margin-bottom: 24px; }
+    .summary {
+      display: flex;
+      gap: 32px;
+      margin-bottom: 24px;
+      padding: 12px 16px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: #f8f9fa;
+    }
+    .summary-item { display: flex; flex-direction: column; gap: 2px; }
+    .summary-item .label { font-size: 9pt; color: #666; }
+    .summary-item .value { font-size: 13pt; font-weight: bold; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 24px;
+    }
+    thead tr { background: #1e3a5f; color: #fff; }
+    thead th {
+      padding: 8px 10px;
+      text-align: left;
+      font-size: 10pt;
+    }
+    tbody tr:nth-child(even) { background: #f4f6fb; }
+    tbody td {
+      padding: 7px 10px;
+      border-bottom: 1px solid #e0e0e0;
+      font-size: 10pt;
+      vertical-align: top;
+    }
+    td.price { text-align: right; white-space: nowrap; font-weight: 600; }
+    tfoot td {
+      padding: 10px 10px;
+      font-weight: bold;
+      font-size: 12pt;
+      border-top: 2px solid #1e3a5f;
+    }
+    tfoot td.price { font-size: 14pt; color: #1e3a5f; }
+    .power { margin-top: 16px; font-size: 10pt; color: #444; }
+    .footer { margin-top: 40px; font-size: 9pt; color: #888; border-top: 1px solid #ddd; padding-top: 8px; }
+    @media print {
+      body { padding: 16px 20px; }
+    }
+  </style>
+</head>
+<body>
+  <h1>PC構成見積書</h1>
+  <p class="meta">発行日: ${issueDate}</p>
+
+  <div class="summary">
+    <div class="summary-item">
+      <span class="label">用途</span>
+      <span class="value">${usageLabel}</span>
+    </div>
+    <div class="summary-item">
+      <span class="label">指定予算</span>
+      <span class="value">¥${requestedBudget.toLocaleString("ja-JP")}</span>
+    </div>
+    <div class="summary-item">
+      <span class="label">合計金額</span>
+      <span class="value" style="color:#0d6e30;">¥${totalPrice.toLocaleString("ja-JP")}</span>
+    </div>
+    <div class="summary-item">
+      <span class="label">推定消費電力</span>
+      <span class="value">${estimatedPower}W</span>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:13%">カテゴリ</th>
+        <th>パーツ名</th>
+        <th style="width:14%">価格（税込）</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${partsRows}
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="2">合計</td>
+        <td class="price">¥${totalPrice.toLocaleString("ja-JP")}</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <p class="power">推定消費電力: ${estimatedPower}W（実際の消費電力は使用環境により異なります）</p>
+
+  <div class="footer">
+    ※ 価格は生成時点の参考価格です。最新価格は各購入ページでご確認ください。<br />
+    ※ 本見積書はポートフォリオ用デモアプリが自動生成したものです。
+  </div>
+</body>
+</html>`;
+
+    const printWindow = window.open("", "_blank", "width=900,height=700");
+    if (!printWindow) {
+      alert("ポップアップがブロックされました。ブラウザのポップアップ許可を有効にしてください。");
+      return;
+    }
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+    // ブラウザがスタイルを適用後に印刷ダイアログを開く
+    printWindow.onload = () => {
+      printWindow.print();
+    };
+  };
+
   const displayedTotalPrice = hasManualEdits
     ? activeDisplayParts.reduce((sum, part) => {
         if (part.isPlaceholder) {
@@ -1390,12 +1550,18 @@ export function ResultView({ config, onBack, onSavedConfiguration }: ResultProps
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
       <div className="max-w-4xl mx-auto">
-        <div className="sticky top-4 z-30 mb-6 flex justify-start">
+        <div className="sticky top-4 z-30 mb-6 flex justify-start gap-3">
           <button
             onClick={onBack}
             className="rounded-lg bg-slate-600 px-4 py-2 font-semibold text-white shadow hover:bg-slate-700 transition"
           >
             ← 戻る
+          </button>
+          <button
+            onClick={handleExportPdf}
+            className="rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white shadow hover:bg-emerald-700 transition"
+          >
+            🖨 見積書PDF保存
           </button>
         </div>
 
@@ -2089,10 +2255,16 @@ export function ResultView({ config, onBack, onSavedConfiguration }: ResultProps
       </div>
 
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-4xl p-3 md:p-4">
+        <div className="mx-auto flex w-full max-w-4xl gap-3 p-3 md:p-4">
+          <button
+            onClick={handleExportPdf}
+            className="flex-1 rounded-lg bg-emerald-600 px-4 py-3 font-bold text-white transition hover:bg-emerald-700"
+          >
+            🖨 見積書PDF保存
+          </button>
           <button
             onClick={onBack}
-            className="w-full rounded-lg bg-indigo-600 px-4 py-3 font-bold text-white transition hover:bg-indigo-700"
+            className="flex-1 rounded-lg bg-indigo-600 px-4 py-3 font-bold text-white transition hover:bg-indigo-700"
           >
             別の構成を生成
           </button>
