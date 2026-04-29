@@ -18,7 +18,7 @@
 ## 3. 既存インデックス（モデル定義由来）
 
 ### 3.1 PCPart
-- 単一列INDEX: `maker`, `model_code`, `dospara_code`, `socket`, `memory_type`, `chipset`, `form_factor`, `capacity_gb`, `interface`, `is_active`
+- 単一列INDEX: `maker`, `model_code`, `shop_code`, `socket`, `memory_type`, `chipset`, `form_factor`, `capacity_gb`, `interface`, `is_active`
 - 複合UNIQUE: `(part_type, name)`
 - FK INDEX: `manufacturer_id`
 
@@ -82,9 +82,9 @@
 - 効果:
   - `icontains` / 部分一致検索高速化
 
-#### IDX-P3-02: dospara_code の条件付き一意性
+#### IDX-P3-02: shop_code の条件付き一意性
 - 対象テーブル: `scraper_pcpart`
-- 定義: `UNIQUE (dospara_code) WHERE dospara_code IS NOT NULL AND dospara_code <> ''`
+- 定義: `UNIQUE (shop_code) WHERE shop_code IS NOT NULL AND shop_code <> ''`
 - 効果:
   - データ重複の防止（運用品質向上）
 
@@ -114,9 +114,9 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_pcpart_name_trgm
 ON scraper_pcpart USING GIN (name gin_trgm_ops);
 
-CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS uq_pcpart_dospara_code_not_blank
-ON scraper_pcpart (dospara_code)
-WHERE dospara_code IS NOT NULL AND dospara_code <> '';
+CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS uq_pcpart_shop_code_not_blank
+ON scraper_pcpart (shop_code)
+WHERE shop_code IS NOT NULL AND shop_code <> '';
 ```
 
 ## 6. Django実装時の注意

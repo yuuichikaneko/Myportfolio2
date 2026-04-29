@@ -86,7 +86,7 @@
 | maker | varchar(100) | NO | INDEX, 空文字可 |
 | manufacturer_id | bigint | YES | FK -> Manufacturer(id), ON DELETE SET NULL |
 | model_code | varchar(120) | NO | INDEX, 空文字可 |
-| dospara_code | varchar(50) | YES | INDEX |
+| shop_code | varchar(50) | YES | INDEX |
 | socket | varchar(50) | NO | INDEX, 空文字可 |
 | memory_type | varchar(20) | NO | INDEX, 空文字可 |
 | chipset | varchar(50) | NO | INDEX, 空文字可 |
@@ -278,5 +278,5 @@
 
 ## 4. 追加推奨（将来）
 - DB レベル CHECK 制約を追加: `price >= 0`, `budget >= 0`, `total_price >= 0` など。
-- 業務キーの一意性強化: `dospara_code` の一意制約導入可否を検討。
+- 業務キーの一意性強化: `shop_code` の一意制約導入可否を検討。
 - NULL と空文字が混在する列（例: 文字列属性）の運用ルールを統一。

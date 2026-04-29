@@ -4,6 +4,7 @@ import {
   deleteSavedConfiguration,
   compareGpuPerformance,
   generateConfig,
+  getPartsByType,
   getSavedConfigurations,
   getLatestCpuSelectionMaterial,
   getScraperStatus,
@@ -162,6 +163,19 @@ describe("api client", () => {
     );
     expect(result.total_count).toBe(2);
     expect(result.capacity_summary[0].items[0].interface_label).toBe("NVMe");
+  });
+
+  it("gets parts by type with storage category filter", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify([]), { status: 200 })
+    );
+
+    await getPartsByType("storage", { slotCategory: "storage2", storageCategory: "sata" });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://127.0.0.1:8001/api/parts/by_type/?type=storage&slot=storage2&storage_category=sata",
+      undefined
+    );
   });
 
   it("gets latest gpu performance snapshot", async () => {

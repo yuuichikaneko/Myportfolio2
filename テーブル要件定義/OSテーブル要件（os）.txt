@@ -1,11 +1,13 @@
 OSテーブル要件（os）
 
+スクレイピング元: PC工房 固定URL（https://www.pc-koubou.jp/goods/windows11_package.php）
+
 識別情報
 id: BIGSERIAL, 主キー
 name: VARCHAR(255), NOT NULL
 maker: VARCHAR(100), NOT NULL（例: Microsoft）
 model_code: VARCHAR(100), NULL（例: HAV-00213）
-dospara_code: VARCHAR(50), NULL, UNIQUE（例: IC479479）
+shop_code: VARCHAR(50), NULL, UNIQUE（例: 123456）
 source_url: TEXT, NOT NULL
 is_active: BOOLEAN, NOT NULL, DEFAULT TRUE
 created_at: TIMESTAMP, NOT NULL, DEFAULT NOW()
@@ -33,7 +35,7 @@ stock_status: VARCHAR(20), NOT NULL, DEFAULT unknown
 last_scraped_at: TIMESTAMP, NULL
 拡張
 specs_json: JSONB, NOT NULL, DEFAULT '{}'::jsonb
-scraper_source: VARCHAR(50), NOT NULL, DEFAULT dospara
+scraper_source: VARCHAR(50), NOT NULL, DEFAULT pckoubou
 parser_name: VARCHAR(50), NULL
 推奨制約
 
@@ -44,10 +46,10 @@ CHECK (min_storage_gb IS NULL OR min_storage_gb >= 0)
 CHECK (os_family IN ('windows','linux','other'))
 CHECK (license_type IN ('retail','oem','dsp','volume','unknown'))
 CHECK (package_type IN ('download','package','keycard','unknown'))
-UNIQUE (dospara_code)
+UNIQUE (shop_code)
 推奨インデックス
 
-dospara_code（UNIQUE）
+shop_code（UNIQUE）
 os_family, edition
 license_type
 price_yen
@@ -71,7 +73,7 @@ id BIGSERIAL PRIMARY KEY,
 name VARCHAR(255) NOT NULL,
 maker VARCHAR(100) NOT NULL,
 model_code VARCHAR(100),
-dospara_code VARCHAR(50) UNIQUE,
+shop_code VARCHAR(50) UNIQUE,
 source_url TEXT NOT NULL,
 
 );

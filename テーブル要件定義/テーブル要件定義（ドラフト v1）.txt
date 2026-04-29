@@ -134,7 +134,7 @@ cache_ttl_seconds > 0
 - メモリ速度上限目安: DDR5-5600（PC5-44800以上は除外対象）。
 
 6. 相場補正要件
-- データソース: https://www.dospara.co.jp/TC30?pmax=2%2C500%2C000.00&srule=04&includeNotInventory=false（スクレイピング）。
+- データソース: https://www.pc-koubou.jp/products/list.php（スクレイピング）。
 - 取得項目: データソースの最低価格から最高価格を4等分し、下から low, middle, high, premium に分類する
 	- 算出例（min=179,980 / max=1,309,980 の場合）:
 		- low: 179,980〜462,480円

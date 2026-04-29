@@ -47,6 +47,8 @@ interface PendingIncompatibleSelection {
   reasons: string[];
 }
 
+type StorageCategoryFilter = "nvme" | "sata";
+
 const PART_DISPLAY_ORDER = [
   "cpu",
   "cpu_cooler",
@@ -59,6 +61,7 @@ const PART_DISPLAY_ORDER = [
   "os",
   "psu",
   "case",
+  "case_fan",
 ] as const;
 
 const EDITABLE_PART_CATEGORIES = new Set(PART_DISPLAY_ORDER);
@@ -482,6 +485,7 @@ export function ResultView({ config, onBack, onSavedConfiguration }: ResultProps
     os: "OS",
     psu: "電源",
     case: "ケース",
+    case_fan: "ケースファン",
   };
 
   const isSavedConfiguration = (value: GenerateConfigResponse | SavedConfigurationResponse): value is SavedConfigurationResponse =>
@@ -513,6 +517,7 @@ export function ResultView({ config, onBack, onSavedConfiguration }: ResultProps
             ["os", config.os_data],
             ["psu", config.psu_data],
             ["case", config.case_data],
+            ["case_fan", config.case_fan_data],
           ]
             .filter((entry): entry is [string, SavedPartResponse] => entry[1] !== null)
             .map(([category, part]) => ({
@@ -550,7 +555,7 @@ export function ResultView({ config, onBack, onSavedConfiguration }: ResultProps
 
   const displayParts = useMemo(() => {
     const parts = [...normalizedParts];
-    for (const category of ["storage2", "storage3"]) {
+    for (const category of ["storage2", "storage3", "case_fan"]) {
       if (!parts.some((part) => part.category === category)) {
         parts.push({
           category,
@@ -590,7 +595,8 @@ export function ResultView({ config, onBack, onSavedConfiguration }: ResultProps
   const [candidateMaker, setCandidateMaker] = useState("all");
   const [candidateMinPrice, setCandidateMinPrice] = useState("");
   const [candidateMaxPrice, setCandidateMaxPrice] = useState("");
-  const [ignorePriceRange, setIgnorePriceRange] = useState(true);
+  const [storageCategoryFilter, setStorageCategoryFilter] = useState<StorageCategoryFilter>("nvme");
+  const [ignorePriceRange, setIgnorePriceRange] = useState(false);
   const [showAllCandidates, setShowAllCandidates] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
@@ -613,7 +619,8 @@ export function ResultView({ config, onBack, onSavedConfiguration }: ResultProps
     setCandidateMaker("all");
     setCandidateMinPrice("");
     setCandidateMaxPrice("");
-    setIgnorePriceRange(true);
+    setStorageCategoryFilter("nvme");
+    setIgnorePriceRange(false);
     setShowAllCandidates(false);
     setSaveError(null);
     setSaveSuccessMessage(null);
@@ -661,6 +668,54 @@ export function ResultView({ config, onBack, onSavedConfiguration }: ResultProps
     return category;
   };
 
+  const isStorageSlotCategory = (category: string) => {
+    return category === "storage" || category === "storage2" || category === "storage3";
+  };
+
+  const buildCandidateCacheKey = (category: string, selectedStorageCategory: StorageCategoryFilter) => {
+    const candidateType = resolveCandidatePartType(category);
+    if (candidateType === "storage") {
+      return `${candidateType}:${category}:${selectedStorageCategory}`;
+    }
+    return `${candidateType}:${category}`;
+  };
+
+  const loadPartCandidates = async (
+    category: string,
+    selectedStorageCategory: StorageCategoryFilter = storageCategoryFilter,
+  ) => {
+    const candidateType = resolveCandidatePartType(category);
+    const cacheKey = buildCandidateCacheKey(category, selectedStorageCategory);
+
+    if (partCandidatesByCategory[cacheKey]) {
+      return;
+    }
+
+    setPartCandidatesLoading(true);
+    try {
+      const candidates = await getPartsByType(candidateType, {
+        slotCategory: category,
+        storageCategory: candidateType === "storage" ? selectedStorageCategory : undefined,
+      });
+      const sorted = candidates
+        .slice()
+        .sort((left, right) => {
+          if (left.price !== right.price) {
+            return left.price - right.price;
+          }
+          return left.name.localeCompare(right.name, "ja");
+        });
+      setPartCandidatesByCategory((previous) => ({
+        ...previous,
+        [cacheKey]: sorted,
+      }));
+    } catch (error) {
+      setPartCandidatesError(error instanceof Error ? error.message : "候補パーツの取得に失敗しました。");
+    } finally {
+      setPartCandidatesLoading(false);
+    }
+  };
+
   const mapUsageForSave = (usage: string): "gaming" | "video_editing" | "general" => {
     if (usage === "gaming") {
       return "gaming";
@@ -684,6 +739,7 @@ export function ResultView({ config, onBack, onSavedConfiguration }: ResultProps
       os: null,
       psu: null,
       case: null,
+      case_fan: null,
     };
 
     if (baseSavedConfig) {
@@ -698,6 +754,7 @@ export function ResultView({ config, onBack, onSavedConfiguration }: ResultProps
       partMap.os = baseSavedConfig.os_data?.id ?? null;
       partMap.psu = baseSavedConfig.psu_data?.id ?? null;
       partMap.case = baseSavedConfig.case_data?.id ?? null;
+      partMap.case_fan = baseSavedConfig.case_fan_data?.id ?? null;
     }
 
     for (const part of parts) {
@@ -728,32 +785,14 @@ export function ResultView({ config, onBack, onSavedConfiguration }: ResultProps
     setCandidateMaxPrice("");
     setShowAllCandidates(false);
     setPartCandidatesError(null);
-    const candidateType = resolveCandidatePartType(category);
-
-    if (partCandidatesByCategory[candidateType]) {
+    const initialStorageCategory: StorageCategoryFilter = "nvme";
+    if (isStorageSlotCategory(category)) {
+      setStorageCategoryFilter(initialStorageCategory);
+      await loadPartCandidates(category, initialStorageCategory);
       return;
     }
 
-    setPartCandidatesLoading(true);
-    try {
-      const candidates = await getPartsByType(candidateType, { slotCategory: category });
-      const sorted = candidates
-        .slice()
-        .sort((left, right) => {
-          if (left.price !== right.price) {
-            return left.price - right.price;
-          }
-          return left.name.localeCompare(right.name, "ja");
-        });
-      setPartCandidatesByCategory((previous) => ({
-        ...previous,
-        [candidateType]: sorted,
-      }));
-    } catch (error) {
-      setPartCandidatesError(error instanceof Error ? error.message : "候補パーツの取得に失敗しました。");
-    } finally {
-      setPartCandidatesLoading(false);
-    }
+    await loadPartCandidates(category, storageCategoryFilter);
   };
 
   const applyManualPartSelection = (category: string, selected: SavedPartResponse) => {
@@ -779,7 +818,7 @@ export function ResultView({ config, onBack, onSavedConfiguration }: ResultProps
     setOpenEditorCategory(null);
   };
 
-  const unsetOptionalPart = (category: "storage2" | "storage3" | "cpu_cooler") => {
+  const unsetOptionalPart = (category: "storage2" | "storage3" | "cpu_cooler" | "case_fan") => {
     setEditedParts((previous) => {
       const baseParts = previous ?? displayParts;
       const placeholder: NormalizedResultPart = {
@@ -831,6 +870,7 @@ export function ResultView({ config, onBack, onSavedConfiguration }: ResultProps
         os: partMap.os,
         psu: partMap.psu,
         case: partMap.case,
+        case_fan: partMap.case_fan,
       });
 
       setSaveSuccessMessage(`保存しました: ID ${saved.id}`);
@@ -857,6 +897,7 @@ export function ResultView({ config, onBack, onSavedConfiguration }: ResultProps
       os: "OS",
       psu: "電源",
       case: "ケース",
+      case_fan: "ケースファン",
     };
 
     const partsForPdf = activeDisplayParts.filter((p) => !p.isPlaceholder && p.price > 0);
@@ -1957,15 +1998,20 @@ export function ResultView({ config, onBack, onSavedConfiguration }: ResultProps
             <h3 className="text-2xl font-bold text-gray-800">PC構成</h3>
             {activeDisplayParts.map((part, index) => {
               const isIgpu = part.category === "gpu" && part.price === 0 && part.name.includes("内蔵");
-              const isUnselectedOptionalStorage = (part.category === "storage2" || part.category === "storage3") && Boolean(part.isPlaceholder);
-              const isUnselectedCpuCooler = part.category === "cpu_cooler" && Boolean(part.isPlaceholder);
+              const isUnselectedOptionalPart =
+                (part.category === "storage2" ||
+                  part.category === "storage3" ||
+                  part.category === "cpu_cooler" ||
+                  part.category === "case_fan") &&
+                Boolean(part.isPlaceholder);
               const isCaseWithoutIncludedFans = part.category === "case" && Number(part.specs?.included_fan_count ?? -1) === 0;
               const categoryLabel = PART_CATEGORY_LABELS[part.category] ?? part.category;
               const psuCapacityWatts = part.category === "psu" ? getPsuWattage(part) : null;
               const memoryCapacityGb = part.category === "memory" ? inferMemoryCapacityGb(part) : 0;
               const memoryModuleCount = part.category === "memory" ? inferMemoryModuleCount(part) : 0;
               const candidatePartType = resolveCandidatePartType(part.category);
-              const candidates = partCandidatesByCategory[candidatePartType] ?? [];
+              const candidateCacheKey = buildCandidateCacheKey(part.category, storageCategoryFilter);
+              const candidates = partCandidatesByCategory[candidateCacheKey] ?? [];
               const isEditorOpen = openEditorCategory === part.category;
               const makerOptions = Array.from(new Set(candidates.map((candidate) => inferManufacturerName({ name: candidate.name, specs: candidate.specs })))).sort((left, right) => left.localeCompare(right, "ja"));
               const minPriceValue = Number(candidateMinPrice);
@@ -2040,7 +2086,7 @@ export function ResultView({ config, onBack, onSavedConfiguration }: ResultProps
                         <span className="inline-block bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded">
                           内蔵GPU
                         </span>
-                      ) : isUnselectedOptionalStorage || isUnselectedCpuCooler ? (
+                      ) : isUnselectedOptionalPart ? (
                         <span className="inline-block bg-slate-100 text-slate-600 text-xs font-semibold px-2 py-1 rounded">
                           任意
                         </span>
@@ -2076,7 +2122,7 @@ export function ResultView({ config, onBack, onSavedConfiguration }: ResultProps
                       このケースは付属ファンなしのため、別途ケースファンの追加を推奨します。
                     </div>
                   )}
-                  {!isIgpu && !isUnselectedOptionalStorage && part.url && (
+                  {!isIgpu && !isUnselectedOptionalPart && part.url && (
                     <a
                       href={part.url}
                       target="_blank"
@@ -2100,6 +2146,45 @@ export function ResultView({ config, onBack, onSavedConfiguration }: ResultProps
                   {isEditorOpen && (
                     <div className="mt-3 rounded-md border border-indigo-200 bg-indigo-50 p-3">
                       <p className="mb-2 text-xs font-semibold text-indigo-800">{categoryLabel}の候補から選択</p>
+                      {candidatePartType === "storage" && (
+                        <div className="mb-3 flex items-center gap-2 text-xs">
+                          <span className="font-semibold text-indigo-800">接続方式:</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (storageCategoryFilter === "nvme") {
+                                return;
+                              }
+                              setStorageCategoryFilter("nvme");
+                              void loadPartCandidates(part.category, "nvme");
+                            }}
+                            className={`rounded border px-2 py-1 font-semibold transition ${
+                              storageCategoryFilter === "nvme"
+                                ? "border-indigo-600 bg-indigo-600 text-white"
+                                : "border-indigo-200 bg-white text-indigo-700 hover:bg-indigo-100"
+                            }`}
+                          >
+                            NVMe
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (storageCategoryFilter === "sata") {
+                                return;
+                              }
+                              setStorageCategoryFilter("sata");
+                              void loadPartCandidates(part.category, "sata");
+                            }}
+                            className={`rounded border px-2 py-1 font-semibold transition ${
+                              storageCategoryFilter === "sata"
+                                ? "border-indigo-600 bg-indigo-600 text-white"
+                                : "border-indigo-200 bg-white text-indigo-700 hover:bg-indigo-100"
+                            }`}
+                          >
+                            SATA
+                          </button>
+                        </div>
+                      )}
                       <div className="mb-3 grid grid-cols-1 gap-2 md:grid-cols-2">
                         <input
                           value={candidateQuery}
@@ -2195,11 +2280,15 @@ export function ResultView({ config, onBack, onSavedConfiguration }: ResultProps
                         </div>
                       )}
 
-                      {(part.category === "storage2" || part.category === "storage3" || part.category === "cpu_cooler") && !part.isPlaceholder && (
+                      {(part.category === "storage2" ||
+                        part.category === "storage3" ||
+                        part.category === "cpu_cooler" ||
+                        part.category === "case_fan") &&
+                        !part.isPlaceholder && (
                         <button
                           type="button"
                           onClick={() => {
-                            unsetOptionalPart(part.category as "storage2" | "storage3" | "cpu_cooler");
+                            unsetOptionalPart(part.category as "storage2" | "storage3" | "cpu_cooler" | "case_fan");
                           }}
                           className="mt-3 rounded border border-slate-300 bg-white px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100"
                         >

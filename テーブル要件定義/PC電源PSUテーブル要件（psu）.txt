@@ -5,7 +5,7 @@ id: BIGSERIAL, 主キー
 name: VARCHAR(255), NOT NULL
 maker: VARCHAR(100), NOT NULL
 model_code: VARCHAR(120), NULL
-dospara_code: VARCHAR(50), NULL, UNIQUE
+shop_code: VARCHAR(50), NULL, UNIQUE
 source_url: TEXT, NOT NULL
 is_active: BOOLEAN, NOT NULL, DEFAULT TRUE
 created_at: TIMESTAMP, NOT NULL, DEFAULT NOW()
@@ -41,7 +41,7 @@ in_stock, low_stock, out_of_stock, unknown
 last_scraped_at: TIMESTAMP, NULL
 拡張
 specs_json: JSONB, NOT NULL, DEFAULT {}::jsonb
-scraper_source: VARCHAR(50), NOT NULL, DEFAULT dospara
+scraper_source: VARCHAR(50), NOT NULL, DEFAULT pckoubou
 parser_name: VARCHAR(50), NULL
 推奨制約
 
@@ -56,7 +56,7 @@ CHECK (modular_type IN ('full','semi','non','unknown'))
 CHECK (stock_status IN ('in_stock','low_stock','out_of_stock','unknown'))
 推奨インデックス
 
-UNIQUE (dospara_code)
+UNIQUE (shop_code)
 INDEX (wattage)
 INDEX (efficiency_grade, wattage)
 INDEX (form_factor, wattage)
@@ -82,7 +82,7 @@ id BIGSERIAL PRIMARY KEY,
 name VARCHAR(255) NOT NULL,
 maker VARCHAR(100) NOT NULL,
 model_code VARCHAR(120),
-dospara_code VARCHAR(50) UNIQUE,
+shop_code VARCHAR(50) UNIQUE,
 source_url TEXT NOT NULL,
 
 wattage INTEGER NOT NULL CHECK (wattage > 0),
@@ -110,7 +110,7 @@ stock_status VARCHAR(20) NOT NULL DEFAULT 'unknown',
 last_scraped_at TIMESTAMP NULL,
 
 specs_json JSONB NOT NULL DEFAULT '{}'::jsonb,
-scraper_source VARCHAR(50) NOT NULL DEFAULT 'dospara',
+  scraper_source VARCHAR(50) NOT NULL DEFAULT 'pckoubou',
 parser_name VARCHAR(50),
 
 is_active BOOLEAN NOT NULL DEFAULT TRUE,

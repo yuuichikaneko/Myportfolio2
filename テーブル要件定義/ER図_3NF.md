@@ -12,7 +12,7 @@ erDiagram
         varchar maker
         bigint manufacturer_id FK
         varchar model_code
-        varchar dospara_code
+        varchar shop_code
         varchar socket
         varchar memory_type
         varchar chipset

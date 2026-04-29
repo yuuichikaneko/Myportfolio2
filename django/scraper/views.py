@@ -2770,7 +2770,7 @@ def _response_has_gaming_x3d_cpu(response_data):
     return False
 
 
-def _has_same_configuration_signature(latest_config, usage, budget, selected_parts, extra_storage_parts, use_igpu):
+def _has_same_configuration_signature(latest_config, usage, budget, selected_parts, extra_storage_parts, use_igpu, case_fan_part=None):
     if not latest_config:
         return False
     if latest_config.usage != usage or int(latest_config.budget) != int(budget):
@@ -2789,6 +2789,7 @@ def _has_same_configuration_signature(latest_config, usage, budget, selected_par
         and latest_config.os_id == (selected_parts.get('os').id if selected_parts.get('os') else None)
         and latest_config.psu_id == (selected_parts.get('psu').id if selected_parts.get('psu') else None)
         and latest_config.case_id == (selected_parts.get('case').id if selected_parts.get('case') else None)
+        and latest_config.case_fan_id == (case_fan_part.id if case_fan_part else None)
     )
 
 
@@ -4984,6 +4985,10 @@ def _infer_storage_media_type(part):
     if media_type in {'ssd', 'hdd'}:
         return media_type
 
+    storage_type = str(_get_spec(part, 'storage_type', '') or '').strip().lower()
+    if storage_type in {'ssd', 'hdd'}:
+        return storage_type
+
     name_text = str(getattr(part, 'name', '') or '').lower()
     form_factor = str(_get_spec(part, 'form_factor', '') or '').strip().lower()
     interface = _infer_storage_interface(part)
@@ -5041,6 +5046,19 @@ def _storage_profile_pick(candidates, build_priority, storage_preference='ssd', 
             candidates = other_candidates
         # それでもなければ、HDD候補しかないため最低価格HDDを返さざるを得ない
         # ただしこれは本来あるべき状態ではない
+
+    # === NVMe 優先フィルタ ===
+    # メインストレージ選定では NVMe > SATA > other の優先度を明示的に適用
+    # SSD が確定した後、その中から NVMe SSD に限定、次点として SATA SSD を許容
+    nvme_candidates = [p for p in candidates if _infer_storage_interface(p) == 'nvme']
+    if nvme_candidates:
+        candidates = nvme_candidates
+    else:
+        # NVMe が無い場合は SATA に限定
+        sata_candidates = [p for p in candidates if _infer_storage_interface(p) == 'sata']
+        if sata_candidates:
+            candidates = sata_candidates
+        # それでもなければ、other タイプを使用（テキスト推論失敗の場合）
 
     prefer_hdd = False  # storage_preference == 'hdd' は廃止
 
@@ -5359,8 +5377,7 @@ def _matches_selection_options(part_type, part, options=None):
         return True
 
     if part_type == 'storage':
-        allow_hdd_fallback = usage == 'gaming' and options.get('build_priority') == 'spec'
-        if enforce_main_storage_ssd and not allow_hdd_fallback and _infer_storage_media_type(part) != 'ssd':
+        if enforce_main_storage_ssd and _infer_storage_media_type(part) != 'ssd':
             return False
         if min_storage_capacity_gb:
             capacity_gb = _infer_storage_capacity_gb(part)
@@ -5571,6 +5588,9 @@ def _downgrade_selected_parts(selected_parts, total_price, budget, options=None)
             ]
             if part_type == 'storage' and options.get('build_priority') != 'spec':
                 cheaper_candidates = [c for c in cheaper_candidates if _infer_storage_media_type(c) == 'ssd']
+                nvme_candidates = [c for c in cheaper_candidates if _infer_storage_interface(c) == 'nvme']
+                if nvme_candidates:
+                    cheaper_candidates = nvme_candidates
             cheaper = None
             if cheaper_candidates:
                 if part_type == 'storage' and build_priority == 'spec':
@@ -6090,6 +6110,9 @@ def _upgrade_parts_with_surplus(selected_parts, total_price, budget, usage, opti
             ]
             if part_type == 'storage':
                 better_candidates = [c for c in better_candidates if _infer_storage_media_type(c) == 'ssd']
+                nvme_candidates = [c for c in better_candidates if _infer_storage_interface(c) == 'nvme']
+                if nvme_candidates:
+                    better_candidates = nvme_candidates
             if part_type == 'memory' and build_priority == 'cost':
                 current_capacity = _infer_memory_capacity_gb(current)
                 current_speed = _infer_memory_speed_mhz(current)
@@ -7107,11 +7130,9 @@ def _enforce_main_storage_ssd(selected_parts, budget, usage, options=None):
     if not storage:
         return selected_parts
 
-    # gaming+spec では高容量HDDフォールバックを許容する。
-    if usage == 'gaming' and options.get('build_priority') == 'spec':
-        return selected_parts
-
-    if _infer_storage_media_type(storage) == 'ssd':
+    current_media = _infer_storage_media_type(storage)
+    current_interface = _infer_storage_interface(storage)
+    if current_media == 'ssd' and current_interface == 'nvme':
         return selected_parts
 
     strict_options = dict(options)
@@ -7128,6 +7149,14 @@ def _enforce_main_storage_ssd(selected_parts, budget, usage, options=None):
     ]
     if not candidates:
         return selected_parts
+
+    ssd_candidates = [p for p in candidates if _infer_storage_media_type(p) == 'ssd']
+    if ssd_candidates:
+        candidates = ssd_candidates
+
+    nvme_candidates = [p for p in candidates if _infer_storage_interface(p) == 'nvme']
+    if nvme_candidates:
+        candidates = nvme_candidates
 
     candidates = sorted(
         candidates,
@@ -7153,7 +7182,12 @@ def _enforce_main_storage_ssd(selected_parts, budget, usage, options=None):
         trial_total = _sum_selected_price(trial)
         trial, trial_total = _downgrade_selected_parts(trial, trial_total, budget, options=strict_options)
         final_storage = trial.get('storage')
-        if final_storage and _infer_storage_media_type(final_storage) == 'ssd' and trial_total <= budget:
+        if (
+            final_storage
+            and _infer_storage_media_type(final_storage) == 'ssd'
+            and _infer_storage_interface(final_storage) == 'nvme'
+            and trial_total <= budget
+        ):
             return trial
 
     return selected_parts
@@ -8606,6 +8640,12 @@ def build_configuration_response(
         options=selection_options,
     )
     selected_parts = _resolve_compatibility(selected_parts, usage, options=selection_options)
+    selected_parts = _enforce_main_storage_ssd(
+        selected_parts,
+        budget,
+        usage,
+        options=selection_options,
+    )
     selection_options = _refresh_selection_options_with_selected_parts(selection_options, selected_parts)
     total_price = _sum_selected_price(selected_parts)
 
@@ -8941,6 +8981,29 @@ def build_configuration_response(
             'reason': _part_adjustment_reason(part_type),
         }
 
+    # ケースファン: 付属ファンなしケースが選択された場合に自動追加
+    case_fan_part = None
+    selected_case = selected_parts.get('case')
+    if selected_case:
+        case_specs = getattr(selected_case, 'specs', {}) or {}
+        included_fan_count = _extract_numeric_fan_count(case_specs.get('included_fan_count'))
+        if included_fan_count == 0 or included_fan_count is None:
+            remaining_budget = max(0, budget - total_price)
+            case_fan_part = _pick_case_fan_for_fanless_case(
+                remaining_budget,
+                selection_options.get('case_fan_policy', 'auto'),
+                selection_options.get('build_priority', 'balanced'),
+            )
+            if case_fan_part:
+                total_price += case_fan_part.price
+                selected.append({
+                    'category': 'case_fan',
+                    'name': case_fan_part.name,
+                    'price': case_fan_part.price,
+                    'url': case_fan_part.url,
+                    'specs': case_fan_part.specs,
+                })
+
     before_parts = dict(initial_selected_parts_snapshot)
     after_parts = dict(selected_parts)
     after_parts.update(extra_storage_parts)
@@ -8961,6 +9024,7 @@ def build_configuration_response(
                 selected_parts,
                 extra_storage_parts,
                 use_igpu,
+                case_fan_part=case_fan_part,
             ):
                 return build_configuration_response(
                     input_budget,
@@ -9003,6 +9067,7 @@ def build_configuration_response(
             os=selected_parts.get('os'),
             psu=selected_parts.get('psu'),
             case=selected_parts.get('case'),
+            case_fan=case_fan_part,
         ) if use_igpu else Configuration.objects.create(
             name=str(configuration_name or '').strip(),
             budget=effective_budget,
@@ -9019,6 +9084,7 @@ def build_configuration_response(
             os=selected_parts.get('os'),
             psu=selected_parts.get('psu'),
             case=selected_parts.get('case'),
+            case_fan=case_fan_part,
         )
 
     response_data = {
@@ -9076,6 +9142,7 @@ PART_TYPE_LABELS = {
     'os':          'OS',
     'psu':         '電源',
     'case':        'ケース',
+    'case_fan':    'ケースファン',
 }
 
 
@@ -9121,14 +9188,32 @@ class PCPartViewSet(viewsets.ModelViewSet):
     serializer_class = PCPartSerializer
     filterset_fields = ['part_type']
     search_fields = ['name']
+
+    @staticmethod
+    def _normalize_storage_category(value):
+        normalized = (value or '').strip().lower()
+        if normalized in {'nvme', 'sata', 'other'}:
+            return normalized
+        return ''
+
+    def get_queryset(self):
+        queryset = PCPart.objects.all()
+        part_type = (self.request.query_params.get('part_type') or '').strip().lower()
+        storage_category = self._normalize_storage_category(self.request.query_params.get('storage_category'))
+        if part_type == 'storage' and storage_category:
+            queryset = queryset.filter(storage_detail__storage_category=storage_category)
+        return queryset
     
     @action(detail=False, methods=['get'])
     def by_type(self, request):
         part_type = request.query_params.get('type')
         slot = (request.query_params.get('slot') or '').strip().lower()
+        storage_category = self._normalize_storage_category(request.query_params.get('storage_category'))
         if not part_type:
             return Response({'error': 'type parameter required'}, status=status.HTTP_400_BAD_REQUEST)
         parts = PCPart.objects.filter(part_type=part_type)
+        if part_type == 'storage' and storage_category:
+            parts = parts.filter(storage_detail__storage_category=storage_category)
         # メインストレージ置換候補は API 側でも SSD のみ返す。
         if part_type == 'storage' and slot == 'storage':
             parts = [part for part in parts if _infer_storage_media_type(part) == 'ssd']
@@ -9812,7 +9897,22 @@ def _infer_storage_interface(part):
     if interface == 'SATA':
         return 'sata'
 
-    text = f"{getattr(part, 'name', '')} {getattr(part, 'url', '')}".lower()
+    try:
+        detail = getattr(part, 'storage_detail', None)
+        category = str(getattr(detail, 'storage_category', '') or '').strip().lower()
+        if category in {'nvme', 'sata'}:
+            return category
+    except Exception:
+        pass
+
+    # Include comment/spec_text in search to detect interface mentions in product details.
+    spec_text = str(_get_spec(part, 'spec_text', '') or '')
+    comment = str(_get_spec(part, 'comment', '') or '')
+    text = f"{getattr(part, 'name', '')} {getattr(part, 'url', '')} {spec_text} {comment}".lower()
+    if 'serial ata' in text:
+        return 'sata'
+    if 'm.2 sata' in text or 'm2 sata' in text:
+        return 'sata'
     if 'nvme' in text:
         return 'nvme'
     if 'sata' in text:
@@ -9826,7 +9926,7 @@ def _infer_storage_interface(part):
     # Samsung NVMe models: 970 EVO/PRO, 980 PRO, 990 PRO
     if re.search(r'\b(970|980|990)\s*(evo|pro)\b', text):
         return 'nvme'
-    # M.2 in product name → NVMe
+    # M.2 in product name or spec_text → NVMe
     if 'm.2' in text:
         return 'nvme'
     return 'other'
@@ -9849,8 +9949,11 @@ def _serialize_storage_part(part):
     }
 
 
-def _build_storage_inventory_summary():
-    storage_parts = list(PCPart.objects.filter(part_type='storage').order_by('price', 'name'))
+def _build_storage_inventory_summary(storage_category=''):
+    queryset = PCPart.objects.filter(part_type='storage')
+    if storage_category in {'nvme', 'sata', 'other'}:
+        queryset = queryset.filter(storage_detail__storage_category=storage_category)
+    storage_parts = list(queryset.order_by('price', 'name'))
     serialized_items = [_serialize_storage_part(part) for part in storage_parts]
 
     capacity_groups = defaultdict(list)
@@ -9923,5 +10026,34 @@ class StorageInventoryAPIView(APIView):
     """ストレージDBの一覧と容量別・接続別サマリーを返す"""
 
     def get(self, request):
-        return Response(_build_storage_inventory_summary())
+        storage_category = (request.query_params.get('storage_category') or '').strip().lower()
+        return Response(_build_storage_inventory_summary(storage_category=storage_category))
+
+
+def _pick_case_fan_for_fanless_case(budget_remaining, case_fan_policy, build_priority='balanced'):
+    """付属ファンなしケース選択時にケースファン単品を選定する。"""
+    all_fans = list(PCPart.objects.filter(part_type='case_fan').order_by('price'))
+    if not all_fans:
+        return None
+
+    suitable = [p for p in all_fans if _is_part_suitable('case_fan', p)]
+    if not suitable:
+        suitable = all_fans
+
+    # 予算内候補を優先するが、候補なしなら最安値から選ぶ
+    affordable = [p for p in suitable if p.price <= max(budget_remaining, 0)]
+    candidates = affordable or suitable
+
+    if case_fan_policy in ('silent', 'airflow'):
+        def _fan_score(part):
+            text = f"{part.name} {part.url}".lower()
+            score = 0
+            for kw in CASE_FAN_POLICY_KEYWORDS.get(case_fan_policy, []):
+                if kw in text:
+                    score += 2
+            return score
+        return sorted(candidates, key=lambda p: (-_fan_score(p), p.price))[0]
+
+    # auto / cost: 最安値
+    return sorted(candidates, key=lambda p: p.price)[0]
 

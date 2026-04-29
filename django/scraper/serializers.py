@@ -45,13 +45,14 @@ class ConfigurationSerializer(serializers.ModelSerializer):
     os_data = PCPartSerializer(source='os', read_only=True)
     psu_data = PCPartSerializer(source='psu', read_only=True)
     case_data = PCPartSerializer(source='case', read_only=True)
-    
+    case_fan_data = PCPartSerializer(source='case_fan', read_only=True)
+
     class Meta:
         model = Configuration
         fields = [
             'id', 'name', 'budget', 'budget_tier', 'budget_tier_label', 'usage', 'usage_display', 'total_price',
-            'cpu', 'cpu_cooler', 'gpu', 'motherboard', 'memory', 'storage', 'storage2', 'storage3', 'os', 'psu', 'case',
-            'cpu_data', 'cpu_cooler_data', 'gpu_data', 'motherboard_data', 'memory_data', 'storage_data', 'storage2_data', 'storage3_data', 'os_data', 'psu_data', 'case_data',
+            'cpu', 'cpu_cooler', 'gpu', 'motherboard', 'memory', 'storage', 'storage2', 'storage3', 'os', 'psu', 'case', 'case_fan',
+            'cpu_data', 'cpu_cooler_data', 'gpu_data', 'motherboard_data', 'memory_data', 'storage_data', 'storage2_data', 'storage3_data', 'os_data', 'psu_data', 'case_data', 'case_fan_data',
             'created_at'
         ]
         read_only_fields = ['id', 'total_price', 'created_at']

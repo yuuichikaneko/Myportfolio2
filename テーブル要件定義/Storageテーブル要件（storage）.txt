@@ -5,7 +5,7 @@ id: PK, AUTO_INCREMENT
 name: VARCHAR(255), NOT NULL
 maker: VARCHAR(100), NOT NULL
 model_code: VARCHAR(100), NULL
-dospara_code: VARCHAR(50), NULL, UNIQUE
+shop_code: VARCHAR(50), NULL, UNIQUE
 source_url: TEXT, NOT NULL
 created_at: TIMESTAMP, DEFAULT now
 updated_at: TIMESTAMP, DEFAULT now
@@ -44,7 +44,7 @@ stock_status: ENUM, DEFAULT unknown
 last_scraped_at: TIMESTAMP, NULL
 監査・拡張
 specs_json: JSONB, DEFAULT {}
-scraper_source: VARCHAR(50), DEFAULT dospara
+scraper_source: VARCHAR(50), DEFAULT pckoubou
 parser_name: VARCHAR(50), NULL
 推奨制約
 
@@ -55,7 +55,7 @@ CHECK seq_write_mbps IS NULL OR seq_write_mbps > 0
 CHECK rpm IS NULL OR rpm > 0
 CHECK cache_mb IS NULL OR cache_mb >= 0
 CHECK endurance_tbw IS NULL OR endurance_tbw >= 0
-UNIQUE dospara_code
+UNIQUE shop_code
 UNIQUE maker + model_code（model_code がある場合）
 推奨インデックス
 
@@ -72,7 +72,7 @@ CREATE TABLE storage (
   name VARCHAR(255) NOT NULL,
   maker VARCHAR(100) NOT NULL,
   model_code VARCHAR(100),
-  dospara_code VARCHAR(50) UNIQUE,
+  shop_code VARCHAR(50) UNIQUE,
   source_url TEXT NOT NULL,
 
   storage_type VARCHAR(20) NOT NULL,
@@ -104,7 +104,7 @@ CREATE TABLE storage (
   last_scraped_at TIMESTAMP NULL,
 
   specs_json JSONB NOT NULL DEFAULT '{}'::jsonb,
-  scraper_source VARCHAR(50) NOT NULL DEFAULT 'dospara',
+  scraper_source VARCHAR(50) NOT NULL DEFAULT 'pckoubou',
   parser_name VARCHAR(50),
 
   is_active BOOLEAN NOT NULL DEFAULT TRUE,

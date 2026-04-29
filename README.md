@@ -1,4 +1,4 @@
-# Myportfolio
+# Myportfolio2
 
 ## レビュアー向けガイド（公開共有）
 
@@ -7,31 +7,10 @@
 - 対象範囲: Django + React (Vite) を使った構成ビルダー（データスクレイピング・運用診断機能含む）
 - 対象者: リポジトリURLをお持ちの方
 
-### クイックレビュー手順
-
-1. まず以下を順に確認:
-	- Quick Start
-	- PostgreSQL migration preparation (Django)
-	- PostgreSQL freeze mitigation and diagnostics
-2. バックエンドとフロントエンドを起動:
-
-```bash
-cd django
-python manage.py runserver 8001
-
-cd ../frontend
-npm install
-npm run dev
-```
-
-3. 動作確認URL:
-	- Backend API: `http://127.0.0.1:8001/api/`
-	- Frontend: `http://127.0.0.1:5173`（使用中なら次の空きポート）
-
 ### 注目ポイント
 
 - コア機能: PC構成自動生成とパーツ手動置換のUX
-- データ品質: スクレイパーのupsertフローと整合性チェック
+- データ品質: パソコン工房スクレイパーのupsertフローと整合性チェック
 - 運用成熟度: タイムアウト付きマイグレーションとPostgreSQLロック診断
 
 ### セキュリティ・運用境界
@@ -45,75 +24,74 @@ npm run dev
 - フロントエンド: `frontend/README.md`
 - Django: `django/`
 - Djangoパッケージ一覧: `django/DJANGO_INSTALLED_PACKAGES.txt`
-- FastAPI: `F:\Python\Myportfolio_FastAPI\backend` に移動済み
-
-## プロジェクト分割構成
-- FastAPIファイル: `F:\Python\Myportfolio_FastAPI\backend`
-- Djangoファイル: `django/`
-- FastAPIヘルパースクリプト: `F:\Python\Myportfolio_FastAPI\backend\scripts`
 
 ## クイックスタート
 
-### バックエンド（FastAPI）
-```bash
-cd F:\Python\Myportfolio_FastAPI\backend
-py -3.12 -m uvicorn app.main:app --reload
-```
-`http://localhost:8000` で起動
+### バックエンド（Django REST API）
 
-### Django
 ```bash
-cd django
-python manage.py runserver 8001
+cd f:\Python\Myportfolio2\django
+f:\Python\Myportfolio2\.venv\Scripts\python.exe manage.py runserver 8001
 ```
-`http://localhost:8001` で起動
+`http://127.0.0.1:8001/api/` で起動
 
-### スクレイピング自動実行（Celery不要）
+#### Django 初期セットアップ（初回のみ）
+
+**1. Django依存パッケージをインストール・更新:**
+```bash
+cd f:\Python\Myportfolio2
+f:\Python\Myportfolio2\.venv\Scripts\python.exe -m pip install -r django/django_requirements.txt
+```
+
+**2. PostgreSQL 環境変数を設定:**
+`django/.env.postgresql.example` を参考に `django/.env` を作成してDB値を設定。
+- Windowsでは `DB_CLIENT_ENCODING=UTF8` を維持してpsycopg2デコードエラーを防ぐ。
+- `DJANGO_SECRET_KEY` の設定が必須。生成例:
+  ```bash
+  f:\Python\Myportfolio2\.venv\Scripts\python.exe -c "import secrets; print(secrets.token_urlsafe(64))"
+  ```
+
+**3. データベースマイグレーション実行:**
+```bash
+cd f:\Python\Myportfolio2\django
+f:\Python\Myportfolio2\.venv\Scripts\python.exe manage.py migrate
+```
+
+**4. DB接続確認:**
+```bash
+cd f:\Python\Myportfolio2\django
+f:\Python\Myportfolio2\.venv\Scripts\python.exe manage.py showmigrations
+```
+
+> `DB_ENGINE` が `postgresql` に設定されていない場合、DjangoはSQLiteを使い続けます。
+
+#### スクレイピング自動実行
+
 `django/auto_run_scrapers.py` は `scraper.tasks.run_scraper_task()` を定期実行するランナーです。
+現在のスクレイピング対象はパソコン工房（pc-koubou.jp）です。
+補助データ（GPU性能表・市場価格帯・CPU選定素材）は既存インポート処理で更新されます。
 
-1回だけ実行:
+**1回だけ実行:**
 ```bash
-cd django
-../.venv/Scripts/python.exe auto_run_scrapers.py
+cd f:\Python\Myportfolio2\django
+f:\Python\Myportfolio2\.venv\Scripts\python.exe auto_run_scrapers.py
 ```
 
-30分ごとに自動実行（失敗しても継続）:
+**30分ごとに自動実行（失敗しても継続）:**
 ```bash
-cd django
-../.venv/Scripts/python.exe auto_run_scrapers.py --interval-minutes 30 --continue-on-error
+cd f:\Python\Myportfolio2\django
+f:\Python\Myportfolio2\.venv\Scripts\python.exe auto_run_scrapers.py --interval-minutes 30 --continue-on-error
 ```
 
-3回だけ実行して終了:
+**3回だけ実行して終了:**
 ```bash
-cd django
-../.venv/Scripts/python.exe auto_run_scrapers.py --interval-minutes 15 --max-runs 3 --continue-on-error
+cd f:\Python\Myportfolio2\django
+f:\Python\Myportfolio2\.venv\Scripts\python.exe auto_run_scrapers.py --interval-minutes 15 --max-runs 3 --continue-on-error
 ```
 
 ログ出力先: `logs/auto_run_scrapers.log`
 
-#### PostgreSQLマイグレーション準備（Django）
-1. Django依存パッケージをインストール・更新:
-```bash
-f:/Python/Myportfolio/.venv/Scripts/python.exe -m pip install -r django/django_requirements.txt
-```
-2. `django/.env.postgresql.example` を参考に `django/.env` を作成してDB値を設定。
-	- Windowsでは `DB_CLIENT_ENCODING=UTF8` を維持してpsycopg2デコードエラーを防ぐ。
-	- `DJANGO_SECRET_KEY` の設定が必須。生成例:
-	  `f:/Python/Myportfolio/.venv/Scripts/python.exe -c "import secrets; print(secrets.token_urlsafe(64))"`
-3. マイグレーション実行:
-```bash
-cd django
-f:/Python/Myportfolio/.venv/Scripts/python.exe manage.py migrate
-```
-4. DB接続確認:
-```bash
-cd django
-f:/Python/Myportfolio/.venv/Scripts/python.exe manage.py showmigrations
-```
-
-`DB_ENGINE` が `postgresql` に設定されていない場合、DjangoはSQLiteを使い続けます。
-
-#### PostgreSQLフリーズ対策と診断
+#### PostgreSQLマイグレーション・フリーズ対策と診断
 運用ツールポリシー（ポートフォリオ範囲）:
 
 - ローカル管理者専用。HTTPエンドポイント経由での公開禁止。
@@ -139,9 +117,9 @@ DB_IDLE_IN_TX_TIMEOUT_MS=10000
 リポジトリルートからのクイック診断:
 
 ```bash
-f:/Python/Myportfolio/.venv/Scripts/python.exe postgres_pg_activity.py --action snapshot --env-path django/.env
-f:/Python/Myportfolio/.venv/Scripts/python.exe postgres_pg_activity.py --action blockers --env-path django/.env
-f:/Python/Myportfolio/.venv/Scripts/python.exe postgres_pg_activity.py --action locks --env-path django/.env
+f:\Python\Myportfolio2\.venv\Scripts\python.exe postgres_pg_activity.py --action snapshot --env-path django/.env
+f:\Python\Myportfolio2\.venv\Scripts\python.exe postgres_pg_activity.py --action blockers --env-path django/.env
+f:\Python\Myportfolio2\.venv\Scripts\python.exe postgres_pg_activity.py --action locks --env-path django/.env
 ```
 
 タイムアウト付きマイグレーション（VS Codeの長時間フリーズ防止に推奨）:
@@ -174,8 +152,8 @@ PowerShellヘルパー（psql使用）:
 ブロッカーPIDが特定できたら、まずcancelを使い、必要な場合のみterminateを使用:
 
 ```bash
-f:/Python/Myportfolio/.venv/Scripts/python.exe postgres_pg_activity.py --action cancel --target-pid <PID> --env-path django/.env
-f:/Python/Myportfolio/.venv/Scripts/python.exe postgres_pg_activity.py --action terminate --target-pid <PID> --env-path django/.env
+f:\Python\Myportfolio2\.venv\Scripts\python.exe postgres_pg_activity.py --action cancel --target-pid <PID> --env-path django/.env
+f:\Python\Myportfolio2\.venv\Scripts\python.exe postgres_pg_activity.py --action terminate --target-pid <PID> --env-path django/.env
 ```
 
 Windows用ヘルパースクリプト:
@@ -187,12 +165,14 @@ Windows用ヘルパースクリプト:
 `start_django_frontend.bat` / `start_django_frontend.ps1` は以下をすべて起動します:
 - Djangoサーバー（8001）
 - フロントエンド開発サーバー（空きポート自動選択）
-- Celery Worker（自動スクレイパー）
+- Celery Worker（パソコン工房自動スクレイパー）
 - Celery Beat（スケジューラー）
 
 `127.0.0.1:6379` でRedisが起動していない場合、`redis-server` が利用可能であれば自動起動を試みます。
 
 ### フロントエンド（React via Vite）
+
+**Viteサーバーで起動：**
 ```bash
 cd frontend
 npm install
@@ -200,7 +180,8 @@ npm run dev
 ```
 `http://127.0.0.1:5173` で起動（使用中の場合は次の空きポート）
 
-### フロントエンド（CDN代替 - Node.js不要）
+#### CDN代替（Node.js不要）
+
 `frontend/index-cdn.html` をブラウザで開くか、以下で配信:
 ```bash
 python -m http.server -d frontend 8080

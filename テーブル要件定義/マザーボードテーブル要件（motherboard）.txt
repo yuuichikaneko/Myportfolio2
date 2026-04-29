@@ -6,8 +6,8 @@ maker (VARCHAR 100, NOT NULL) – メーカー (例: "GIGABYTE", "MSI", "ASRock"
 model_name (VARCHAR 100, NOT NULL) – モデル名 (例: "B850 AORUS")
 model_code (VARCHAR 100, nullable) – 型番
 chipset (VARCHAR 100, NOT NULL) – チップセット (例: "B850", "X870", "Z890")
-dospara_code (VARCHAR 50, unique, nullable) – Dospara 商品コード (例: "IC583471")
-source_url (URL, NOT NULL) – Dospara 商品ページ URL
+shop_code (VARCHAR 50, unique, nullable) – PC工房 商品コード
+source_url (URL, NOT NULL) – PC工房 商品ページ URL
 created_at (TIMESTAMP, default=now) – 作成日時
 updated_at (TIMESTAMP, default=now, on_update=now) – 更新日時
 is_active (BOOLEAN, default=true) – アクティブフラグ
@@ -94,7 +94,7 @@ stock_update_count (INT, default=0) – 在庫更新回数
 8. 制約＆デフォルト（Constraints）
 9. インデックス（Indexes）
 PRIMARY: id
-UNIQUE: dospara_code, (maker, model_name), source_url
+UNIQUE: shop_code, (maker, model_name), source_url
 INDEX:
 socket, memory_type – CPU 選択時の互換性チェック（最優先）
 chipset, socket – チップセット別検索
@@ -135,7 +135,7 @@ WHERE g.pcie_generation <= (SELECT pcie_generation FROM motherboard WHERE id = ?
 ORDER BY g.price_yen DESC;
 
 {
-  "source": "dospara",
+  "source": "pckoubou",
   "parser": "products_api",
   "code": "IC583471",
   "socket": "AM5",
@@ -193,6 +193,6 @@ CHECK (pcie_slots_total >= 1)
 CHECK (pcie_x16_slots >= 1)
 CHECK (m2_slots_total >= 0)
 CHECK (form_factor IN ('atx', 'micro_atx', 'mini_itx', 'eatx', 'x_atx'))
-UNIQUE (dospara_code)
+UNIQUE (shop_code)
 UNIQUE (maker, model_name)  -- または (maker, chipset, socket)
 

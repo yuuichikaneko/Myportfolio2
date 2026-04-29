@@ -67,6 +67,34 @@ def _ref_or_none(model, value):
     return obj
 
 
+def _infer_storage_category_from_part(part):
+    interface = str(getattr(part, 'interface', '') or '').strip().upper()
+    if interface == 'NVME':
+        return 'nvme'
+    if interface == 'SATA':
+        return 'sata'
+
+    specs = getattr(part, 'specs', None)
+    spec_text = ''
+    if isinstance(specs, dict):
+        spec_text = str(specs.get('spec_text', '') or '')
+    text = f"{getattr(part, 'name', '')} {getattr(part, 'url', '')} {spec_text}".lower()
+
+    if 'nvme' in text:
+        return 'nvme'
+    if 'sata' in text:
+        return 'sata'
+    if re.search(r'\bsn[5-9]\d{2}\b', text):
+        return 'nvme'
+    if re.search(r'\bsa\d{3}\b', text):
+        return 'sata'
+    if re.search(r'\b(970|980|990)\s*(evo|pro)\b', text):
+        return 'nvme'
+    if 'm.2' in text:
+        return 'nvme'
+    return 'other'
+
+
 def _build_detail_sync_payload(part):
     if part.part_type == 'cpu':
         return CPUDetail, {
@@ -115,6 +143,7 @@ def _build_detail_sync_payload(part):
         return StorageDetail, {
             'capacity_gb': part.capacity_gb,
             'interface': part.interface,
+            'storage_category': _infer_storage_category_from_part(part),
             'form_factor': part.form_factor,
             'interface_ref': _ref_or_none(InterfaceType, part.interface),
             'form_factor_ref': _ref_or_none(FormFactor, part.form_factor),
@@ -482,6 +511,7 @@ def run_scraper_task():
                         'specs': part.get('specs', {'source': 'pckoubou'}),
                         'stock_status': part.get('stock_status', 'unknown'),
                         'is_active': part.get('is_active', True),
+                        'last_scraped_at': timezone.now(),
                     },
                 )
                 upserted_parts.append(upserted)

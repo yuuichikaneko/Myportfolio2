@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8002/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8001/api";
 
 /**
  * 構成生成APIで受け付ける用途コード。
@@ -32,7 +32,7 @@ async function safeFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
     return await fetch(input, init);
   } catch {
     throw new Error(
-      `API server is unreachable: ${API_BASE_URL}. Start Flask bridge first (python -m flask_service.run_flask).`
+      `API server is unreachable: ${API_BASE_URL}. Start Django API server (python django/manage.py runserver 8001).`
     );
   }
 }
@@ -163,6 +163,7 @@ export interface SavedConfigurationResponse {
   os_data: SavedPartResponse | null;
   psu_data: SavedPartResponse | null;
   case_data: SavedPartResponse | null;
+  case_fan_data: SavedPartResponse | null;
   created_at: string;
 }
 
@@ -181,6 +182,7 @@ export interface CreateSavedConfigurationRequest {
   os: number | null;
   psu: number | null;
   case: number | null;
+  case_fan: number | null;
 }
 
 interface PaginatedResponse<T> {
@@ -206,7 +208,7 @@ export async function generateConfig(
   const timeoutPromise = new Promise<never>((_, reject) => {
     timeoutHandle = window.setTimeout(() => {
       reject(new Error("構成生成がタイムアウトしました。条件を緩めるか、もう一度お試しください。"));
-    }, 30000);
+    }, 60000);
   });
 
   const response = await Promise.race([requestPromise, timeoutPromise]);
@@ -347,6 +349,7 @@ export async function deleteSavedConfiguration(id: number): Promise<void> {
 
 interface GetPartsByTypeOptions {
   slotCategory?: string;
+  storageCategory?: "nvme" | "sata";
 }
 
 export async function getPartsByType(
@@ -356,6 +359,9 @@ export async function getPartsByType(
   const searchParams = new URLSearchParams({ type: partType });
   if (options.slotCategory) {
     searchParams.set("slot", options.slotCategory);
+  }
+  if (options.storageCategory) {
+    searchParams.set("storage_category", options.storageCategory);
   }
   const response = await safeFetch(`${API_BASE_URL}/parts/by_type/?${searchParams.toString()}`);
 

@@ -16,7 +16,11 @@ from decouple import config
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-APP_ENV = config('APP_ENV', default='development')
+APP_ENV = config('APP_ENV', default='development').strip().lower()
+
+
+def _split_csv(value):
+    return [item.strip() for item in str(value or '').split(',') if item.strip()]
 
 
 # Quick-start development settings - unsuitable for production
@@ -28,9 +32,31 @@ if not SECRET_KEY:
     raise RuntimeError('DJANGO_SECRET_KEY is required. Set it in django/.env or environment variables.')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DJANGO_DEBUG', default=(APP_ENV != 'production'), cast=bool)
 
-ALLOWED_HOSTS = []
+default_allowed_hosts = '127.0.0.1,localhost' if APP_ENV != 'production' else ''
+ALLOWED_HOSTS = _split_csv(config('DJANGO_ALLOWED_HOSTS', default=default_allowed_hosts))
+
+# Security hardening (stage by APP_ENV and override by env vars)
+SECURE_SSL_REDIRECT = config('DJANGO_SECURE_SSL_REDIRECT', default=(APP_ENV == 'production'), cast=bool)
+SESSION_COOKIE_SECURE = config('DJANGO_SESSION_COOKIE_SECURE', default=(APP_ENV == 'production'), cast=bool)
+CSRF_COOKIE_SECURE = config('DJANGO_CSRF_COOKIE_SECURE', default=(APP_ENV == 'production'), cast=bool)
+
+default_hsts_seconds = 0
+if APP_ENV == 'staging':
+    default_hsts_seconds = 300
+elif APP_ENV == 'production':
+    default_hsts_seconds = 3600
+SECURE_HSTS_SECONDS = config('DJANGO_SECURE_HSTS_SECONDS', default=default_hsts_seconds, cast=int)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = config(
+    'DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS',
+    default=(APP_ENV == 'production'),
+    cast=bool,
+)
+SECURE_HSTS_PRELOAD = config('DJANGO_SECURE_HSTS_PRELOAD', default=False, cast=bool)
+USE_X_FORWARDED_HOST = config('DJANGO_USE_X_FORWARDED_HOST', default=False, cast=bool)
+if config('DJANGO_TRUST_X_FORWARDED_PROTO', default=False, cast=bool):
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
 # Application definition
@@ -52,6 +78,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -85,7 +112,11 @@ WSGI_APPLICATION = 'myportfolio_django.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DB_ENGINE = config('DB_ENGINE', default='sqlite3').strip().lower()
+default_db_engine = 'postgresql' if APP_ENV == 'production' else 'sqlite3'
+DB_ENGINE = config('DB_ENGINE', default=default_db_engine).strip().lower()
+
+if APP_ENV == 'production' and DB_ENGINE not in ('postgresql', 'postgres', 'django.db.backends.postgresql'):
+    raise RuntimeError('In production, DB_ENGINE must be postgresql.')
 
 if DB_ENGINE in ('postgresql', 'postgres', 'django.db.backends.postgresql'):
     db_sslmode = config('DB_SSLMODE', default='prefer').strip()
@@ -170,6 +201,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / config('DJANGO_STATIC_ROOT', default='staticfiles')
+STATICFILES_STORAGE = config(
+    'DJANGO_STATICFILES_STORAGE',
+    default='whitenoise.storage.CompressedManifestStaticFilesStorage',
+)
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -183,7 +219,7 @@ REST_FRAMEWORK = {
 }
 
 # CORS
-CORS_ALLOWED_ORIGINS = [
+local_cors_allowed_origins = [
     'http://localhost:3000',
     'http://localhost:8000',
     'http://localhost:5173',
@@ -195,15 +231,21 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:5174',
     'http://127.0.0.1:8001',
 ]
+CORS_ALLOWED_ORIGINS = _split_csv(config('CORS_ALLOWED_ORIGINS', default=''))
+if not CORS_ALLOWED_ORIGINS and APP_ENV == 'development':
+    CORS_ALLOWED_ORIGINS = local_cors_allowed_origins
 
-CORS_ALLOWED_ORIGIN_REGEXES = [
-    r"^http://localhost:5\d{3}$",
-    r"^http://127\.0\.0\.1:5\d{3}$",
-]
+CORS_ALLOWED_ORIGIN_REGEXES = _split_csv(config('CORS_ALLOWED_ORIGIN_REGEXES', default=''))
+if not CORS_ALLOWED_ORIGIN_REGEXES and APP_ENV == 'development':
+    CORS_ALLOWED_ORIGIN_REGEXES = [
+        r"^http://localhost:5\d{3}$",
+        r"^http://127\.0\.0\.1:5\d{3}$",
+    ]
 
 # Celery
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+default_redis_url = 'redis://localhost:6379/0'
+CELERY_BROKER_URL = config('CELERY_BROKER_URL', default=default_redis_url)
+CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default=CELERY_BROKER_URL)
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'

@@ -5,7 +5,7 @@ id: BIGSERIAL, 主キー
 name: VARCHAR(255), NOT NULL
 maker: VARCHAR(100), NOT NULL
 model_code: VARCHAR(100), NULL
-dospara_code: VARCHAR(50), NULL, UNIQUE
+shop_code: VARCHAR(50), NULL, UNIQUE
 source_url: TEXT, NOT NULL
 created_at: TIMESTAMP, DEFAULT now
 updated_at: TIMESTAMP, DEFAULT now
@@ -27,11 +27,11 @@ last_scraped_at: TIMESTAMP, NULL
 
 その他
 specs_json: JSONB, NOT NULL, DEFAULT '{}'
-scraper_source: VARCHAR(50), NOT NULL, DEFAULT 'dospara'
+scraper_source: VARCHAR(50), NOT NULL, DEFAULT 'pckoubou'
 parser_name: VARCHAR(50), NULL
 
 一意性制約
-UNIQUE dospara_code
+UNIQUE shop_code
 UNIQUE maker + model_code（model_code がある場合）
 
 推奨インデックス
@@ -49,7 +49,7 @@ CREATE TABLE memory (
   name VARCHAR(255) NOT NULL,
   maker VARCHAR(100) NOT NULL,
   model_code VARCHAR(100),
-  dospara_code VARCHAR(50) UNIQUE,
+  shop_code VARCHAR(50) UNIQUE,
   source_url TEXT NOT NULL,
 
   memory_type VARCHAR(20) NOT NULL,
@@ -63,7 +63,7 @@ CREATE TABLE memory (
   last_scraped_at TIMESTAMP NULL,
 
   specs_json JSONB NOT NULL DEFAULT '{}'::jsonb,
-  scraper_source VARCHAR(50) NOT NULL DEFAULT 'dospara',
+  scraper_source VARCHAR(50) NOT NULL DEFAULT 'pckoubou',
   parser_name VARCHAR(50),
 
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
