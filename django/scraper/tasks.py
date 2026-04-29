@@ -423,7 +423,7 @@ def import_cpu_selection_material_task(timeout=20):
 
     with transaction.atomic():
         snapshot = CPUSelectionSnapshot.objects.create(
-            source_name=data.get('source_name', 'dospara_cpu_comparison_pages'),
+            source_name=data.get('source_name', 'pckoubou_cpu_spec_pages'),
             source_urls=data.get('source_urls', []) or [],
             exclude_intel_13_14=bool(data.get('exclude_intel_13_14', True)),
             entry_count=int(data.get('entry_count', len(entries)) or len(entries)),
@@ -502,18 +502,47 @@ def run_scraper_task():
         with transaction.atomic():
             upserted_parts = []
             for part in scraped_parts:
-                upserted, created = PCPart.objects.update_or_create(
-                    part_type=part['part_type'],
-                    name=part['name'],
-                    defaults={
-                        'price': part['price'],
-                        'url': part['url'],
-                        'specs': part.get('specs', {'source': 'pckoubou'}),
-                        'stock_status': part.get('stock_status', 'unknown'),
-                        'is_active': part.get('is_active', True),
-                        'last_scraped_at': timezone.now(),
-                    },
-                )
+                specs = part.get('specs', {'source': 'pckoubou'})
+                shop_code = ''
+                if isinstance(specs, dict):
+                    shop_code = str(specs.get('code') or '').strip()
+
+                defaults = {
+                    'price': part['price'],
+                    'url': part['url'],
+                    'specs': specs,
+                    'stock_status': part.get('stock_status', 'unknown'),
+                    'is_active': part.get('is_active', True),
+                    'last_scraped_at': timezone.now(),
+                }
+
+                # shop_code がある場合は同一商品を優先的に更新して一意制約衝突を回避する
+                if shop_code:
+                    existing_by_code = PCPart.objects.filter(shop_code=shop_code).first()
+                    if existing_by_code:
+                        existing_by_code.part_type = part['part_type']
+                        existing_by_code.name = part['name']
+                        existing_by_code.price = defaults['price']
+                        existing_by_code.url = defaults['url']
+                        existing_by_code.specs = defaults['specs']
+                        existing_by_code.stock_status = defaults['stock_status']
+                        existing_by_code.is_active = defaults['is_active']
+                        existing_by_code.last_scraped_at = defaults['last_scraped_at']
+                        existing_by_code.save()
+                        upserted = existing_by_code
+                        created = False
+                    else:
+                        upserted, created = PCPart.objects.update_or_create(
+                            part_type=part['part_type'],
+                            name=part['name'],
+                            defaults=defaults,
+                        )
+                else:
+                    upserted, created = PCPart.objects.update_or_create(
+                        part_type=part['part_type'],
+                        name=part['name'],
+                        defaults=defaults,
+                    )
                 upserted_parts.append(upserted)
                 saved_count += 1 if created else 0
 
@@ -538,7 +567,7 @@ def run_scraper_task():
         try:
             cpu_selection_result = import_cpu_selection_material_task(timeout=20)
         except Exception:
-            logger.exception('cpu_selection_import_failed source=dospara_cpu_comparison_pages')
+            logger.exception('cpu_selection_import_failed source=pckoubou_cpu_spec_pages')
             cpu_selection_result = {'status': 'error'}
 
         status.last_run = timezone.now()

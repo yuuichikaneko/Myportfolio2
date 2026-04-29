@@ -2,15 +2,16 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8001/api"
 
 /**
  * 構成生成APIで受け付ける用途コード。
- * 正規値は gaming / creator / ai / general。
- * 旧データ互換のため、business / standard / video_editing も受け付ける。
+ * 正規値は gaming / general / creator / business / workstation。
+ * 旧データ互換のため、ai / standard / video_editing も受け付ける。
  */
 export type UsageCode =
   | "gaming"
-  | "creator"
-  | "ai"
   | "general"
+  | "creator"
   | "business"
+  | "workstation"
+  | "ai"
   | "standard"
   | "video_editing";
 
@@ -170,7 +171,7 @@ export interface SavedConfigurationResponse {
 export interface CreateSavedConfigurationRequest {
   name?: string;
   budget: number;
-  usage: "gaming" | "video_editing" | "general";
+  usage: "gaming" | "general" | "creator" | "business" | "workstation" | "video_editing" | "ai" | "standard";
   cpu: number | null;
   cpu_cooler: number | null;
   gpu: number | null;

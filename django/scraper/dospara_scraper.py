@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from urllib.parse import parse_qs, quote, urljoin, urlparse
 
 import requests
@@ -116,7 +116,7 @@ CATEGORY_RULES = {
         "exclude": ["グリス", "thermal paste", "マザーボード", "motherboard", "pcケース"],
     },
     "cpu": {
-        "include": ["ryzen", "core i", "pentium", "celeron", "core ultra", "xeon", "cpu box"],
+        "include": ["ryzen", "core i", "pentium", "celeron", "core ultra", "cpu box"],
         "exclude": ["グリス", "cooler", "クーラー", "ファン", "cpuクーラー", "water block"],
     },
     "gpu": {
@@ -236,10 +236,11 @@ MARKET_BRAND_URLS = {
     "dospara_tc30_market": "https://www.dospara.co.jp/TC30?pmax=2%2C500%2C000.00&srule=04&includeNotInventory=false",
 }
 
-DOSPARA_GPU_PERFORMANCE_URL = "https://www.dospara.co.jp/5shopping/shp_vga_def_parts.html"
-GPU_PERF_SCORE_NOTE = "Dospara独自の参考値（定期見直しあり）"
-DOSPARA_AMD_CPU_PERFORMANCE_URL = "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
-DOSPARA_INTEL_CPU_PERFORMANCE_URL = "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+DOSPARA_GPU_PERFORMANCE_URL = "https://www.pc-koubou.jp/pc/benchmark.php"
+GPU_PERF_SCORE_NOTE = "PC工房公開の3DMark Fire Strike Graphics Score参考値"
+DOSPARA_AMD_CPU_PERFORMANCE_URL = "https://www.pc-koubou.jp/magazine/5813"
+DOSPARA_INTEL_CPU_PERFORMANCE_URL = "https://www.pc-koubou.jp/magazine/5574"
+PCKOUBOU_CPU_REFERENCE_URL = "https://www.pc-koubou.jp/magazine/references/ref-cpu"
 
 PRICE_IN_HTML_PATTERN = re.compile(r"([1-9][0-9]{0,2}(?:,[0-9]{3})+)")
 INTEL_13_14_GEN_PATTERN = re.compile(r"\bCORE\s+I[3579]\s*[- ]?\s*1[34]\d{3}[A-Z]*\b", re.IGNORECASE)
@@ -539,8 +540,66 @@ def fetch_dospara_gpu_performance_table(timeout: int = 20, session: Optional[req
                 }
             )
 
+    # PC工房ベンチマーク形式: GPU(CPU) / VRAM / Graphics Score
+    for table in soup.find_all("table"):
+        header = " ".join(th.get_text(" ", strip=True) for th in table.find_all("th"))
+        if "GPU(CPU)" not in header or "Graphics Score" not in header:
+            continue
+
+        for row in table.find_all("tr"):
+            cells = row.find_all("td")
+            if len(cells) < 3:
+                continue
+
+            cell_texts = [c.get_text(" ", strip=True) for c in cells]
+            merged_text = " ".join(cell_texts)
+
+            score_raw = cell_texts[-1]
+            score_digits = re.sub(r"[^0-9]", "", score_raw)
+            if not score_digits:
+                continue
+            perf_score = int(score_digits)
+
+            # 代表的なGPU名称を抽出（CPU括弧書きは除去）
+            gpu_name = ""
+            for text in cell_texts:
+                candidate = re.sub(r"\([^)]*\)", "", text).strip()
+                upper = candidate.upper()
+                if any(token in upper for token in ("RTX", "GTX", "RADEON", "RX ", "ARC", "UHD", "IRIS", "VEGA")):
+                    gpu_name = candidate
+                    break
+            if not gpu_name:
+                model_key_guess = _extract_gpu_model_key(merged_text)
+                if model_key_guess:
+                    gpu_name = model_key_guess
+            if not gpu_name:
+                continue
+
+            vram_raw = next((t for t in cell_texts if "GB" in t.upper()), "")
+            vram_gb = _parse_gpu_vram_gb(vram_raw)
+            model_key = _extract_gpu_model_key(gpu_name)
+            is_laptop = "laptop" in merged_text.lower() or "ノート" in merged_text
+
+            row_key = (model_key or gpu_name, vram_gb, perf_score, is_laptop)
+            if row_key in seen:
+                continue
+            seen.add(row_key)
+
+            entries.append(
+                {
+                    "name": gpu_name,
+                    "model_key": model_key,
+                    "vendor": _infer_gpu_vendor(gpu_name),
+                    "vram_raw": vram_raw,
+                    "vram_gb": vram_gb,
+                    "perf_score": perf_score,
+                    "detail_url": DOSPARA_GPU_PERFORMANCE_URL,
+                    "is_laptop": is_laptop,
+                }
+            )
+
     return {
-        "source_name": "dospara_gpu_performance_page",
+        "source_name": "pckoubou_gpu_benchmark_page",
         "source_url": DOSPARA_GPU_PERFORMANCE_URL,
         "updated_at_source": updated_at_source,
         "score_note": GPU_PERF_SCORE_NOTE,
@@ -557,6 +616,65 @@ def _parse_cpu_perf_score(text: str) -> Optional[int]:
     if not digits:
         return None
     return int(digits)
+
+
+def _parse_first_int(text: str) -> Optional[int]:
+    match = re.search(r"(\d+)", str(text or ""))
+    if not match:
+        return None
+    try:
+        return int(match.group(1))
+    except (TypeError, ValueError):
+        return None
+
+
+def _parse_cores_threads(text: str) -> Tuple[Optional[int], Optional[int]]:
+    token = str(text or "")
+    match = re.search(r"(\d+)\s*/\s*(\d+)", token)
+    if match:
+        return _parse_first_int(match.group(1)), _parse_first_int(match.group(2))
+    cores = _parse_first_int(token)
+    return cores, None
+
+
+def _parse_clock_ghz(text: str) -> Optional[float]:
+    token = str(text or "").lower()
+    match = re.search(r"(\d+(?:\.\d+)?)\s*ghz", token)
+    if not match:
+        return None
+    try:
+        return float(match.group(1))
+    except (TypeError, ValueError):
+        return None
+
+
+def _parse_cache_mb(text: str) -> Optional[int]:
+    token = str(text or "")
+    match = re.search(r"(\d+(?:\.\d+)?)\s*MB", token, re.IGNORECASE)
+    if not match:
+        return None
+    try:
+        return int(float(match.group(1)))
+    except (TypeError, ValueError):
+        return None
+
+
+def _derive_cpu_perf_score_from_specs(cores, threads, base_ghz, boost_ghz, cache_l2_mb, cache_l3_mb) -> int:
+    cores_i = int(cores or 0)
+    threads_i = int(threads or 0)
+    base = float(base_ghz or 0.0)
+    boost = float(boost_ghz or base_ghz or 0.0)
+    cache_mb = int((cache_l2_mb or 0) + (cache_l3_mb or 0))
+
+    # 既存ロジックの閾値(3000, 7000, 11000)に合わせた互換スケール
+    score = (
+        threads_i * 120
+        + cores_i * 60
+        + int(base * 350)
+        + int(boost * 450)
+        + cache_mb * 4
+    )
+    return max(score, 0)
 
 
 def _is_excluded_intel_13_14_generation(model_name: str) -> bool:
@@ -603,11 +721,89 @@ def _extract_cpu_performance_entries(html: str, vendor: str, source_url: str, ex
 
             entries.append(row_data)
 
+    # PC工房のCPU資料形式（性能目安列なし）から合成スコアを作る
+    for table in soup.find_all("table"):
+        header = " ".join(th.get_text(" ", strip=True) for th in table.find_all("th"))
+        if "コア/スレッド" not in header:
+            continue
+        if "動作クロック" not in header and "最大ブースト" not in header:
+            continue
+
+        for row in table.find_all("tr"):
+            cells = row.find_all("td")
+            if len(cells) < 4:
+                continue
+
+            cell_texts = [c.get_text(" ", strip=True) for c in cells]
+            model_name = _normalize_cpu_model_name(cell_texts[0])
+            if not model_name:
+                continue
+
+            cores = None
+            threads = None
+            base_ghz = None
+            boost_ghz = None
+            cache_l2_mb = None
+            cache_l3_mb = None
+
+            for text in cell_texts:
+                if cores is None and threads is None and re.search(r"\d+\s*/\s*\d+", text):
+                    cores, threads = _parse_cores_threads(text)
+                if base_ghz is None and "ghz" in text.lower():
+                    base_ghz = _parse_clock_ghz(text)
+                    continue
+                if boost_ghz is None and "ghz" in text.lower():
+                    boost_ghz = _parse_clock_ghz(text)
+
+            mb_cells = [text for text in cell_texts if re.search(r"\d+(?:\.\d+)?\s*MB", text, re.IGNORECASE)]
+            if mb_cells:
+                cache_l2_mb = _parse_cache_mb(mb_cells[0])
+            if len(mb_cells) >= 2:
+                cache_l3_mb = _parse_cache_mb(mb_cells[1])
+
+            if cores is None:
+                continue
+            if threads is None:
+                threads = cores
+            if base_ghz is None:
+                base_ghz = 0.0
+            if boost_ghz is None:
+                boost_ghz = base_ghz
+
+            perf_score = _derive_cpu_perf_score_from_specs(
+                cores=cores,
+                threads=threads,
+                base_ghz=base_ghz,
+                boost_ghz=boost_ghz,
+                cache_l2_mb=cache_l2_mb,
+                cache_l3_mb=cache_l3_mb,
+            )
+            if perf_score <= 0:
+                continue
+
+            key = (vendor, model_name.upper(), perf_score)
+            if key in seen:
+                continue
+            seen.add(key)
+
+            row_data = {
+                "vendor": vendor,
+                "model_name": model_name,
+                "perf_score": perf_score,
+                "source_url": source_url,
+            }
+
+            if vendor == "intel" and exclude_intel_13_14 and _is_excluded_intel_13_14_generation(model_name):
+                excluded.append({**row_data, "excluded_reason": "intel_13th_14th_generation"})
+                continue
+
+            entries.append(row_data)
+
     return {"entries": entries, "excluded": excluded}
 
 
 def fetch_dospara_cpu_selection_material(timeout: int = 20, session: Optional[requests.Session] = None, exclude_intel_13_14: bool = True) -> Dict:
-    """Fetch CPU comparison materials from Dospara AMD/Intel pages with optional Intel 13/14 gen exclusion."""
+    """Fetch CPU comparison materials from pc-koubou AMD/Intel pages with optional Intel 13/14 gen exclusion."""
     client = session or requests.Session()
     sources = [
         ("amd", DOSPARA_AMD_CPU_PERFORMANCE_URL),
@@ -632,11 +828,12 @@ def fetch_dospara_cpu_selection_material(timeout: int = 20, session: Optional[re
     all_entries.sort(key=lambda row: (row.get("perf_score", 0), row.get("model_name", "")), reverse=True)
 
     return {
-        "source_name": "dospara_cpu_comparison_pages",
-        "source_urls": [url for _, url in sources],
+        "source_name": "pckoubou_cpu_spec_pages",
+        "source_urls": [PCKOUBOU_CPU_REFERENCE_URL] + [url for _, url in sources],
         "exclude_intel_13_14": bool(exclude_intel_13_14),
         "entry_count": len(all_entries),
         "excluded_count": len(excluded_entries),
+        "parser_version": "v2-pckoubou-spec-score",
         "entries": all_entries,
         "excluded_entries": excluded_entries,
     }

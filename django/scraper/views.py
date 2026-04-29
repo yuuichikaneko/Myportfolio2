@@ -31,10 +31,12 @@ _CPU_SELECTION_CACHE = {
 
 
 PART_ORDER = ['cpu', 'cpu_cooler', 'gpu', 'motherboard', 'memory', 'storage', 'os', 'psu', 'case']
-CANONICAL_USAGE_CODES = frozenset({'gaming', 'creator', 'ai', 'general'})
+CANONICAL_USAGE_CODES = frozenset({'gaming', 'general', 'creator', 'business', 'workstation'})
 USAGE_COMPAT_ALIASES = {
     'video_editing': 'creator',
-    'business': 'general',
+    'create': 'creator',
+    'game': 'gaming',
+    'ai': 'workstation',
     'standard': 'general',
 }
 
@@ -50,12 +52,13 @@ def _normalize_usage_code(value):
 
 
 USAGE_POWER_MAP = {
-    'gaming': 550,    # ゲーミング: GPU高負荷
-    'creator': 500,   # クリエイター: CPU+GPU高負荷
-    'ai': 650,        # AI: GPU高負荷 + 連続実行
-    'general': 300,   # 汎用: 省電力寄り
-    'business': 350,  # ビジネス: 省電力
-    'standard': 400,  # スタンダード: 標準
+    'gaming': 550,       # ゲーム: GPU高負荷
+    'creator': 500,      # クリエイト: CPU+GPU高負荷
+    'workstation': 650,  # ワークステーション: GPU高負荷 + 連続実行
+    'general': 300,      # 汎用: 省電力寄り
+    'business': 350,     # ビジネス: 省電力
+    'standard': 400,     # 旧互換
+    'ai': 650,           # 旧互換
 }
 
 USAGE_BUDGET_WEIGHTS = {
@@ -83,7 +86,18 @@ USAGE_BUDGET_WEIGHTS = {
         'psu': 0.06,
         'case': 0.02,
     },
-    # AI: VRAM/メモリ/電源・冷却を重視
+    # ワークステーション: VRAM/メモリ/電源・冷却を重視
+    'workstation': {
+        'cpu': 0.16,
+        'cpu_cooler': 0.09,
+        'gpu': 0.32,
+        'motherboard': 0.11,
+        'memory': 0.14,
+        'storage': 0.08,
+        'os': 0.04,
+        'psu': 0.05,
+        'case': 0.01,
+    },
     'ai': {
         'cpu': 0.16,
         'cpu_cooler': 0.09,
@@ -152,6 +166,16 @@ BUDGET_TIER_THRESHOLDS = {
     'low': 220000,
     'middle': 300000,
     'high': 500000,
+}
+
+# パソコン工房の用途別スペック検索ページ実測値をそのまま tier 境界へ反映。
+# 各用途で low=25percentile / middle=median / high=75percentile とする。
+BUDGET_TIER_THRESHOLDS_BY_USAGE = {
+    'gaming': {'low': 129800, 'middle': 134800, 'high': 139800},
+    'desktop': {'low': 94800, 'middle': 104300, 'high': 109800},
+    'creator': {'low': 134800, 'middle': 159800, 'high': 164800},
+    'workstation': {'low': 379800, 'middle': 464800, 'high': 624800},
+    'business': {'low': 109800, 'middle': 120700, 'high': 124800},
 }
 
 MARKET_TIER_FALLBACK_MIN = 179980
@@ -240,12 +264,13 @@ PART_PRICE_BANDS_BY_USAGE_TIER = {
 CATEGORY_DROP_PRIORITY = ['case', 'storage', 'memory', 'cpu_cooler', 'motherboard', 'psu', 'gpu', 'cpu']
 
 UPGRADE_PRIORITY_BY_USAGE = {
-    'gaming':   ['gpu', 'cpu', 'cpu_cooler', 'memory', 'storage', 'motherboard', 'psu', 'case'],
-    'creator':  ['cpu', 'motherboard', 'memory', 'gpu', 'storage', 'cpu_cooler', 'psu', 'case'],
-    'ai':       ['gpu', 'memory', 'cpu', 'storage', 'motherboard', 'cpu_cooler', 'psu', 'case'],
-    'general':  ['cpu', 'memory', 'storage', 'motherboard', 'cpu_cooler', 'psu', 'case'],
-    'business': ['cpu', 'memory', 'storage', 'motherboard', 'cpu_cooler', 'psu', 'case'],
-    'standard': ['cpu', 'memory', 'storage', 'motherboard', 'cpu_cooler', 'psu', 'case'],
+    'gaming':      ['gpu', 'cpu', 'cpu_cooler', 'memory', 'storage', 'motherboard', 'psu', 'case'],
+    'creator':     ['cpu', 'motherboard', 'memory', 'gpu', 'storage', 'cpu_cooler', 'psu', 'case'],
+    'workstation': ['gpu', 'memory', 'cpu', 'storage', 'motherboard', 'cpu_cooler', 'psu', 'case'],
+    'general':     ['cpu', 'memory', 'storage', 'motherboard', 'cpu_cooler', 'psu', 'case'],
+    'business':    ['cpu', 'memory', 'storage', 'motherboard', 'cpu_cooler', 'psu', 'case'],
+    'standard':    ['cpu', 'memory', 'storage', 'motherboard', 'cpu_cooler', 'psu', 'case'],
+    'ai':          ['gpu', 'memory', 'cpu', 'storage', 'motherboard', 'cpu_cooler', 'psu', 'case'],
 }
 
 # 内蔵GPU(iGPU)使用: ビジネス・スタンダードはdGPU不要
@@ -324,7 +349,7 @@ CASE_SIZE_KEYWORDS = {
 }
 
 CPU_VENDOR_KEYWORDS = {
-    'intel': ['intel', 'core i', 'core ultra', 'pentium', 'celeron', 'xeon'],
+    'intel': ['intel', 'core i', 'core ultra', 'pentium', 'celeron'],
     'amd': ['amd', 'ryzen', 'athlon', 'epyc', 'threadripper'],
 }
 
@@ -669,6 +694,7 @@ def _resolve_os_edition_by_usage(usage, os_edition):
 
     auto_map = {
         'gaming': 'home',
+        'workstation': 'pro',
         'ai': 'pro',
         'standard': 'home',
         'general': 'home',
@@ -1129,12 +1155,12 @@ def _is_general_cost_low_tier(usage, build_priority, budget):
     return (
         usage in {'general', 'business', 'standard'}
         and build_priority == 'cost'
-        and _classify_budget_tier(int(budget or 0)) == 'low'
+        and _classify_budget_tier(int(budget or 0), usage=usage) == 'low'
     )
 
 
 def _is_general_low_tier(usage, budget):
-    return usage in {'general', 'business', 'standard'} and _classify_budget_tier(int(budget or 0)) == 'low'
+    return usage in {'general', 'business', 'standard'} and _classify_budget_tier(int(budget or 0), usage=usage) == 'low'
 
 
 def _is_general_cost_legacy_cpu(part):
@@ -1191,7 +1217,47 @@ def _is_ai_latest_generation_cpu(part):
     intel_latest = re.search(r'core\s*ultra\s*[3579]\s*2\d{2}[a-z]*', text) is not None
     # AMD は AI用途で Ryzen 9000 系のみを「最新世代」として扱う。
     amd_latest = re.search(r'ryzen\s*[3579]\s*9\d{3}(?:x3d|x|g|gt|ge|f)?', text) is not None
-    return intel_latest or amd_latest
+    # AI/Creator のワークステーション用途では Threadripper / EPYC も許可する。
+    workstation_cpu = _is_workstation_cpu(part)
+    return intel_latest or amd_latest or workstation_cpu
+
+
+def _is_workstation_cpu(part):
+    text = f"{getattr(part, 'name', '')} {getattr(part, 'url', '')}".lower()
+    return any(keyword in text for keyword in ('threadripper', 'epyc'))
+
+
+def _is_supported_intel_client_cpu(part):
+    text = f"{getattr(part, 'name', '')} {getattr(part, 'url', '')}".lower()
+    intel_tokens = ('intel', 'core', 'pentium', 'celeron', 'ultra')
+    if not any(token in text for token in intel_tokens):
+        return True
+    return any(token in text for token in ('core i', 'core ultra', 'pentium', 'celeron'))
+
+
+def _pick_workstation_cpu(candidates, build_priority='spec'):
+    if not candidates:
+        return None
+    if build_priority == 'cost':
+        return sorted(
+            candidates,
+            key=lambda p: (
+                int(getattr(p, 'price', 0) or 0),
+                -(_get_cpu_perf_score(p) or 0),
+                -_extract_cpu_core_count(p),
+                -_extract_cpu_core_threads(p),
+            ),
+        )[0]
+    return sorted(
+        candidates,
+        key=lambda p: (
+            (_get_cpu_perf_score(p) or 0),
+            _extract_cpu_core_count(p),
+            _extract_cpu_core_threads(p),
+            -int(getattr(p, 'price', 0) or 0),
+        ),
+        reverse=True,
+    )[0]
 
 
 def _is_ai_latest_generation_gpu(part):
@@ -1485,7 +1551,7 @@ def _is_gaming_gpu_within_priority_cap(part, build_priority, budget=None):
     except (TypeError, ValueError):
         budget_value = 0
 
-    budget_tier = _classify_budget_tier(budget_value)
+    budget_tier = _classify_budget_tier(budget_value, usage='gaming')
     text = f"{getattr(part, 'name', '')} {getattr(part, 'url', '')}".lower()
     is_rtx_5050 = bool(re.search(r'\brtx\s*5050\b', text))
     is_rtx_5060 = bool(re.search(r'\brtx\s*5060\b', text)) and not bool(re.search(r'\brtx\s*5060\s*ti\b', text))
@@ -1740,7 +1806,7 @@ def _gaming_spec_gpu_tier_cap(budget, usage, options=None):
     options = options or {}
     if usage != 'gaming' or options.get('build_priority') != 'spec':
         return None
-    tier = _classify_budget_tier(int(budget or 0))
+    tier = _classify_budget_tier(int(budget or 0), usage=usage)
     if tier == 'low':
         return 1
     if tier == 'middle':
@@ -1756,7 +1822,7 @@ def _is_gaming_spec_exact_5060_gpu(part):
 
 
 def _gaming_low_end_gpu_policy(budget, usage, build_priority):
-    if usage != 'gaming' or budget >= BUDGET_TIER_THRESHOLDS['low']:
+    if usage != 'gaming' or budget >= _budget_tier_threshold(usage, 'low'):
         return None
 
     if build_priority == 'cost':
@@ -1849,12 +1915,34 @@ def _creator_motherboard_floor_price(budget, options=None):
     return int(budget * floor_ratio)
 
 
-def _classify_budget_tier(budget):
-    if budget <= BUDGET_TIER_THRESHOLDS['low']:
+def _normalize_budget_tier_usage(usage):
+    usage_key = str(usage or 'standard').strip().lower()
+    if usage_key in {'general', 'standard'}:
+        return 'desktop'
+    if usage_key == 'ai':
+        return 'workstation'
+    if usage_key in {'gaming', 'desktop', 'creator', 'workstation', 'business'}:
+        return usage_key
+    return 'desktop'
+
+
+def _budget_tier_thresholds_for_usage(usage):
+    normalized = _normalize_budget_tier_usage(usage)
+    return BUDGET_TIER_THRESHOLDS_BY_USAGE.get(normalized, BUDGET_TIER_THRESHOLDS)
+
+
+def _budget_tier_threshold(usage, tier_key):
+    thresholds = _budget_tier_thresholds_for_usage(usage)
+    return int(thresholds.get(tier_key, BUDGET_TIER_THRESHOLDS[tier_key]))
+
+
+def _classify_budget_tier(budget, usage=None):
+    thresholds = _budget_tier_thresholds_for_usage(usage)
+    if budget <= thresholds['low']:
         return 'low'
-    if budget <= BUDGET_TIER_THRESHOLDS['middle']:
+    if budget <= thresholds['middle']:
         return 'middle'
-    if budget <= BUDGET_TIER_THRESHOLDS['high']:
+    if budget <= thresholds['high']:
         return 'high'
     return 'premium'
 
@@ -1873,7 +1961,7 @@ def _is_creator_premium_budget(budget):
         budget_value = int(budget)
     except (TypeError, ValueError):
         return False
-    return _classify_budget_tier(budget_value) == 'premium'
+    return _classify_budget_tier(budget_value, usage='creator') == 'premium'
 
 
 def _get_latest_market_price_range_from_db():
@@ -1945,7 +2033,7 @@ def _apply_scraped_market_budget_correction(budget, usage, build_priority='balan
 
 def _classify_budget_tier_by_min_max(budget, market_min, market_max):
     if market_min <= 0 or market_max <= market_min:
-        return _classify_budget_tier(budget)
+        return _classify_budget_tier(budget, usage='gaming')
 
     span = market_max - market_min
     q1 = market_min + int(span * 0.25)
@@ -1989,7 +2077,7 @@ def _select_gaming_x3d_cpu_by_budget_tier(budget, usage='gaming', build_priority
     if usage == 'gaming' and build_priority == 'cost':
         budget_tier = _classify_budget_tier_from_market_range(budget, market_range=market_range)
     else:
-        budget_tier = _classify_budget_tier(budget)
+        budget_tier = _classify_budget_tier(budget, usage='gaming')
     candidates = [
         part for part in PCPart.objects.filter(part_type='cpu').order_by('price')
         if _is_part_suitable('cpu', part)
@@ -2172,7 +2260,7 @@ def _part_price_band(part_type, budget, usage):
     if not usage_bands:
         return None
 
-    budget_tier = _classify_budget_tier(budget)
+    budget_tier = _classify_budget_tier(budget, usage=usage)
     ratio_range = usage_bands.get(budget_tier)
     if not ratio_range:
         return None
@@ -2185,7 +2273,7 @@ def _filter_candidates_by_part_price_band(candidates, part_type, budget, usage):
     if not candidates:
         return candidates
 
-    budget_tier = _classify_budget_tier(budget)
+    budget_tier = _classify_budget_tier(budget, usage=usage)
     if budget_tier in ('low', 'middle'):
         return candidates
 
@@ -2454,7 +2542,7 @@ def _pick_gaming_low_end_gpu(candidates, budget, usage, build_priority):
         return None
 
     # ローエンド cost では RTX 3050 を積極的に優先（distance-to-target）
-    if build_priority == 'cost' and budget < BUDGET_TIER_THRESHOLDS['low']:
+    if build_priority == 'cost' and budget < _budget_tier_threshold('gaming', 'low'):
         rtx_3050_candidates = [
             p for p in bounded_candidates 
             if 'rtx 3050' in f"{p.name} {p.url}".lower() and p.price <= price_cap
@@ -2696,7 +2784,7 @@ def _minimum_ai_cpu_perf_score(budget, build_priority='cost'):
     except (TypeError, ValueError):
         budget_value = 0
 
-    tier = _classify_budget_tier(budget_value)
+    tier = _classify_budget_tier(budget_value, usage='ai')
     if build_priority == 'spec':
         if tier == 'premium':
             return 11000
@@ -2719,7 +2807,13 @@ def _pick_ai_cpu_candidate(candidates, build_priority='spec', budget=0):
     if not candidates:
         return None
 
-    tier = _classify_budget_tier(int(budget or 0))
+    tier = _classify_budget_tier(int(budget or 0), usage='ai')
+
+    workstation_candidates = [p for p in candidates if _is_workstation_cpu(p)]
+    if workstation_candidates and tier in {'high', 'premium'}:
+        picked = _pick_workstation_cpu(workstation_candidates, build_priority=build_priority)
+        if picked:
+            return picked
 
     minimum_perf = _minimum_ai_cpu_perf_score(budget, build_priority=build_priority)
     if minimum_perf > 0:
@@ -3054,6 +3148,8 @@ def _infer_cpu_core_threads_from_name(text):
 def _cpu_meets_creator_minimum(part, min_cores=8, min_threads=16):
     if not part:
         return False
+    if _is_workstation_cpu(part):
+        return True
     cores = _extract_cpu_core_count(part)
     threads = _extract_cpu_core_threads(part)
     return cores >= min_cores and threads >= min_threads
@@ -3233,6 +3329,13 @@ def _pick_creator_cpu_with_budget(candidates, budget, build_priority='balanced')
     if filtered_candidates:
         candidates = filtered_candidates
 
+    budget_tier = _classify_budget_tier(int(budget or 0), usage='creator')
+    workstation_candidates = [p for p in candidates if _is_workstation_cpu(p)]
+    if workstation_candidates and budget_tier in {'high', 'premium'}:
+        picked = _pick_workstation_cpu(workstation_candidates, build_priority=build_priority)
+        if picked:
+            return picked
+
     if _is_creator_premium_budget(budget):
         premium_picked = _prefer_creator_premium_cpu(candidates, build_priority=build_priority)
         if premium_picked:
@@ -3286,7 +3389,7 @@ def _prefer_creator_cost_cpu_8_to_24_cores(candidates, budget=None):
 
     # ハイエンド帯の creator + cost は、単純最安よりも実効性能を優先し、
     # Radeon AI PRO 系との組み合わせを考慮して AMD 候補を優先する。
-    if budget_value >= BUDGET_TIER_THRESHOLDS['high']:
+    if budget_value >= _budget_tier_threshold('creator', 'high'):
         amd_ranked = [p for p in ranked if _is_cpu_vendor_match(p, 'amd')]
         pool = amd_ranked or ranked
         return sorted(
@@ -3300,7 +3403,7 @@ def _prefer_creator_cost_cpu_8_to_24_cores(candidates, budget=None):
         )[0]
 
     # 中予算以上では、同じ creator 条件を満たす中でも上位CPUへ寄せる。
-    if budget_value >= BUDGET_TIER_THRESHOLDS['middle']:
+    if budget_value >= _budget_tier_threshold('creator', 'middle'):
         return sorted(
             ranked,
             key=lambda p: (
@@ -3888,10 +3991,14 @@ def _pick_part_by_target(part_type, budget, usage, weights_override=None, option
                 candidates = radiator_filtered
         candidates = _filter_candidates_by_part_price_band(candidates, 'case', budget, usage)
     elif part_type == 'cpu':
+        candidates = [
+            p for p in candidates
+            if not _is_cpu_vendor_match(p, 'intel') or _is_supported_intel_client_cpu(p)
+        ]
         vendor_filtered = [p for p in candidates if _is_cpu_vendor_match(p, cpu_vendor)]
         if vendor_filtered:
             candidates = vendor_filtered
-        if usage == 'ai':
+        if usage in {'workstation', 'ai'}:
             ai_latest_filtered = [p for p in candidates if _is_ai_latest_generation_cpu(p)]
             if ai_latest_filtered:
                 candidates = ai_latest_filtered
@@ -3930,7 +4037,10 @@ def _pick_part_by_target(part_type, budget, usage, weights_override=None, option
                 else:
                     candidates = []
         if usage == 'creator':
-            creator_cpu_filtered = [p for p in candidates if _cpu_meets_creator_minimum(p, min_cores=8, min_threads=16)]
+            creator_cpu_filtered = [
+                p for p in candidates
+                if _cpu_meets_creator_minimum(p, min_cores=8, min_threads=16) or _is_workstation_cpu(p)
+            ]
             if creator_cpu_filtered:
                 candidates = creator_cpu_filtered
         if _is_general_cost_low_tier(usage, build_priority, budget):
@@ -3949,7 +4059,7 @@ def _pick_part_by_target(part_type, budget, usage, weights_override=None, option
                 candidates = socket_filtered
         
         # ローエンド gaming/cost では B860/X670 など低価格チップセットを優先
-        if options.get('usage') == 'gaming' and options.get('build_priority') == 'cost' and options.get('budget', 0) < BUDGET_TIER_THRESHOLDS['low']:
+        if options.get('usage') == 'gaming' and options.get('build_priority') == 'cost' and options.get('budget', 0) < _budget_tier_threshold('gaming', 'low'):
             low_end_chipsets = [p for p in candidates if _infer_motherboard_chipset(p) in ('b860', 'b760', 'x670')]
             if low_end_chipsets:
                 candidates = low_end_chipsets
@@ -3983,7 +4093,7 @@ def _pick_part_by_target(part_type, budget, usage, weights_override=None, option
         candidates = _filter_candidates_by_part_price_band(candidates, 'motherboard', budget, usage)
 
         # ローエンド gaming/cost ではマザーボード価格を制限（GPU予算を圧迫しないため）
-        if usage == 'gaming' and build_priority == 'cost' and budget < BUDGET_TIER_THRESHOLDS['low']:
+        if usage == 'gaming' and build_priority == 'cost' and budget < _budget_tier_threshold(usage, 'low'):
             mb_price_cap = max(25000, int(budget * 0.18))
             capped_candidates = [p for p in candidates if p.price <= mb_price_cap]
             if capped_candidates:
@@ -4103,13 +4213,13 @@ def _pick_part_by_target(part_type, budget, usage, weights_override=None, option
             if tier_filtered:
                 candidates = tier_filtered
 
-    if part_type == 'gpu' and usage == 'ai':
+    if part_type == 'gpu' and usage in {'workstation', 'ai'}:
         ai_latest_filtered = [p for p in candidates if _is_ai_latest_generation_gpu(p)]
         if ai_latest_filtered:
             candidates = ai_latest_filtered
         else:
             candidates = []
-        if _classify_budget_tier(int(budget or 0)) == 'premium':
+        if _classify_budget_tier(int(budget or 0), usage=usage) == 'premium':
             ai_premium_pick = _pick_ai_premium_gpu_candidate(candidates, build_priority=build_priority)
             if ai_premium_pick:
                 return ai_premium_pick
@@ -4121,7 +4231,7 @@ def _pick_part_by_target(part_type, budget, usage, weights_override=None, option
                 return pick
         
         # ローエンド gaming/cost では RTX 3050 を積極的に優先
-        if budget < BUDGET_TIER_THRESHOLDS['low']:
+        if budget < _budget_tier_threshold(usage, 'low'):
             price_cap = max(34980, int(budget * 0.21))
             rtx_3050_pool = [
                 p for p in candidates
@@ -4214,7 +4324,11 @@ def _pick_part_by_target(part_type, budget, usage, weights_override=None, option
         if part_type == 'cpu' and usage == 'creator':
             # クリエイター用途: コアスレッド数が多いCPUを優先選定
             # within_target が空の場合は candidates 全体から選定
-            target_cpus = within_target if within_target else candidates
+            budget_tier = _classify_budget_tier(int(budget or 0), usage=usage)
+            if budget_tier in {'high', 'premium'}:
+                target_cpus = candidates
+            else:
+                target_cpus = within_target if within_target else candidates
             picked_creator_cpu = _pick_creator_cpu_with_budget(target_cpus, budget=budget, build_priority=build_priority)
             if picked_creator_cpu:
                 return picked_creator_cpu
@@ -4258,8 +4372,12 @@ def _pick_part_by_target(part_type, budget, usage, weights_override=None, option
             low_end_gpu = _pick_gaming_low_end_gpu(within_target, budget, usage, build_priority)
             if low_end_gpu:
                 return low_end_gpu
-        if part_type == 'cpu' and usage == 'ai':
-            ai_cpu_pool = within_target if within_target else candidates
+        if part_type == 'cpu' and usage in {'workstation', 'ai'}:
+            budget_tier = _classify_budget_tier(int(budget or 0), usage=usage)
+            if budget_tier in {'high', 'premium'}:
+                ai_cpu_pool = candidates
+            else:
+                ai_cpu_pool = within_target if within_target else candidates
             picked_ai_cpu = _pick_ai_cpu_candidate(ai_cpu_pool, build_priority=build_priority, budget=budget)
             if picked_ai_cpu:
                 return picked_ai_cpu
@@ -4781,8 +4899,8 @@ def _target_memory_profile(budget, usage, options=None):
     options = options or {}
     build_priority = options.get('build_priority')
 
-    if usage in {'creator', 'ai'}:
-        if usage == 'ai':
+    if usage in {'creator', 'workstation', 'ai'}:
+        if usage in {'workstation', 'ai'}:
             if budget >= 500000:
                 return {'capacity_gb': 64, 'preferred_modules': 2}
             return {'capacity_gb': 32, 'preferred_modules': 2}
@@ -4854,7 +4972,7 @@ def _memory_profile_pick(candidates, build_priority, budget=None, usage=None, op
 
     if build_priority == 'cost':
         current_usage = usage or options.get('usage', 'general')
-        creator_min_capacity_gb = 32 if current_usage in {'creator', 'ai'} else 0
+        creator_min_capacity_gb = 32 if current_usage in {'creator', 'workstation', 'ai'} else 0
         
         # usage別の preferred_capacity_gb 設定（fallback ロジック用）
         budget_val = budget or 0
@@ -5255,7 +5373,7 @@ def _matches_selection_options(part_type, part, options=None):
             return False
         if not _is_allowed_cpu_cooler_brand(part):
             return False
-        if usage in {'creator', 'ai'} and not (_is_liquid_cooler(part) or _is_dual_tower_cooler(part)):
+        if usage in {'creator', 'workstation', 'ai'} and not (_is_liquid_cooler(part) or _is_dual_tower_cooler(part)):
             return False
         if cooler_type == 'liquid' and radiator_size != 'any' and not _is_radiator_size_match(part, radiator_size):
             return False
@@ -5299,14 +5417,14 @@ def _matches_selection_options(part_type, part, options=None):
                     return False
         if usage == 'creator' and not _cpu_meets_creator_minimum(part, min_cores=8, min_threads=16):
             return False
-        if usage == 'ai' and not _is_ai_latest_generation_cpu(part):
+        if usage in {'workstation', 'ai'} and not _is_ai_latest_generation_cpu(part):
             return False
         return _is_cpu_vendor_match(part, cpu_vendor)
 
     if part_type == 'gpu':
-        if usage == 'ai' and _infer_gpu_memory_gb(part) < 8:
+        if usage in {'workstation', 'ai'} and _infer_gpu_memory_gb(part) < 8:
             return False
-        if usage == 'ai' and not _is_ai_latest_generation_gpu(part):
+        if usage in {'workstation', 'ai'} and not _is_ai_latest_generation_gpu(part):
             return False
         if usage == 'gaming' and _is_gaming_creative_gpu(part):
             return False
@@ -5368,7 +5486,7 @@ def _matches_selection_options(part_type, part, options=None):
                 return False
         if min_memory_speed_mhz and _infer_memory_speed_mhz(part) < int(min_memory_speed_mhz):
             return False
-        if usage in {'creator', 'ai'} and _infer_memory_capacity_gb(part) < 32:
+        if usage in {'creator', 'workstation', 'ai'} and _infer_memory_capacity_gb(part) < 32:
             return False
         if usage == 'general' and _infer_memory_capacity_gb(part) < 16:
             return False
@@ -5563,7 +5681,7 @@ def _downgrade_selected_parts(selected_parts, total_price, budget, options=None)
     protect_low_end_gpu = (
         options.get('usage') == 'gaming'
         and options.get('build_priority') == 'cost'
-        and options.get('budget') < BUDGET_TIER_THRESHOLDS['low']
+        and options.get('budget') < _budget_tier_threshold('gaming', 'low')
     )
 
     changed = True
@@ -5627,7 +5745,7 @@ def _drop_until_budget(selected_parts, total_price, budget, options=None):
     protect_low_end_gpu = (
         options.get('usage') == 'gaming'
         and options.get('build_priority') == 'cost'
-        and options.get('budget', 0) < BUDGET_TIER_THRESHOLDS['low']
+        and options.get('budget', 0) < _budget_tier_threshold('gaming', 'low')
     )
 
     for part_type in CATEGORY_DROP_PRIORITY:
@@ -5794,7 +5912,7 @@ def _upgrade_fallback_config_for_budget_utilization(config_response, budget, usa
         
         requested_priority = options.get('build_priority')
         general_spec_mode = usage in {'general', 'business', 'standard'} and requested_priority == 'spec'
-        general_low_tier_spec_mode = general_spec_mode and _classify_budget_tier(int(budget or 0)) == 'low'
+        general_low_tier_spec_mode = general_spec_mode and _classify_budget_tier(int(budget or 0), usage=usage) == 'low'
         target_memory_capacity = _target_memory_capacity_gb(budget, usage, options=options)
         if general_low_tier_spec_mode:
             upgrade_order = ['memory', 'storage']
@@ -6584,7 +6702,7 @@ def _enforce_gaming_spec_best_value_gpu(selected_parts, budget, usage, options=N
         tier_capped_candidates = [p for p in affordable_candidates if _gaming_spec_gpu_tier(p) <= tier_cap]
         if tier_capped_candidates:
             affordable_candidates = tier_capped_candidates
-    if int(budget or 0) <= BUDGET_TIER_THRESHOLDS['middle']:
+    if int(budget or 0) <= _budget_tier_threshold(usage, 'middle'):
         exact_5060_candidates = [p for p in affordable_candidates if _is_gaming_spec_exact_5060_gpu(p)]
         if exact_5060_candidates:
             affordable_candidates = exact_5060_candidates
@@ -6608,7 +6726,7 @@ def _enforce_gaming_spec_prefers_x3d_cpu(selected_parts, budget, usage, options=
     build_priority = options.get('build_priority')
     if build_priority not in {'spec', 'cost'}:
         return selected_parts
-    if build_priority == 'spec' and budget < BUDGET_TIER_THRESHOLDS['low']:
+    if build_priority == 'spec' and budget < _budget_tier_threshold(usage, 'low'):
         return selected_parts
     if build_priority == 'cost':
         # 自動調整中は昇格ロジックを重ねない。
@@ -6897,7 +7015,7 @@ def _upgrade_gpu_after_motherboard_rightsize(selected_parts, budget, usage, opti
         tier_capped_pool = [c for c in gpu_pool if _gaming_spec_gpu_tier(c) <= tier_cap]
         if tier_capped_pool:
             gpu_pool = tier_capped_pool
-    if int(budget or 0) <= BUDGET_TIER_THRESHOLDS['middle']:
+    if int(budget or 0) <= _budget_tier_threshold(usage, 'middle'):
         exact_5060_pool = [c for c in gpu_pool if _is_gaming_spec_exact_5060_gpu(c)]
         if exact_5060_pool:
             gpu_pool = exact_5060_pool
@@ -7840,7 +7958,7 @@ def _prefer_non_x3d_cpu_when_possible(selected_parts, budget, usage, options=Non
         replacement = _pick_amd_gaming_cpu(non_x3d_candidates, build_priority, require_x3d=False)
     elif usage == 'creator':
         replacement = _pick_creator_cpu_with_budget(non_x3d_candidates, budget, build_priority)
-    elif usage == 'ai':
+    elif usage in {'workstation', 'ai'}:
         ai_latest = [part for part in non_x3d_candidates if _is_ai_latest_generation_cpu(part)]
         pool = ai_latest or non_x3d_candidates
         if build_priority == 'spec':
@@ -7965,7 +8083,7 @@ def build_configuration_response(
 
     usage = _normalize_usage_code(usage)
     if usage is None:
-        return None, Response({'detail': 'usage must be gaming, creator, ai, or general'}, status=status.HTTP_400_BAD_REQUEST)
+        return None, Response({'detail': 'usage must be gaming, general, creator, business, or workstation'}, status=status.HTTP_400_BAD_REQUEST)
 
     requested_build_priority = _normalize_build_priority(build_priority)
 
@@ -8019,7 +8137,7 @@ def build_configuration_response(
         
         return fallback_response, None
 
-    if usage in IGPU_USAGES and requested_build_priority == 'spec' and _classify_budget_tier(budget) == 'low':
+    if usage in IGPU_USAGES and requested_build_priority == 'spec' and _classify_budget_tier(budget, usage=usage) == 'low':
         fallback_response, fallback_error = build_configuration_response(
             budget,
             usage,
@@ -8090,7 +8208,7 @@ def build_configuration_response(
         selection_options['auto_adjust_reference_budget'] = anchor_budget
     # ローエンド gaming/cost では X3D CPU を優先（強制ではなく prefer）
     # GPU(RTX 3050) 予算を圧迫しすぎないよう、X3D 強制は避け、prefer にとどめる
-    if usage == 'gaming' and selection_options.get('build_priority') == 'cost' and budget < BUDGET_TIER_THRESHOLDS['low']:
+    if usage == 'gaming' and selection_options.get('build_priority') == 'cost' and budget < _budget_tier_threshold(usage, 'low'):
         pass  # X3D 強制ではなく、_prefer_higher_gaming_cost_x3d_cpu の後段処理で prefer する
     if require_gaming_x3d_cpu:
         selection_options['require_gaming_x3d_cpu'] = True
@@ -8117,7 +8235,7 @@ def build_configuration_response(
 
     # high帯(gaming + cost/spec): メモリは64GBまで、ストレージは1TBまで。
     if usage == 'gaming' and selection_options.get('build_priority') in {'cost', 'spec'}:
-        budget_tier = _classify_budget_tier(budget)
+        budget_tier = _classify_budget_tier(budget, usage=usage)
         if budget_tier == 'high':
             selection_options = dict(selection_options)
             selection_options['max_memory_capacity_gb'] = 64
@@ -8139,7 +8257,7 @@ def build_configuration_response(
     # すべてのユースケースでメインストレージの最低容量を設定（SSD候補を確保）
     if not selection_options.get('min_storage_capacity_gb'):
         selection_options = dict(selection_options)
-        if usage in {'creator', 'ai'}:
+        if usage in {'creator', 'workstation', 'ai'}:
             selection_options['min_storage_capacity_gb'] = 1000
         elif usage == 'general':
             selection_options['min_storage_capacity_gb'] = 512
@@ -9091,8 +9209,8 @@ def build_configuration_response(
         'name': str(configuration_name or '').strip(),
         'usage': usage,
         'budget': effective_budget,
-        'budget_tier': _classify_budget_tier(effective_budget),
-        'budget_tier_label': _budget_tier_label_jp(_classify_budget_tier(effective_budget)),
+        'budget_tier': _classify_budget_tier(effective_budget, usage=usage),
+        'budget_tier_label': _budget_tier_label_jp(_classify_budget_tier(effective_budget, usage=usage)),
         'cooler_type': selection_options['cooler_type'],
         'radiator_size': selection_options['radiator_size'],
         'cooling_profile': selection_options['cooling_profile'],
@@ -9595,7 +9713,7 @@ def _match_available_cpu_part(model_name, inventory_parts=None):
 def _store_cpu_selection_snapshot(data):
     entries = data.get('entries', []) or []
     snapshot = CPUSelectionSnapshot.objects.create(
-        source_name=data.get('source_name', 'dospara_cpu_comparison_pages'),
+        source_name=data.get('source_name', 'pckoubou_cpu_spec_pages'),
         source_urls=data.get('source_urls', []) or [],
         exclude_intel_13_14=bool(data.get('exclude_intel_13_14', True)),
         entry_count=int(data.get('entry_count', len(entries)) or len(entries)),

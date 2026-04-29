@@ -65,7 +65,7 @@ DB_PART_TYPE_MAP: Dict[str, str] = {
 # カテゴリ判定キーワード（dospara_scraper の流用）
 CATEGORY_RULES: Dict[str, Dict[str, List[str]]] = {
     "cpu": {
-        "include": ["ryzen", "core i", "core ultra", "xeon", "cpu box", "pentium", "celeron"],
+        "include": ["ryzen", "core i", "core ultra", "cpu box", "pentium", "celeron"],
         "exclude": ["グリス", "cooler", "クーラー", "cpuクーラー", "water block"],
     },
     "gpu": {

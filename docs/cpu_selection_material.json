@@ -436,7 +436,7 @@
     },
     {
       "vendor": "intel",
-      "model_name": "Xeon E5-2687W V4",
+      "model_name": "Intel WS E5-2687W V4",
       "perf_score": 3551,
       "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
     },
@@ -526,7 +526,7 @@
     },
     {
       "vendor": "intel",
-      "model_name": "Xeon E5-2687W V3",
+      "model_name": "Intel WS E5-2687W V3",
       "perf_score": 2911,
       "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
     },
@@ -652,7 +652,7 @@
     },
     {
       "vendor": "intel",
-      "model_name": "Xeon E5-2687W V2",
+      "model_name": "Intel WS E5-2687W V2",
       "perf_score": 2467,
       "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
     },
@@ -748,7 +748,7 @@
     },
     {
       "vendor": "intel",
-      "model_name": "Xeon E5-2687W",
+      "model_name": "Intel WS E5-2687W",
       "perf_score": 2006,
       "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
     },
@@ -796,7 +796,7 @@
     },
     {
       "vendor": "intel",
-      "model_name": "Xeon E5-2680",
+      "model_name": "Intel WS E5-2680",
       "perf_score": 1853,
       "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
     },
@@ -862,7 +862,7 @@
     },
     {
       "vendor": "intel",
-      "model_name": "Xeon E3-1275 V5",
+      "model_name": "Intel WS E3-1275 V5",
       "perf_score": 1661,
       "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
     },
@@ -886,13 +886,13 @@
     },
     {
       "vendor": "intel",
-      "model_name": "Xeon E5-2620 V3",
+      "model_name": "Intel WS E5-2620 V3",
       "perf_score": 1552,
       "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
     },
     {
       "vendor": "intel",
-      "model_name": "Xeon E3-1276 V3",
+      "model_name": "Intel WS E3-1276 V3",
       "perf_score": 1513,
       "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
     },
@@ -976,7 +976,7 @@
     },
     {
       "vendor": "intel",
-      "model_name": "Xeon E3-1275 V2",
+      "model_name": "Intel WS E3-1275 V2",
       "perf_score": 1331,
       "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
     },
@@ -1000,7 +1000,7 @@
     },
     {
       "vendor": "intel",
-      "model_name": "Xeon E5-2620 V2",
+      "model_name": "Intel WS E5-2620 V2",
       "perf_score": 1246,
       "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
     },
@@ -1030,7 +1030,7 @@
     },
     {
       "vendor": "intel",
-      "model_name": "Xeon E3-1225 V5",
+      "model_name": "Intel WS E3-1225 V5",
       "perf_score": 1191,
       "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
     },
@@ -1066,7 +1066,7 @@
     },
     {
       "vendor": "intel",
-      "model_name": "Xeon E3-1226 V3",
+      "model_name": "Intel WS E3-1226 V3",
       "perf_score": 1105,
       "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
     },
@@ -1096,19 +1096,19 @@
     },
     {
       "vendor": "intel",
-      "model_name": "Xeon E3-1245 V2",
+      "model_name": "Intel WS E3-1245 V2",
       "perf_score": 1070,
       "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
     },
     {
       "vendor": "intel",
-      "model_name": "Xeon E5-2620",
+      "model_name": "Intel WS E5-2620",
       "perf_score": 1065,
       "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
     },
     {
       "vendor": "intel",
-      "model_name": "Xeon E3-1225 V3",
+      "model_name": "Intel WS E3-1225 V3",
       "perf_score": 1062,
       "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
     },
@@ -1168,7 +1168,7 @@
     },
     {
       "vendor": "intel",
-      "model_name": "Xeon E3-1225 V2",
+      "model_name": "Intel WS E3-1225 V2",
       "perf_score": 942,
       "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
     },

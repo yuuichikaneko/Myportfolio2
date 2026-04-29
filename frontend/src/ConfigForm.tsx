@@ -75,10 +75,11 @@ const CUSTOM_BUDGET_WEIGHT_FIELDS: Array<{ key: keyof CustomBudgetWeights; label
 ];
 
 const USAGE_OPTIONS = [
-  { value: "gaming", label: "ゲーミングPC", icon: "🎮", desc: "GPU重視・高フレームレート向け" },
-  { value: "creator", label: "クリエイターPC", icon: "🎨", desc: "動画編集・配信・ゲーム配信向け" },
-  { value: "ai", label: "AI PC（ローカルAI）", icon: "🧠", desc: "ローカルLLM・画像生成向け" },
-  { value: "general", label: "汎用PC（事務・学習向け）", icon: "💼", desc: "事務作業・学習・軽い開発向け" },
+  { value: "gaming", label: "ゲーム", icon: "🎮", desc: "GPU重視・高フレームレート向け" },
+  { value: "general", label: "汎用", icon: "🧩", desc: "日常利用・学習・軽い開発向け" },
+  { value: "creator", label: "クリエイト", icon: "🎨", desc: "動画編集・配信・制作向け" },
+  { value: "business", label: "ビジネス", icon: "💼", desc: "業務利用・安定運用向け" },
+  { value: "workstation", label: "ワークステーション", icon: "🛠️", desc: "高負荷計算・ローカルAI・3D制作向け" },
 ] as const;
 
 const COOLER_OPTIONS = [

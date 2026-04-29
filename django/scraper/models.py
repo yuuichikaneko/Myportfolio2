@@ -293,9 +293,14 @@ class CPUCoolerDetail(models.Model):
 class Configuration(models.Model):
     """PC 構成モデル"""
     USAGE_CHOICES = [
-        ('gaming', 'Gaming'),
-        ('video_editing', 'Video Editing'),
+        ('gaming', 'Game'),
         ('general', 'General'),
+        ('creator', 'Create'),
+        ('business', 'Business'),
+        ('workstation', 'Workstation'),
+        ('ai', 'AI (Legacy)'),
+        ('video_editing', 'Video Editing (Legacy)'),
+        ('standard', 'Standard (Legacy)'),
     ]
     
     name = models.CharField(max_length=120, blank=True, default='', db_index=True)

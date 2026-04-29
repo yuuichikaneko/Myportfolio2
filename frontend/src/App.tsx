@@ -21,10 +21,14 @@ interface OsBudgetToast {
 }
 
 const USAGE_LABELS_JA: Record<UsageCode, string> = {
-  gaming: "ゲーミングPC",
-  creator: "クリエイターPC",
-  ai: "AI PC（ローカルAI）",
-  general: "汎用PC（事務・学習向け）",
+  gaming: "ゲーム",
+  general: "汎用",
+  creator: "クリエイト",
+  business: "ビジネス",
+  workstation: "ワークステーション",
+  ai: "ワークステーション",
+  standard: "汎用",
+  video_editing: "クリエイト",
 };
 
 function App() {
