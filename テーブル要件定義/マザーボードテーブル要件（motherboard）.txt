@@ -1,0 +1,198 @@
+マザーボードテーブル要件（motherboard）
+1. 識別情報（Identification）
+id (PK, AUTO_INCREMENT) – 一意識別子
+name (VARCHAR 255, NOT NULL) – マザーボード名 (例: "GIGABYTE B850 AORUS STEALTH ICE")
+maker (VARCHAR 100, NOT NULL) – メーカー (例: "GIGABYTE", "MSI", "ASRock", "ASUS")
+model_name (VARCHAR 100, NOT NULL) – モデル名 (例: "B850 AORUS")
+model_code (VARCHAR 100, nullable) – 型番
+chipset (VARCHAR 100, NOT NULL) – チップセット (例: "B850", "X870", "Z890")
+shop_code (VARCHAR 50, unique, nullable) – PC工房 商品コード
+source_url (URL, NOT NULL) – PC工房 商品ページ URL
+created_at (TIMESTAMP, default=now) – 作成日時
+updated_at (TIMESTAMP, default=now, on_update=now) – 更新日時
+is_active (BOOLEAN, default=true) – アクティブフラグ
+2. 互換性情報（Compatibility）
+socket (VARCHAR 50, NOT NULL) – CPU ソケット (例: "AM5", "LGA1700", "LGA1851")
+memory_type (ENUM, NOT NULL) – メモリタイプ
+ddr4 – DDR4
+ddr5 – DDR5
+ddr6 – DDR6（将来対応）
+memory_slots (INT, NOT NULL, > 0) – メモリスロット数
+max_memory_gb (INT, NOT NULL) – 最大メモリ容量 (GB)
+min_memory_speed_mhz (INT, nullable) – サポート最小メモリ速度 (MHz)
+max_memory_speed_mhz (INT, nullable) – サポート最大メモリ速度 (MHz)
+jedec_profiles (VARCHAR 255, nullable) – JEDEC プロファイル (例: "DDR5-4800, DDR5-5600")
+xmp_ocp_support (BOOLEAN, default=false) – XMP/OCP サポート
+form_factor (ENUM, NOT NULL) – フォームファクタ
+atx – ATX
+micro_atx – Micro-ATX
+mini_itx – Mini-ITX
+eatx – E-ATX
+x_atx – XL-ATX
+3. 拡張スロット・インターフェース（Expansion Slots）
+pcie_slots_total (INT, NOT NULL) – PCIe スロット総数
+pcie_x16_slots (INT, NOT NULL, >= 1) – PCIe x16 スロット数
+pcie_x8_slots (INT, default=0) – PCIe x8 スロット数
+pcie_x4_slots (INT, default=0) – PCIe x4 スロット数
+pcie_x1_slots (INT, default=0) – PCIe x1 スロット数
+pcie_generation (ENUM, NOT NULL) – PCIe 世代
+gen3 – PCIe Gen 3.0
+gen4 – PCIe Gen 4.0
+gen5 – PCIe Gen 5.0
+mixed – 混在（複数世代）
+m2_slots_total (INT, NOT NULL, >= 0) – M.2 スロット総数
+m2_gen4_slots (INT, default=0) – M.2 NVMe Gen 4 対応スロット数
+m2_gen5_slots (INT, default=0) – M.2 NVMe Gen 5 対応スロット数
+sata_ports (INT, default=0) – SATA ポート数
+4. I/Oポート・コネクタ（I/O Ports）
+usb_20_ports (INT, nullable) – USB 2.0 ポート数
+usb_30_ports (INT, nullable) – USB 3.0 ポート数
+usb_31_5gbps_ports (INT, nullable) – USB 3.1 (5Gbps) ポート数
+usb_31_10gbps_ports (INT, nullable) – USB 3.1 (10Gbps) ポート数
+usb_32_5gbps_ports (INT, nullable) – USB 3.2 (5Gbps) ポート数
+usb_32_10gbps_ports (INT, nullable) – USB 3.2 (10Gbps) ポート数
+usb_32_20gbps_ports (INT, nullable) – USB 3.2 (20Gbps) ポート数
+usb_type_c_ports (INT, default=0) – USB Type-C ポート数
+thunderbolt_ports (INT, default=0) – Thunderbolt ポート数
+audio_port_count (INT, nullable) – オーディオ ジャック数
+network_ports (INT, default=1) – ネットワークポート数（Ethernet）
+network_speed_gbps (INT, default=1, CHECK > 0) – ネットワーク速度 (Gbps)
+5. 機能・仕様（Features）
+has_wifi (BOOLEAN, default=false) – Wi-Fi 搭載
+wifi_standard (VARCHAR 50, nullable) – Wi-Fi 規格 (例: "Wi-Fi 6E", "Wi-Fi 7")
+has_bluetooth (BOOLEAN, default=false) – Bluetooth 搭載
+bluetooth_version (VARCHAR 50, nullable) – Bluetooth バージョン (例: "5.3")
+bios_type (ENUM, nullable)
+ami – AMI BIOS
+award – Award BIOS
+uefi – UEFI
+power_phases (INT, nullable) – 電源フェーズ数（VRM）
+audio_codec (VARCHAR 100, nullable) – オーディオコーデック (例: "Realtek ALC4050")
+lan_chip (VARCHAR 100, nullable) – LAN チップ (例: "Intel I226-V", "Realtek RTL8125")
+vrm_heatsink (BOOLEAN, default=false) – VRM ヒートシンク搭載
+m2_heatsink (BOOLEAN, default=false) – M.2 ヒートシンク搭載
+oled_display (BOOLEAN, default=false) – OLED ディスプレイ搭載
+6. 仕様・物理情報（Physical Specs）
+height_mm (INT, nullable) – 高さ (mm)
+width_mm (INT, nullable) – 幅 (mm)
+cooler_height_clearance_mm (INT, nullable) – CPUクーラー高さ制限 (mm)
+power_connector_8pin (INT, default=1) – 8ピン電源コネクタ数
+power_connector_4pin (INT, default=0) – 4ピン電源コネクタ数（CPU_FAN側）
+weight_g (INT, nullable) – 重量 (g)
+color (VARCHAR 50, nullable) – 色 (例: "Black", "White")
+warranty_months (INT, default=36) – 保証期間（月）
+7. 価格・在庫（Price/Stock）
+price_yen (INT, NOT NULL, >= 0) – 価格（円）
+currency (CHAR 3, default='JPY') – 通貨コード
+stock_status (ENUM, default='unknown')
+in_stock – 在庫有
+low_stock – 残りわずか
+out_of_stock – 在庫なし
+unknown – 不明
+last_scraped_at (TIMESTAMP) – 最終スクレイプ日時
+stock_update_count (INT, default=0) – 在庫更新回数
+8. 制約＆デフォルト（Constraints）
+9. インデックス（Indexes）
+PRIMARY: id
+UNIQUE: shop_code, (maker, model_name), source_url
+INDEX:
+socket, memory_type – CPU 選択時の互換性チェック（最優先）
+chipset, socket – チップセット別検索
+form_factor – ケースサイズ別フィルタリング
+pcie_x16_slots, pcie_generation – GPU 搭載可能性チェック
+m2_slots_total – NVMe ストレージ対応検索
+price_yen – 価格ソート
+has_wifi, has_bluetooth – 機能別フィルタリング
+max_memory_gb, memory_type – メモリ設定検索
+updated_at – 更新トラッキング
+FULLTEXT (MySQL) / GIN (PostgreSQL): name, model_name – テキスト検索
+補助テーブル（推奨）：Motherboard CPU ソケット互換性
+厳密な CPU ↔ MB 互換性チェック用：
+
+motherboard_cpu_socket_compatibility テーブル
+補助テーブル（オプション）：Motherboard メモリプロファイル
+XMP/OCP プロファイルの詳細管理用：
+
+motherboard_memory_profiles テーブル
+JSONフィールド（拡張属性用）
+個別の情報（LED RGB 制御、AGESA バージョン、カスタマイズ設定など）は specs JSONB として保持：
+
+CPU ↔ Motherboard 互換性チェックロジック
+SQL での互換性検証例：
+
+-- 予算内で、選択 CPU に互換性のあるマザーボード検索
+SELECT m.* FROM motherboard m
+WHERE m.socket = (SELECT socket FROM cpu WHERE id = ?)
+  AND m.memory_type = ?  -- CPU が要求するメモリタイプ
+  AND m.price_yen <= ?   -- 予算上限
+  AND m.is_active = TRUE
+ORDER BY m.price_yen ASC;
+
+-- 選択マザーボードに搭載可能な GPU（PCIe 互換性）検索
+SELECT g.* FROM gpu g
+WHERE g.pcie_generation <= (SELECT pcie_generation FROM motherboard WHERE id = ?)
+  AND g.price_yen <= ?
+ORDER BY g.price_yen DESC;
+
+{
+  "source": "pckoubou",
+  "parser": "products_api",
+  "code": "IC583471",
+  "socket": "AM5",
+  "memory_type": "DDR5",
+  "usb_total": 8,
+  "pcie_slots": 4,
+  "pcie_x16_slots": 1,
+  "m2_slots": 2,
+  "type_c_ports": 1,
+  "form_factor": "ATX",
+  "agesa_version": "1.2.0.6c",
+  "bios_flash_feature": true,
+  "debug_led": true,
+  "rgb_header_count": 2,
+  "rgb_controllable": true,
+  "temperature_sensors": 5,
+  "fan_headers": 6,
+  "pwm_headers": 6,
+  "rgb_software": "RGB Fusion"
+}
+
+CREATE TABLE motherboard_memory_profiles (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  motherboard_id INT NOT NULL (FK → motherboard.id),
+  profile_name VARCHAR(100) NOT NULL,        -- "JEDEC DDR5-4800", "XMP 6000 CAS30" など
+  memory_speed_mhz INT NOT NULL,
+  cas_latency INT NOT NULL,
+  timing_string VARCHAR(50),                 -- "30-36-36-96" など
+  voltage_v DECIMAL 4,3 NOT NULL,
+  is_xmp BOOLEAN DEFAULT FALSE,
+  is_ocp BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT NOW(),
+  INDEX (motherboard_id, profile_name)
+);
+
+CREATE TABLE motherboard_cpu_socket_compatibility (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  motherboard_id INT NOT NULL (FK → motherboard.id),
+  socket VARCHAR(50) NOT NULL,                -- "AM5", "LGA1700" など
+  supported_from_gen INT,                     -- サポート開始世代
+  supported_to_gen INT,                       -- サポート終了世代
+  bios_update_required BOOLEAN DEFAULT FALSE, -- BIOS アップデート必須
+  bios_version VARCHAR(100),                  -- 対応 BIOS バージョン
+  notes TEXT,                                 -- "初期版は非対応" など
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE (motherboard_id, socket),
+  FOREIGN KEY (motherboard_id) REFERENCES motherboard(id) ON DELETE CASCADE,
+  INDEX (socket, motherboard_id)
+);
+
+CHECK (price_yen >= 0)
+CHECK (memory_slots > 0)
+CHECK (max_memory_gb > 0)
+CHECK (pcie_slots_total >= 1)
+CHECK (pcie_x16_slots >= 1)
+CHECK (m2_slots_total >= 0)
+CHECK (form_factor IN ('atx', 'micro_atx', 'mini_itx', 'eatx', 'x_atx'))
+UNIQUE (shop_code)
+UNIQUE (maker, model_name)  -- または (maker, chipset, socket)
+

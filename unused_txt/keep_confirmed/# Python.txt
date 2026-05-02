@@ -1,0 +1,65 @@
+マスタデータ要件（PCパーツ）
+対象テーブル: models.py:4
+エンティティ: PCPart
+必須項目:
+part_type（cpu, cpu_cooler, gpu, motherboard, memory, storage, os, psu, case）
+name
+price
+specs（JSON）
+url
+scraped_at
+updated_at
+制約:
+(part_type, name) の複合一意
+並び順は updated_at 降順
+実質要件:
+パーツ詳細仕様は specs に格納（可変属性）
+価格は整数（円）で保持
+構成データ要件（見積結果）
+対象テーブル: models.py:31
+エンティティ: Configuration
+必須項目:
+budget
+usage（現モデル定義は gaming, video_editing, general）
+total_price
+created_at
+is_deleted（論理削除）
+参照項目:
+cpu_id, cpu_cooler_id, gpu_id, motherboard_id, memory_id, storage_id, storage2_id, storage3_id, os_id, psu_id, case_id
+参照整合:
+すべて PCPart 参照
+参照先削除時は SET NULL
+実質要件:
+構成は複数ストレージ対応（最大3本）
+履歴保持のため論理削除あり
+スクレイピング運用要件
+対象テーブル: models.py:69
+エンティティ: ScraperStatus
+項目:
+last_run
+next_run
+total_scraped
+success_count
+error_count
+cache_enabled
+cache_ttl_seconds
+updated_at
+実質要件:
+バッチ実行結果を累積管理
+次回実行時刻を保持
+自動実行スケジュール要件
+対象設定: settings.py
+要件:
+Celery Beat で定期実行タスクを登録
+run_scraper_task を定期実行
+注意:
+現在の schedule 値は秒指定とcrontabコメントが混在していたため、最終的にどちらを正式採用するか要確定
+現時点で不足・曖昧な要件（要件定義で詰めるべき点）
+usage の定義不一致:
+モデル定義（gaming/video_editing/general）と実装ロジック側（creator/business/standard等）の差分整理が必要
+specs(JSON) の標準キー未固定:
+例: cpuのsocket, motherboardのmemory_typeなどの必須キーを規約化すると運用が安定
+互換性のDB制約不足:
+CPU socket とマザー socket の一致などは現在アプリロジック依存
+監査性:
+スクレイプ実行履歴（1回ごとの詳細）テーブルが未定義

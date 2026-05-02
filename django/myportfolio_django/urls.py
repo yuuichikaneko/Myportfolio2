@@ -26,6 +26,10 @@ from scraper.views import (
     ScraperStatusCompatAPIView,
     MarketPriceRangeAPIView,
     PartPriceRangesAPIView,
+    GpuPerformanceLatestAPIView,
+    GpuPerformanceCompareAPIView,
+    CpuSelectionMaterialLatestAPIView,
+    CpuSelectionMaterialCompareAPIView,
     StorageInventoryAPIView,
 )
 
@@ -42,6 +46,10 @@ urlpatterns = [
     path('api/scraper-status/summary/', ScraperStatusCompatAPIView.as_view()),
     path('api/market-price-range/', MarketPriceRangeAPIView.as_view()),
     path('api/part-price-ranges/', PartPriceRangesAPIView.as_view()),
+    path('api/gpu-performance/latest/', GpuPerformanceLatestAPIView.as_view()),
+    path('api/gpu-performance/compare/', GpuPerformanceCompareAPIView.as_view()),
+    path('api/cpu-selection-material/latest/', CpuSelectionMaterialLatestAPIView.as_view()),
+    path('api/cpu-selection-material/compare/', CpuSelectionMaterialCompareAPIView.as_view()),
     path('api/storage-inventory/', StorageInventoryAPIView.as_view()),
     path('api/', include(router.urls)),
     path('api-auth/', include('rest_framework.urls')),

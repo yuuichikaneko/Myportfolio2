@@ -1,0 +1,24 @@
+OSEditionテーブル要件
+
+識別情報
+id: BIGSERIAL, 主キー
+name: VARCHAR(50), NOT NULL, UNIQUE
+
+説明
+マスターデータ（OS エディション参照テーブル）
+OS の版・エディションを標準化。
+例: Windows 11 Home, Windows 11 Pro, Windows Server 2022 など
+
+制約
+name は NULL 不可、UNIQUE
+OS エディション名の一意性
+
+推奨インデックス
+INDEX name（UNIQUE に含まれる）
+
+PostgreSQL DDLサンプル
+
+CREATE TABLE os_edition (
+  id BIGSERIAL PRIMARY KEY,
+  name VARCHAR(50) NOT NULL UNIQUE
+);

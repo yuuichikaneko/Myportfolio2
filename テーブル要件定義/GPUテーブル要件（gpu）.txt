@@ -1,0 +1,135 @@
+GPUテーブル要件（gpu）
+1. 識別情報（Identification）
+id (PK, AUTO_INCREMENT) – 一意識別子
+name (VARCHAR 255, NOT NULL) – GPU名 (例: "MSI GeForce RTX 5050 8G VENTUS 2X OC")
+maker (VARCHAR 100, NOT NULL) – メーカー (例: "MSI", "GIGABYTE", "ASRock")
+chip_name (VARCHAR 100, NOT NULL) – チップ名 (例: "GeForce RTX 5050", "Radeon RX 9070")
+model_code (VARCHAR 100, nullable) – 型番 (例: "RTX 5050")
+shop_code (VARCHAR 50, unique, nullable) – PC工房 商品コード (例: "123456")
+source_url (URL, NOT NULL) – PC工房 商品ページ URL
+created_at (TIMESTAMP, default=now) – 作成日時
+updated_at (TIMESTAMP, default=now, on_update=now) – 更新日時
+is_active (BOOLEAN, default=true) – アクティブフラグ
+2. アーキテクチャ/カテゴリ（Architecture）
+gpu_type (ENUM, NOT NULL) – GPU タイプ
+gaming_nvidia – NVIDIA ゲーミング（RTX/GTX）
+gaming_amd – AMD ゲーミング（Radeon RX）
+professional_nvidia – NVIDIA Pro（RTX Pro/Tesla）
+professional_amd – AMD Pro（Radeon Pro/AI）
+workstation – ワークステーション用
+architecture (VARCHAR 50, NOT NULL) – アーキテクチャ世代
+NVIDIA: "Blackwell", "Ada Lovelace", "Hopper"
+AMD: "RDNA 4", "RDNA 3", "CDNA 3"
+chipset_family (VARCHAR 100, NOT NULL) – チップセットファミリー (例: "GeForce RTX 50 series")
+generation_year (INT, nullable) – リリース年 (例: 2025)
+3. メモリ仕様（Memory）
+vram_gb (INT, NOT NULL, > 0) – VRAM 容量 (GB)
+vram_type (ENUM, NOT NULL) – VRAM メモリタイプ
+gddr6 – GDDR6
+gddr6x – GDDR6X
+gddr7 – GDDR7
+hbm2e – HBM2e
+hbm3 – HBM3
+unknown – 不明
+memory_width_bits (INT, nullable) – メモリバス幅（ビット）(例: 192)
+memory_bandwidth_gbs (DECIMAL 8,2, nullable) – メモリバンド幅 (GB/s)
+4. パフォーマンス仕様（Performance）
+cuda_cores (INT, nullable) – CUDA コア数（NVIDIA のみ）
+stream_processors (INT, nullable) – ストリームプロセッサ数（AMD のみ）
+tensor_cores (INT, nullable) – テンソルコア数（NVIDIA のみ）
+rt_cores (INT, nullable) – RT コア数（NVIDIA のみ）
+base_clock_mhz (INT, nullable) – ベースクロック (MHz)
+boost_clock_mhz (INT, nullable) – ブーストクロック (MHz)
+max_power_draw_w (INT, NOT NULL, > 0) – 最大電力消費 (W) (例: 380)
+tdp_w (INT, nullable) – TDP (W)
+5. インターフェース・物理仕様（Interface）
+pcie_generation (ENUM, NOT NULL) – PCIe 世代 (3.0, 4.0, 5.0)
+pcie_lanes (INT, default=16) – PCIe レーン数
+connector_type (VARCHAR 100, nullable) – 外部電源コネクタ (例: "8pin+6pin", "2x8pin")
+height_mm (INT, nullable) – 高さ (mm)
+length_mm (INT, nullable) – 長さ (mm)
+width_mm (INT, nullable) – 幅 (mm)
+slot_width (ENUM, nullable) – スロット幅 ("single_slot", "dual_slot", "triple_slot")
+cooling_type (VARCHAR 100, nullable) – 冷却方式 (例: "air_cooling", "water_cooling")
+fan_count (INT, default=1) – ファン数
+6. 価格・在庫（Price/Stock）
+price_yen (INT, NOT NULL, >= 0) – 価格（円）
+currency (CHAR 3, default='JPY') – 通貨コード
+stock_status (ENUM, default='unknown')
+in_stock – 在庫有
+low_stock – 残りわずか
+out_of_stock – 在庫なし
+unknown – 不明
+last_scraped_at (TIMESTAMP) – 最終スクレイプ日時
+stock_update_count (INT, default=0) – 在庫更新回数
+7. 制約＆デフォルト（Constraints）
+8. インデックス（Indexes）
+PRIMARY: id
+UNIQUE: shop_code, (maker, model_code), source_url
+INDEX:
+gpu_type, price_yen – ゲーミング/Pro 別フィルタリング＋価格ソート
+vram_gb, vram_type – メモリスペック検索
+architecture, generation_year – 世代別検索
+pcie_generation – インターフェース互換性チェック
+max_power_draw_w – PSU 選択時の電力制約
+updated_at – 更新トラッキング
+FULLTEXT (MySQL) / GIN (PostgreSQL): name, chip_name – テキスト検索
+補助テーブル（オプション）：GPU対応マザーボード互換性
+PCIe 世代の厳密な互換性チェックが必要な場合：
+
+gpu_motherboard_compatibility テーブル
+JSONフィールド（拡張属性用）
+個別の仕様（シェーダー、テクスチャユニット、Ray Tracing 性能など）は specs JSONB として保持：
+
+ゲーミング vs プロフェッショナル GPU の区分
+属性	ゲーミング (RTX/RX)	プロフェッショナル (RTX Pro/Radeon Pro)
+gpu_type	gaming_nvidia / gaming_amd	professional_nvidia / professional_amd
+用途チェック	ゲーム FPS、高リフレッシュレート重視	レンダリング、AI 推論、精度重視
+CUDA/Stream Cores	少ない傾向	多数
+価格帯	¥50K-300K	¥300K-3M+
+メモリ容量	8-24GB 一般的	32-80GB 一般的
+
+CHECK (price_yen >= 0)
+CHECK (vram_gb > 0)
+CHECK (max_power_draw_w > 0)
+CHECK (height_mm IS NULL OR height_mm > 0)
+CHECK (cuda_cores IS NULL OR cuda_cores > 0)
+CHECK (stream_processors IS NULL OR stream_processors > 0)
+UNIQUE (shop_code)
+UNIQUE (maker, model_code)  -- または (maker, chip_name)
+
+CREATE TABLE gpu_motherboard_compatibility (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  gpu_id INT NOT NULL (FK → gpu.id),
+  motherboard_id INT NOT NULL (FK → motherboard.id),
+  pcie_bottleneck_percent DECIMAL 5,2,  -- 例: 5.2% のボトルネック予測
+  slot_position INT,                     -- 搭載スロット位置（1=最上部）
+  notes TEXT,                            -- "x16/x8 デュアル時に制限" など
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE (gpu_id, motherboard_id),
+  FOREIGN KEY (gpu_id) REFERENCES gpu(id) ON DELETE CASCADE,
+  FOREIGN KEY (motherboard_id) REFERENCES motherboard(id) ON DELETE CASCADE
+);
+
+{
+  "source": "pckoubou",
+  "parser": "products_api",
+  "code": "IC541470",
+  "vram_gb": 8,
+  "vram_type": "GDDR6",
+  "texture_units": 288,
+  "rasterizers": 12,
+  "ray_trace_capacity": "Medium",
+  "dlss_supported": true,
+  "dlss_version": "3.8",
+  "fsr_supported": false,
+  "power_state": "Max Power",
+  "directx_version": "12",
+  "opengl_version": "4.6",
+  "max_display_outputs": 4,
+  "warranty_months": 36,
+  "color": "black",
+  "rgb_led": true
+}
+
+

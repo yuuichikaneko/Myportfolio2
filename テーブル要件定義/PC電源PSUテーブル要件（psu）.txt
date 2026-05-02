@@ -1,0 +1,130 @@
+PSUテーブル要件（psu）
+
+識別情報
+id: BIGSERIAL, 主キー
+name: VARCHAR(255), NOT NULL
+maker: VARCHAR(100), NOT NULL
+model_code: VARCHAR(120), NULL
+shop_code: VARCHAR(50), NULL, UNIQUE
+source_url: TEXT, NOT NULL
+is_active: BOOLEAN, NOT NULL, DEFAULT TRUE
+created_at: TIMESTAMP, NOT NULL, DEFAULT NOW()
+updated_at: TIMESTAMP, NOT NULL, DEFAULT NOW()
+電源仕様
+wattage: INTEGER, NOT NULL （W）
+efficiency_grade: VARCHAR(20), NULL
+例: Titanium, Platinum, Gold, Silver, Bronze, Standard
+atx_version: VARCHAR(20), NULL
+例: ATX3.0, ATX3.1
+form_factor: VARCHAR(20), NOT NULL, DEFAULT atx
+例: atx, sfx, sfx_l, tfx
+modular_type: VARCHAR(20), NOT NULL, DEFAULT unknown
+例: full, semi, non, unknown
+has_pcie_12vhpwr: BOOLEAN, NOT NULL, DEFAULT FALSE
+pcie_8pin_count: SMALLINT, NOT NULL, DEFAULT 0
+sata_power_count: SMALLINT, NOT NULL, DEFAULT 0
+cpu_8pin_count: SMALLINT, NOT NULL, DEFAULT 0
+保護・品質
+protection_ovp: BOOLEAN, NOT NULL, DEFAULT FALSE
+protection_ocp: BOOLEAN, NOT NULL, DEFAULT FALSE
+protection_opp: BOOLEAN, NOT NULL, DEFAULT FALSE
+protection_scp: BOOLEAN, NOT NULL, DEFAULT FALSE
+protection_otp: BOOLEAN, NOT NULL, DEFAULT FALSE
+fan_size_mm: SMALLINT, NULL
+zero_rpm_mode: BOOLEAN, NOT NULL, DEFAULT FALSE
+warranty_years: SMALLINT, NULL
+価格・在庫
+price_yen: INTEGER, NOT NULL
+currency: CHAR(3), NOT NULL, DEFAULT JPY
+stock_status: VARCHAR(20), NOT NULL, DEFAULT unknown
+in_stock, low_stock, out_of_stock, unknown
+last_scraped_at: TIMESTAMP, NULL
+拡張
+specs_json: JSONB, NOT NULL, DEFAULT {}::jsonb
+scraper_source: VARCHAR(50), NOT NULL, DEFAULT pckoubou
+parser_name: VARCHAR(50), NULL
+推奨制約
+
+CHECK (price_yen >= 0)
+CHECK (wattage > 0)
+CHECK (pcie_8pin_count >= 0)
+CHECK (sata_power_count >= 0)
+CHECK (cpu_8pin_count >= 0)
+CHECK (fan_size_mm IS NULL OR fan_size_mm > 0)
+CHECK (warranty_years IS NULL OR warranty_years >= 0)
+CHECK (modular_type IN ('full','semi','non','unknown'))
+CHECK (stock_status IN ('in_stock','low_stock','out_of_stock','unknown'))
+推奨インデックス
+
+UNIQUE (shop_code)
+INDEX (wattage)
+INDEX (efficiency_grade, wattage)
+INDEX (form_factor, wattage)
+INDEX (price_yen)
+INDEX (is_active, updated_at)
+検索用途で name に trigram など
+configuration.psu_id 定義
+
+ALTER TABLE configuration
+ADD COLUMN psu_id BIGINT NULL;
+
+ALTER TABLE configuration
+ADD CONSTRAINT fk_configuration_psu
+FOREIGN KEY (psu_id) REFERENCES psu(id) ON DELETE SET NULL;
+
+CREATE INDEX idx_configuration_psu_id
+ON configuration(psu_id);
+
+PostgreSQL DDLサンプル
+
+CREATE TABLE psu (
+id BIGSERIAL PRIMARY KEY,
+name VARCHAR(255) NOT NULL,
+maker VARCHAR(100) NOT NULL,
+model_code VARCHAR(120),
+shop_code VARCHAR(50) UNIQUE,
+source_url TEXT NOT NULL,
+
+wattage INTEGER NOT NULL CHECK (wattage > 0),
+efficiency_grade VARCHAR(20),
+atx_version VARCHAR(20),
+form_factor VARCHAR(20) NOT NULL DEFAULT 'atx',
+modular_type VARCHAR(20) NOT NULL DEFAULT 'unknown',
+has_pcie_12vhpwr BOOLEAN NOT NULL DEFAULT FALSE,
+pcie_8pin_count SMALLINT NOT NULL DEFAULT 0 CHECK (pcie_8pin_count >= 0),
+sata_power_count SMALLINT NOT NULL DEFAULT 0 CHECK (sata_power_count >= 0),
+cpu_8pin_count SMALLINT NOT NULL DEFAULT 0 CHECK (cpu_8pin_count >= 0),
+
+protection_ovp BOOLEAN NOT NULL DEFAULT FALSE,
+protection_ocp BOOLEAN NOT NULL DEFAULT FALSE,
+protection_opp BOOLEAN NOT NULL DEFAULT FALSE,
+protection_scp BOOLEAN NOT NULL DEFAULT FALSE,
+protection_otp BOOLEAN NOT NULL DEFAULT FALSE,
+fan_size_mm SMALLINT CHECK (fan_size_mm IS NULL OR fan_size_mm > 0),
+zero_rpm_mode BOOLEAN NOT NULL DEFAULT FALSE,
+warranty_years SMALLINT CHECK (warranty_years IS NULL OR warranty_years >= 0),
+
+price_yen INTEGER NOT NULL CHECK (price_yen >= 0),
+currency CHAR(3) NOT NULL DEFAULT 'JPY',
+stock_status VARCHAR(20) NOT NULL DEFAULT 'unknown',
+last_scraped_at TIMESTAMP NULL,
+
+specs_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+  scraper_source VARCHAR(50) NOT NULL DEFAULT 'pckoubou',
+parser_name VARCHAR(50),
+
+is_active BOOLEAN NOT NULL DEFAULT TRUE,
+created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+
+CHECK (modular_type IN ('full','semi','non','unknown')),
+CHECK (stock_status IN ('in_stock','low_stock','out_of_stock','unknown'))
+);
+
+CREATE INDEX idx_psu_wattage ON psu(wattage);
+CREATE INDEX idx_psu_eff_watt ON psu(efficiency_grade, wattage);
+CREATE INDEX idx_psu_form_watt ON psu(form_factor, wattage);
+CREATE INDEX idx_psu_price ON psu(price_yen);
+CREATE INDEX idx_psu_active_updated ON psu(is_active, updated_at);
+
+必要なら次に、GPU最大消費電力とCPU TDPから必要電源容量を計算して、psu候補を自動絞り込みする選定ルールまでSQL化できます。

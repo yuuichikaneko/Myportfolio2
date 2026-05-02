@@ -1,0 +1,80 @@
+Memoryテーブル要件（Memory）
+
+識別情報
+id: BIGSERIAL, 主キー
+name: VARCHAR(255), NOT NULL
+maker: VARCHAR(100), NOT NULL
+model_code: VARCHAR(100), NULL
+shop_code: VARCHAR(50), NULL, UNIQUE
+source_url: TEXT, NOT NULL
+created_at: TIMESTAMP, DEFAULT now
+updated_at: TIMESTAMP, DEFAULT now
+is_active: BOOLEAN, DEFAULT true
+
+基本仕様
+memory_type: VARCHAR(20), NOT NULL
+例: DDR4, DDR5
+capacity_gb: INTEGER, NOT NULL, > 0
+speed_mhz: INTEGER, NOT NULL, > 0
+form_factor: VARCHAR(30), NULL
+例: DIMM, SO-DIMM, IP-DIMM
+
+価格・在庫
+price_yen: INTEGER, NOT NULL, >= 0
+currency: CHAR(3), NOT NULL, DEFAULT 'JPY'
+stock_status: VARCHAR(20), NOT NULL, DEFAULT 'unknown'
+last_scraped_at: TIMESTAMP, NULL
+
+その他
+specs_json: JSONB, NOT NULL, DEFAULT '{}'
+scraper_source: VARCHAR(50), NOT NULL, DEFAULT 'pckoubou'
+parser_name: VARCHAR(50), NULL
+
+一意性制約
+UNIQUE shop_code
+UNIQUE maker + model_code（model_code がある場合）
+
+推奨インデックス
+INDEX memory_type + capacity_gb
+INDEX memory_type + speed_mhz
+INDEX capacity_gb + speed_mhz
+INDEX memory_type + price_yen
+INDEX updated_at
+INDEX stock_status
+
+PostgreSQL DDLサンプル
+
+CREATE TABLE memory (
+  id BIGSERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  maker VARCHAR(100) NOT NULL,
+  model_code VARCHAR(100),
+  shop_code VARCHAR(50) UNIQUE,
+  source_url TEXT NOT NULL,
+
+  memory_type VARCHAR(20) NOT NULL,
+  capacity_gb INTEGER NOT NULL CHECK (capacity_gb > 0),
+  speed_mhz INTEGER NOT NULL CHECK (speed_mhz > 0),
+  form_factor VARCHAR(30),
+
+  price_yen INTEGER NOT NULL CHECK (price_yen >= 0),
+  currency CHAR(3) NOT NULL DEFAULT 'JPY',
+  stock_status VARCHAR(20) NOT NULL DEFAULT 'unknown',
+  last_scraped_at TIMESTAMP NULL,
+
+  specs_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+  scraper_source VARCHAR(50) NOT NULL DEFAULT 'pckoubou',
+  parser_name VARCHAR(50),
+
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_memory_type_capacity ON memory(memory_type, capacity_gb);
+CREATE INDEX idx_memory_type_speed ON memory(memory_type, speed_mhz);
+CREATE INDEX idx_memory_capacity_speed ON memory(capacity_gb, speed_mhz);
+CREATE INDEX idx_memory_type_price ON memory(memory_type, price_yen);
+CREATE INDEX idx_memory_updated_at ON memory(updated_at);
+CREATE INDEX idx_memory_stock_status ON memory(stock_status);
+CREATE INDEX idx_memory_name_trgm ON memory USING gin (name gin_trgm_ops);

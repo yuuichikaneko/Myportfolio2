@@ -1,0 +1,79 @@
+OSテーブル要件（os）
+
+スクレイピング元: PC工房 固定URL（https://www.pc-koubou.jp/goods/windows11_package.php）
+
+識別情報
+id: BIGSERIAL, 主キー
+name: VARCHAR(255), NOT NULL
+maker: VARCHAR(100), NOT NULL（例: Microsoft）
+model_code: VARCHAR(100), NULL（例: HAV-00213）
+shop_code: VARCHAR(50), NULL, UNIQUE（例: 123456）
+source_url: TEXT, NOT NULL
+is_active: BOOLEAN, NOT NULL, DEFAULT TRUE
+created_at: TIMESTAMP, NOT NULL, DEFAULT NOW()
+updated_at: TIMESTAMP, NOT NULL, DEFAULT NOW()
+OS仕様
+os_family: VARCHAR(50), NOT NULL（windows, linux, other）
+edition: VARCHAR(100), NULL（Home, Pro など）
+version_major: VARCHAR(20), NULL（11 など）
+locale: VARCHAR(20), NULL（ja-JP など）
+license_type: VARCHAR(30), NOT NULL（retail, oem, dsp, volume, unknown）
+package_type: VARCHAR(30), NOT NULL（download, package, keycard, unknown）
+architecture: VARCHAR(20), NOT NULL（x64, arm64, x86, unknown）
+seats: INTEGER, NOT NULL, DEFAULT 1
+support_end_date: DATE, NULL
+互換性・要件
+min_ram_gb: INTEGER, NULL
+min_storage_gb: INTEGER, NULL
+tpm_required: BOOLEAN, NOT NULL, DEFAULT FALSE
+secure_boot_required: BOOLEAN, NOT NULL, DEFAULT FALSE
+uefi_required: BOOLEAN, NOT NULL, DEFAULT FALSE
+価格・在庫
+price_yen: INTEGER, NOT NULL
+currency: CHAR(3), NOT NULL, DEFAULT JPY
+stock_status: VARCHAR(20), NOT NULL, DEFAULT unknown
+last_scraped_at: TIMESTAMP, NULL
+拡張
+specs_json: JSONB, NOT NULL, DEFAULT '{}'::jsonb
+scraper_source: VARCHAR(50), NOT NULL, DEFAULT pckoubou
+parser_name: VARCHAR(50), NULL
+推奨制約
+
+CHECK (price_yen >= 0)
+CHECK (seats > 0)
+CHECK (min_ram_gb IS NULL OR min_ram_gb >= 0)
+CHECK (min_storage_gb IS NULL OR min_storage_gb >= 0)
+CHECK (os_family IN ('windows','linux','other'))
+CHECK (license_type IN ('retail','oem','dsp','volume','unknown'))
+CHECK (package_type IN ('download','package','keycard','unknown'))
+UNIQUE (shop_code)
+推奨インデックス
+
+shop_code（UNIQUE）
+os_family, edition
+license_type
+price_yen
+is_active, updated_at
+name（検索用、必要なら trigram）
+configuration 側の os_id 定義
+
+ALTER TABLE configuration
+ADD COLUMN os_id BIGINT NULL;
+
+ALTER TABLE configuration
+ADD CONSTRAINT fk_configuration_os
+FOREIGN KEY (os_id) REFERENCES os(id) ON DELETE SET NULL;
+
+CREATE INDEX idx_configuration_os_id ON configuration(os_id);
+
+PostgreSQL DDLサンプル
+
+CREATE TABLE os (
+id BIGSERIAL PRIMARY KEY,
+name VARCHAR(255) NOT NULL,
+maker VARCHAR(100) NOT NULL,
+model_code VARCHAR(100),
+shop_code VARCHAR(50) UNIQUE,
+source_url TEXT NOT NULL,
+
+);

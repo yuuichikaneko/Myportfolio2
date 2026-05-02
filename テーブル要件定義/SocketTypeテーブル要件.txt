@@ -1,0 +1,24 @@
+SocketTypeテーブル要件
+
+識別情報
+id: BIGSERIAL, 主キー
+name: VARCHAR(50), NOT NULL, UNIQUE
+
+説明
+マスターデータ（ソケットタイプ参照テーブル）
+CPU/CPU Cooler のソケット形式標準化用。
+例: LGA1700, AM5, TR4 など
+
+制約
+name は NULL 不可、UNIQUE
+ソケット形式名の一意性を保証
+
+推奨インデックス
+INDEX name（UNIQUE に含まれる）
+
+PostgreSQL DDLサンプル
+
+CREATE TABLE socket_type (
+  id BIGSERIAL PRIMARY KEY,
+  name VARCHAR(50) NOT NULL UNIQUE
+);

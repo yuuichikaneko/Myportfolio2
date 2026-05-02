@@ -1,0 +1,121 @@
+Storageテーブル要件（storage）
+
+識別情報
+id: PK, AUTO_INCREMENT
+name: VARCHAR(255), NOT NULL
+maker: VARCHAR(100), NOT NULL
+model_code: VARCHAR(100), NULL
+shop_code: VARCHAR(50), NULL, UNIQUE
+source_url: TEXT, NOT NULL
+created_at: TIMESTAMP, DEFAULT now
+updated_at: TIMESTAMP, DEFAULT now
+is_active: BOOLEAN, DEFAULT true
+基本仕様
+storage_type: ENUM, NOT NULL
+値: hdd, sata_ssd, nvme_ssd, external, unknown
+capacity_gb: INTEGER, NOT NULL, > 0
+interface_type: ENUM, NOT NULL
+値: sata, pcie3x4, pcie4x4, pcie5x4, usb, sas, unknown
+form_factor: ENUM, NOT NULL
+値: 3.5inch, 2.5inch, m2_2280, m2_22110, pcie_card, u2, unknown
+性能仕様（取れるものだけ）
+seq_read_mbps: INTEGER, NULL
+seq_write_mbps: INTEGER, NULL
+random_read_iops: INTEGER, NULL
+random_write_iops: INTEGER, NULL
+rpm: INTEGER, NULL （HDD用）
+cache_mb: INTEGER, NULL
+nand_type: VARCHAR(50), NULL （TLC, QLC など）
+endurance_tbw: INTEGER, NULL
+mtbf_hours: BIGINT, NULL
+互換性関連
+pcie_gen: SMALLINT, NULL （NVMe向け）
+lanes: SMALLINT, NULL （NVMe向け、通常4）
+nvme_version: VARCHAR(20), NULL
+requires_m2_slot: BOOLEAN, DEFAULT false
+sata_port_required: BOOLEAN, DEFAULT true
+height_mm: DECIMAL(6,2), NULL
+thickness_mm: DECIMAL(6,2), NULL
+価格・在庫
+price_yen: INTEGER, NOT NULL, >= 0
+currency: CHAR(3), DEFAULT JPY
+stock_status: ENUM, DEFAULT unknown
+値: in_stock, low_stock, out_of_stock, unknown
+last_scraped_at: TIMESTAMP, NULL
+監査・拡張
+specs_json: JSONB, DEFAULT {}
+scraper_source: VARCHAR(50), DEFAULT pckoubou
+parser_name: VARCHAR(50), NULL
+推奨制約
+
+CHECK price_yen >= 0
+CHECK capacity_gb > 0
+CHECK seq_read_mbps IS NULL OR seq_read_mbps > 0
+CHECK seq_write_mbps IS NULL OR seq_write_mbps > 0
+CHECK rpm IS NULL OR rpm > 0
+CHECK cache_mb IS NULL OR cache_mb >= 0
+CHECK endurance_tbw IS NULL OR endurance_tbw >= 0
+UNIQUE shop_code
+UNIQUE maker + model_code（model_code がある場合）
+推奨インデックス
+
+INDEX interface_type + form_factor
+INDEX storage_type + price_yen
+INDEX capacity_gb + price_yen
+INDEX updated_at
+INDEX stock_status
+テキスト検索用インデックス: name
+PostgreSQL DDLサンプル
+
+CREATE TABLE storage (
+  id BIGSERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  maker VARCHAR(100) NOT NULL,
+  model_code VARCHAR(100),
+  shop_code VARCHAR(50) UNIQUE,
+  source_url TEXT NOT NULL,
+
+  storage_type VARCHAR(20) NOT NULL,
+  capacity_gb INTEGER NOT NULL CHECK (capacity_gb > 0),
+  interface_type VARCHAR(20) NOT NULL,
+  form_factor VARCHAR(20) NOT NULL,
+
+  seq_read_mbps INTEGER CHECK (seq_read_mbps IS NULL OR seq_read_mbps > 0),
+  seq_write_mbps INTEGER CHECK (seq_write_mbps IS NULL OR seq_write_mbps > 0),
+  random_read_iops INTEGER CHECK (random_read_iops IS NULL OR random_read_iops > 0),
+  random_write_iops INTEGER CHECK (random_write_iops IS NULL OR random_write_iops > 0),
+  rpm INTEGER CHECK (rpm IS NULL OR rpm > 0),
+  cache_mb INTEGER CHECK (cache_mb IS NULL OR cache_mb >= 0),
+  nand_type VARCHAR(50),
+  endurance_tbw INTEGER CHECK (endurance_tbw IS NULL OR endurance_tbw >= 0),
+  mtbf_hours BIGINT CHECK (mtbf_hours IS NULL OR mtbf_hours > 0),
+
+  pcie_gen SMALLINT,
+  lanes SMALLINT,
+  nvme_version VARCHAR(20),
+  requires_m2_slot BOOLEAN DEFAULT FALSE,
+  sata_port_required BOOLEAN DEFAULT TRUE,
+  height_mm NUMERIC(6,2),
+  thickness_mm NUMERIC(6,2),
+
+  price_yen INTEGER NOT NULL CHECK (price_yen >= 0),
+  currency CHAR(3) NOT NULL DEFAULT 'JPY',
+  stock_status VARCHAR(20) NOT NULL DEFAULT 'unknown',
+  last_scraped_at TIMESTAMP NULL,
+
+  specs_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+  scraper_source VARCHAR(50) NOT NULL DEFAULT 'pckoubou',
+  parser_name VARCHAR(50),
+
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_storage_iface_form ON storage(interface_type, form_factor);
+CREATE INDEX idx_storage_type_price ON storage(storage_type, price_yen);
+CREATE INDEX idx_storage_capacity_price ON storage(capacity_gb, price_yen);
+CREATE INDEX idx_storage_updated_at ON storage(updated_at);
+CREATE INDEX idx_storage_stock_status ON storage(stock_status);
+CREATE INDEX idx_storage_name_trgm ON storage USING gin (name gin_trgm_ops);
+

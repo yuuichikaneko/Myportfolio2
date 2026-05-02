@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ConfigForm } from "./ConfigForm";
 import { ResultView } from "./ResultView";
 import {
@@ -6,26 +6,36 @@ import {
   deleteSavedConfiguration,
   generateConfig,
   GenerateConfigResponse,
+  getSavedConfigurationById,
   getSavedConfigurations,
   getScraperStatus,
   SavedConfigurationResponse,
   ScraperStatus,
+  type UsageCode,
 } from "./api";
+import { normalizeUsageCode } from "./usageUtils";
 
-type UsageFilter =
-  | "all"
-  | "gaming"
-  | "creator"
-  | "business"
-  | "standard"
-  | "video_editing";
+interface OsBudgetToast {
+  point: string;
+  recommendedBudgetText: string;
+}
+
+const USAGE_LABELS_JA: Record<UsageCode, string> = {
+  gaming: "ゲーム",
+  general: "汎用",
+  creator: "クリエイト",
+  business: "ビジネス",
+  workstation: "ワークステーション",
+  ai: "ワークステーション",
+  standard: "汎用",
+  video_editing: "クリエイト",
+};
 
 function App() {
   const [result, setResult] = useState<GenerateConfigResponse | null>(null);
   const [selectedSavedConfig, setSelectedSavedConfig] = useState<SavedConfigurationResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const generateAbortControllerRef = useRef<AbortController | null>(null);
   const [scraperStatus, setScraperStatus] = useState<ScraperStatus | null>(null);
   const [statusLoading, setStatusLoading] = useState(true);
   const [showStatus, setShowStatus] = useState(false);
@@ -36,10 +46,11 @@ function App() {
   const [historyBulkDeleting, setHistoryBulkDeleting] = useState(false);
   const [deleteTargetConfig, setDeleteTargetConfig] = useState<SavedConfigurationResponse | null>(null);
   const [showHistory, setShowHistory] = useState(false);
-  const [historyUsageFilter, setHistoryUsageFilter] = useState<UsageFilter>("all");
+  const [historyUsageFilter, setHistoryUsageFilter] = useState<"all" | UsageCode>("all");
   const [historyQuery, setHistoryQuery] = useState("");
   const [historyDeleteScope, setHistoryDeleteScope] = useState<"filtered" | "all">("filtered");
   const [historyToastMessage, setHistoryToastMessage] = useState<string | null>(null);
+  const [osBudgetErrorToast, setOsBudgetErrorToast] = useState<OsBudgetToast | null>(null);
 
   useEffect(() => {
     if (!historyToastMessage) {
@@ -52,6 +63,18 @@ function App() {
 
     return () => window.clearTimeout(timer);
   }, [historyToastMessage]);
+
+  useEffect(() => {
+    if (!osBudgetErrorToast) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setOsBudgetErrorToast(null);
+    }, 4500);
+
+    return () => window.clearTimeout(timer);
+  }, [osBudgetErrorToast]);
 
   const fetchSavedConfigurations = async () => {
     try {
@@ -90,6 +113,24 @@ function App() {
     fetchSavedConfigurations();
   }, []);
 
+  useEffect(() => {
+    if (!showHistory) {
+      return;
+    }
+    setHistoryLoading(true);
+    fetchSavedConfigurations();
+  }, [showHistory]);
+
+  useEffect(() => {
+    if (!selectedSavedConfig) {
+      return;
+    }
+    const stillExists = savedConfigurations.some((config) => config.id === selectedSavedConfig.id);
+    if (!stillExists) {
+      setSelectedSavedConfig(null);
+    }
+  }, [savedConfigurations, selectedSavedConfig]);
+
   const getConfigContentSignature = (config: SavedConfigurationResponse) => {
     const partIds = [
       config.cpu_data?.id ?? 0,
@@ -123,8 +164,9 @@ function App() {
 
   const handleGenerateConfig = async (
     budget: number,
-    usage: string,
+    usage: UsageCode,
     options: {
+      name: string;
       coolerType: "air" | "liquid";
       radiatorSize: "120" | "240" | "360";
       coolingProfile: "silent" | "performance";
@@ -143,14 +185,15 @@ function App() {
   ) => {
     setIsLoading(true);
     setError(null);
-
-    const abortController = new AbortController();
-    generateAbortControllerRef.current = abortController;
+    setOsBudgetErrorToast(null);
+    setResult(null);
+    setSelectedSavedConfig(null);
 
     try {
       const response = await generateConfig({
         budget,
-        usage: usage as "gaming" | "creator" | "business" | "standard" | "video_editing",
+        usage,
+        name: options.name || undefined,
         cooler_type: options.coolerType,
         radiator_size: options.radiatorSize,
         cooling_profile: options.coolingProfile,
@@ -164,36 +207,44 @@ function App() {
         storage3_part_id: options.storage3PartId ?? undefined,
         os_edition: options.osEdition,
         custom_budget_weights: options.useCustomBudgetWeights ? options.customBudgetWeights : undefined,
-      }, abortController.signal);
+        cpu_part_id: options.cpuPartId ?? undefined,
+      });
       setResult(response);
       setSelectedSavedConfig(null);
-      setIsLoading(false);
       setHistoryLoading(true);
-      fetchSavedConfigurations();
+      await fetchSavedConfigurations();
     } catch (err) {
-      if (err instanceof Error && err.name === 'AbortError') {
-        // ユーザーによるキャンセル
-      } else {
-        setError(
-          err instanceof Error ? err.message : "予期しないエラーが発生しました"
-        );
+      const errorMessage = err instanceof Error ? err.message : "予期しないエラーが発生しました";
+      setError(errorMessage);
+      if (errorMessage.includes("OS必須予算不足")) {
+        const recommendedMatch = errorMessage.match(/¥\s*([\d,]+)/);
+        const recommendedBudgetText = recommendedMatch
+          ? `¥${recommendedMatch[1]}`
+          : "予算を増やして再試行";
+        setOsBudgetErrorToast({
+          point: "OSを維持すると予算内に収まりません。",
+          recommendedBudgetText,
+        });
       }
-      setIsLoading(false);
     } finally {
-      generateAbortControllerRef.current = null;
+      setIsLoading(false);
     }
-  };
-
-  const handleCancelGenerate = () => {
-    generateAbortControllerRef.current?.abort();
-    generateAbortControllerRef.current = null;
-    setIsLoading(false);
   };
 
   const handleBack = () => {
     setResult(null);
     setSelectedSavedConfig(null);
     setError(null);
+    setShowHistory(false);
+  };
+
+  const handleSavedFromResultView = async (saved: SavedConfigurationResponse) => {
+    setSelectedSavedConfig(saved);
+    setResult(null);
+    setShowHistory(false);
+    setHistoryLoading(true);
+    await fetchSavedConfigurations();
+    setHistoryToastMessage(`編集後の構成を保存しました (ID ${saved.id})`);
   };
 
   const handleSelectSavedConfig = (config: SavedConfigurationResponse) => {
@@ -285,7 +336,7 @@ function App() {
   };
 
   const filteredHistory = uniqueSavedConfigurations.filter((config) => {
-    if (historyUsageFilter !== "all" && config.usage !== historyUsageFilter) {
+    if (historyUsageFilter !== "all" && normalizeUsageCode(config.usage) !== historyUsageFilter) {
       return false;
     }
 
@@ -310,8 +361,14 @@ function App() {
       .join(" ")
       .toLowerCase();
 
+    const usageCode = normalizeUsageCode(config.usage, "general");
+    const usageLabel = usageCode === "all" ? config.usage_display : USAGE_LABELS_JA[usageCode];
+
     const target = [
       `id ${config.id}`,
+      config.name ?? "",
+      usageCode,
+      usageLabel,
       config.usage_display,
       config.total_price.toString(),
       config.budget.toString(),
@@ -327,6 +384,8 @@ function App() {
   const isDeveloperViewEnabled =
     import.meta.env.DEV ||
     (typeof window !== "undefined" && window.localStorage.getItem("myportfolio:developer-mode") === "1");
+  const scraperCategoryStats = scraperStatus?.category_stats ?? [];
+  const scraperCachedCategories = scraperStatus?.cached_categories ?? [];
 
   useEffect(() => {
     // 画面切り替え時（フォーム→結果 / 結果→フォーム）は常に先頭へ移動する。
@@ -360,10 +419,39 @@ function App() {
       {isDeveloperViewEnabled && scraperStatus && !statusLoading && showStatus && (
         <div className="fixed bottom-16 left-4 bg-slate-50 border border-slate-300 rounded-lg p-4 shadow-lg text-sm max-w-xs z-50">
           <div className="font-semibold text-slate-700 mb-2">
-            取得済みパーツ一覧
-            <span className="ml-2 text-xs font-normal text-slate-500">
-              合計 {scraperStatus.total_parts_in_db} 件
-            </span>
+            最新スクレイプ状況
+          </div>
+          <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
+            <div className="rounded-md bg-white border border-slate-200 px-2 py-1.5">
+              <div className="text-slate-500">DB件数</div>
+              <div className="mt-0.5 font-semibold text-slate-800 tabular-nums">
+                {scraperStatus.total_parts_in_db.toLocaleString("ja-JP")} 件
+              </div>
+            </div>
+            <div className="rounded-md bg-white border border-slate-200 px-2 py-1.5">
+              <div className="text-slate-500">キャッシュ</div>
+              <div className="mt-0.5 font-semibold text-slate-800">
+                {scraperStatus.cache_enabled ? "有効" : "無効"}
+              </div>
+            </div>
+            <div className="rounded-md bg-white border border-slate-200 px-2 py-1.5">
+              <div className="text-slate-500">TTL</div>
+              <div className="mt-0.5 font-semibold text-slate-800 tabular-nums">
+                {scraperStatus.cache_ttl_seconds.toLocaleString("ja-JP")} 秒
+              </div>
+            </div>
+            <div className="rounded-md bg-white border border-slate-200 px-2 py-1.5">
+              <div className="text-slate-500">再取得間隔</div>
+              <div className="mt-0.5 font-semibold text-slate-800 tabular-nums">
+                {scraperStatus.rate_limit_delay.toFixed(1)} 秒
+              </div>
+            </div>
+          </div>
+          <div className="mb-3 rounded-md bg-slate-100 px-2 py-1.5 text-xs text-slate-600">
+            対象カテゴリ: {scraperCachedCategories.join("、") || "なし"}
+          </div>
+          <div className="mb-3 rounded-md bg-slate-100 px-2 py-1.5 text-xs text-slate-600">
+            リトライ回数: {scraperStatus.retry_count}
           </div>
           <table className="w-full text-xs text-slate-600 border-collapse">
             <thead>
@@ -374,7 +462,7 @@ function App() {
               </tr>
             </thead>
             <tbody>
-              {scraperStatus.category_stats.map((stat) => (
+              {scraperCategoryStats.map((stat) => (
                 <tr key={stat.part_type} className="border-b border-slate-100 last:border-0">
                   <td className="py-1 pr-2">{stat.label}</td>
                   <td className="text-right py-1 pr-2 tabular-nums">{stat.count}</td>
@@ -387,11 +475,9 @@ function App() {
               ))}
             </tbody>
           </table>
-          {scraperStatus.last_update_time && (
-            <div className="mt-2 text-xs text-slate-400">
-              最終更新: {new Date(scraperStatus.last_update_time).toLocaleString("ja-JP")}
-            </div>
-          )}
+          <div className="mt-2 text-xs text-slate-400">
+            最終更新: {scraperStatus.last_update_time ? new Date(scraperStatus.last_update_time).toLocaleString("ja-JP") : "未取得"}
+          </div>
         </div>
       )}
 
@@ -417,15 +503,14 @@ function App() {
           <div className="space-y-2 mb-4">
             <select
               value={historyUsageFilter}
-              onChange={(e) => setHistoryUsageFilter(e.target.value as UsageFilter)}
+              onChange={(e) => setHistoryUsageFilter(e.target.value as "all" | UsageCode)}
               className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-700"
             >
               <option value="all">用途: すべて</option>
               <option value="gaming">用途: ゲーミング</option>
-              <option value="creator">用途: クリエイター</option>
-              <option value="business">用途: ビジネス</option>
-              <option value="standard">用途: ホーム・日常用</option>
-              <option value="video_editing">用途: ワークステーション</option>
+              <option value="creator">用途: クリエイターPC</option>
+              <option value="ai">用途: AI PC（ローカルAI）</option>
+              <option value="general">用途: 汎用PC（事務・学習向け）</option>
             </select>
             <input
               value={historyQuery}
@@ -465,15 +550,19 @@ function App() {
           ) : (
             <div className="space-y-3">
               {filteredHistory.map((config) => (
+                (() => {
+                  const usageCode = normalizeUsageCode(config.usage, "general");
+                  const usageLabel = usageCode === "all" ? config.usage_display : USAGE_LABELS_JA[usageCode];
+                  return (
                 <div
                   key={config.id}
                   className="w-full text-left border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 rounded-xl p-4 transition-colors"
                 >
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <div>
-                      <div className="font-semibold text-slate-900">{config.usage_display}</div>
+                      <div className="font-semibold text-slate-900">{config.name?.trim() ? config.name : usageLabel}</div>
                       <div className="text-xs text-slate-500">
-                        ID {config.id} ・ {new Date(config.created_at).toLocaleString("ja-JP")}
+                        {usageLabel} ・ ID {config.id} ・ {new Date(config.created_at).toLocaleString("ja-JP")}
                       </div>
                     </div>
                     <div className="text-sm font-bold text-indigo-600">
@@ -490,7 +579,14 @@ function App() {
                   )}
                   <div className="flex gap-2 mt-3">
                     <button
-                      onClick={() => handleSelectSavedConfig(config)}
+                      onClick={async () => {
+                        try {
+                          const latest = await getSavedConfigurationById(config.id);
+                          handleSelectSavedConfig(latest);
+                        } catch {
+                          handleSelectSavedConfig(config);
+                        }
+                      }}
                       className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg px-3 py-2 transition-colors"
                     >
                       詳細を開く
@@ -504,6 +600,8 @@ function App() {
                     </button>
                   </div>
                 </div>
+                  );
+                })()
               ))}
             </div>
           )}
@@ -518,9 +616,19 @@ function App() {
 
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm text-slate-700 space-y-1 mb-5">
               <div>ID: {deleteTargetConfig.id}</div>
-              <div>用途: {deleteTargetConfig.usage_display}</div>
+              <div>
+                用途: {
+                  (() => {
+                    const usageCode = normalizeUsageCode(deleteTargetConfig.usage, "general");
+                    return usageCode === "all"
+                      ? deleteTargetConfig.usage_display
+                      : USAGE_LABELS_JA[usageCode];
+                  })()
+                }
+              </div>
               <div>予算: ¥{deleteTargetConfig.budget.toLocaleString("ja-JP")}</div>
               <div>構成金額: ¥{deleteTargetConfig.total_price.toLocaleString("ja-JP")}</div>
+              {deleteTargetConfig.name?.trim() && <div>保存名: {deleteTargetConfig.name}</div>}
             </div>
 
             <div className="flex gap-2 justify-end">
@@ -555,10 +663,18 @@ function App() {
         </div>
       )}
 
+      {osBudgetErrorToast && (
+        <div className="fixed top-20 right-4 max-w-md rounded-xl border-2 border-red-300 bg-red-50 px-4 py-3 text-red-900 shadow-xl z-[90]">
+          <div className="text-sm font-bold">OS必須予算不足</div>
+          <div className="mt-1 text-xs leading-relaxed">要点: {osBudgetErrorToast.point}</div>
+          <div className="mt-1 text-xs font-semibold">推奨予算: {osBudgetErrorToast.recommendedBudgetText}</div>
+        </div>
+      )}
+
       {activeResult ? (
-        <ResultView config={activeResult} onBack={handleBack} />
+        <ResultView config={activeResult} onBack={handleBack} onSavedConfiguration={handleSavedFromResultView} />
       ) : (
-        <ConfigForm onSubmit={handleGenerateConfig} onCancel={handleCancelGenerate} isLoading={isLoading} />
+        <ConfigForm onSubmit={handleGenerateConfig} isLoading={isLoading} />
       )}
     </>
   );

@@ -69,6 +69,11 @@ verify_*.py
 # Temporary
 *.tmp
 *.temp
+.log
+django/celerybeat-schedule.bak
+django/celerybeat-schedule.dat
+django/celerybeat-schedule.dir
+logs/postgres-freeze/*.log
 .venv_broken_*/
 django/tmp_*.py
 django/*_sweep_result.json

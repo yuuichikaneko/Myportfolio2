@@ -1,0 +1,7 @@
+位	CPU	スコア	備考
+🥇	Core Ultra 9 285K	13474	最新フラッグシップ
+🥈	Core Ultra 7 270K Plus	13257	Core Ultraプレミアム
+🥉	Core Ultra 7 265K	11744	バランス高性能
+4️⃣	Core Ultra 7 265KF	11744	同上（F版）
+5️⃣	Core Ultra 9 285	11470	65W
+6️⃣	Core Ultra 7 265	9979	

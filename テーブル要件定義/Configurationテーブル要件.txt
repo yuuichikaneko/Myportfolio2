@@ -1,0 +1,79 @@
+Configurationテーブル要件
+
+識別情報
+id: BIGSERIAL, 主キー
+budget: INTEGER, NOT NULL, > 0
+usage: VARCHAR(20), NOT NULL
+値: gaming, video_editing, general
+created_at: TIMESTAMP, NOT NULL, DEFAULT NOW()
+is_deleted: BOOLEAN, NOT NULL, DEFAULT FALSE
+deleted_at: TIMESTAMP, NULL
+
+説明
+PC 構成提案結果テーブル
+ユーザーのバジェットと用途に基づいて生成された構成案を保存。
+ソフトデリート（is_deleted フラグ）で論理削除に対応。
+
+必須パーツ参照（カラム全て NOT NULL）
+cpu: BIGINT, FK -> PCPart(id), ON DELETE SET NULL
+cpu_cooler: BIGINT, FK -> PCPart(id), ON DELETE SET NULL
+gpu: BIGINT, FK -> PCPart(id), ON DELETE SET NULL
+motherboard: BIGINT, FK -> PCPart(id), ON DELETE SET NULL
+memory: BIGINT, FK -> PCPart(id), ON DELETE SET NULL
+storage: BIGINT, FK -> PCPart(id), ON DELETE SET NULL
+os: BIGINT, FK -> PCPart(id), ON DELETE SET NULL
+psu: BIGINT, FK -> PCPart(id), ON DELETE SET NULL
+case: BIGINT, FK -> PCPart(id), ON DELETE SET NULL
+
+オプショナルパーツ参照（複数ストレージ対応）
+storage2: BIGINT, FK -> PCPart(id), ON DELETE SET NULL, NULLABLE
+storage3: BIGINT, FK -> PCPart(id), ON DELETE SET NULL, NULLABLE
+case_fan: BIGINT, FK -> PCPart(id), ON DELETE SET NULL, NULLABLE
+
+集計カラム
+total_price: INTEGER, NOT NULL, DEFAULT 0, >= 0
+
+制約
+budget > 0
+total_price >= 0
+UNIQUE 制約: なし（同一バジェット・用途での複数構成案を許可）
+
+ソフトデリート
+is_deleted = TRUE のレコードは SELECT から除外する（アプリケーションレベル）
+deleted_at に論理削除時刻を記録
+
+推奨インデックス
+INDEX usage + is_deleted + created_at DESC
+INDEX is_deleted + created_at DESC
+INDEX created_at DESC
+
+PostgreSQL DDLサンプル
+
+CREATE TABLE configuration (
+  id BIGSERIAL PRIMARY KEY,
+  budget INTEGER NOT NULL CHECK (budget > 0),
+  usage VARCHAR(20) NOT NULL,
+  cpu_id BIGINT NOT NULL REFERENCES pc_part(id) ON DELETE SET NULL,
+  cpu_cooler_id BIGINT NOT NULL REFERENCES pc_part(id) ON DELETE SET NULL,
+  gpu_id BIGINT NOT NULL REFERENCES pc_part(id) ON DELETE SET NULL,
+  motherboard_id BIGINT NOT NULL REFERENCES pc_part(id) ON DELETE SET NULL,
+  memory_id BIGINT NOT NULL REFERENCES pc_part(id) ON DELETE SET NULL,
+  storage_id BIGINT NOT NULL REFERENCES pc_part(id) ON DELETE SET NULL,
+  storage2_id BIGINT REFERENCES pc_part(id) ON DELETE SET NULL,
+  storage3_id BIGINT REFERENCES pc_part(id) ON DELETE SET NULL,
+  os_id BIGINT NOT NULL REFERENCES pc_part(id) ON DELETE SET NULL,
+  psu_id BIGINT NOT NULL REFERENCES pc_part(id) ON DELETE SET NULL,
+  case_id BIGINT NOT NULL REFERENCES pc_part(id) ON DELETE SET NULL,
+  case_fan_id BIGINT REFERENCES pc_part(id) ON DELETE SET NULL,
+  total_price INTEGER NOT NULL DEFAULT 0 CHECK (total_price >= 0),
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+  deleted_at TIMESTAMP NULL
+);
+
+CREATE INDEX idx_configuration_usage_active_created 
+  ON configuration(usage, is_deleted, created_at DESC);
+CREATE INDEX idx_configuration_active_created 
+  ON configuration(is_deleted, created_at DESC);
+CREATE INDEX idx_configuration_created_at 
+  ON configuration(created_at DESC);

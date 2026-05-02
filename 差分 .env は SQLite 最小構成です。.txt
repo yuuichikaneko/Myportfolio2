@@ -1,0 +1,49 @@
+現行の .env は SQLite 最小構成です。
+なので PostgreSQL へ行く差分はこの2点だけです。
+
+DB_ENGINE を sqlite3 から postgresql へ変更
+PostgreSQL 接続項目を追記
+そのまま貼って使えるように、差分だけの手順を用意しました。
+
+変更前バックアップを作成
+
+Copy-Item .env .\django.env.sqlite.bak -Force
+
+差分適用（PowerShellでそのまま実行）
+
+@"
+APP_ENV=development
+DB_ENGINE=postgresql
+DB_NAME=myportfolio
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_CONN_MAX_AGE=60
+DB_SSLMODE=prefer
+DB_CLIENT_ENCODING=UTF8
+DB_CONNECT_TIMEOUT=5
+DB_STATEMENT_TIMEOUT_MS=15000
+DB_LOCK_TIMEOUT_MS=5000
+DB_IDLE_IN_TX_TIMEOUT_MS=10000
+"@ | Set-Content -Path .env -Encoding utf8
+
+差分チェック（何が変わったか確認）
+
+git diff -- .env
+
+Django が PostgreSQL を見ているか確認
+
+python.exe manage.py shell -c "from django.conf import settings; print(settings.DATABASES['default']['ENGINE']); print(settings.DATABASES['default']['NAME'])"
+
+migrate 実行（安全版）
+
+powershell -NoProfile -ExecutionPolicy Bypass -File safe_postgres_migrate.ps1
+
+ロールバック（SQLiteへ戻す）も1コマンドで可能
+
+Copy-Item .\django.env.sqlite.bak .env -Force
+
+補足:
+PostgreSQL用の雛形は .env.postgresql.example にあります。
+値だけ変えたい場合は DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT の5項目だけ環境に合わせてください。

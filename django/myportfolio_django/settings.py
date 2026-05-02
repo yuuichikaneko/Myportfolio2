@@ -16,21 +16,47 @@ from decouple import config
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-APP_ENV = config('APP_ENV', default='development')
+APP_ENV = config('APP_ENV', default='development').strip().lower()
+
+
+def _split_csv(value):
+    return [item.strip() for item in str(value or '').split(',') if item.strip()]
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-rb8ad(4fam%q@k_hv-02p29fmx*a7af&pax#l64oiw_27!e&*k'
+SECRET_KEY = config('DJANGO_SECRET_KEY', default='').strip()
+if not SECRET_KEY:
+    raise RuntimeError('DJANGO_SECRET_KEY is required. Set it in django/.env or environment variables.')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DJANGO_DEBUG', default=(APP_ENV != 'production'), cast=bool)
 
-FRONTEND_DEV_SERVER_URL = config('FRONTEND_DEV_SERVER_URL', default='http://127.0.0.1:5173')
+default_allowed_hosts = '127.0.0.1,localhost' if APP_ENV != 'production' else ''
+ALLOWED_HOSTS = _split_csv(config('DJANGO_ALLOWED_HOSTS', default=default_allowed_hosts))
 
-ALLOWED_HOSTS = []
+# Security hardening (stage by APP_ENV and override by env vars)
+SECURE_SSL_REDIRECT = config('DJANGO_SECURE_SSL_REDIRECT', default=(APP_ENV == 'production'), cast=bool)
+SESSION_COOKIE_SECURE = config('DJANGO_SESSION_COOKIE_SECURE', default=(APP_ENV == 'production'), cast=bool)
+CSRF_COOKIE_SECURE = config('DJANGO_CSRF_COOKIE_SECURE', default=(APP_ENV == 'production'), cast=bool)
+
+default_hsts_seconds = 0
+if APP_ENV == 'staging':
+    default_hsts_seconds = 300
+elif APP_ENV == 'production':
+    default_hsts_seconds = 3600
+SECURE_HSTS_SECONDS = config('DJANGO_SECURE_HSTS_SECONDS', default=default_hsts_seconds, cast=int)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = config(
+    'DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS',
+    default=(APP_ENV == 'production'),
+    cast=bool,
+)
+SECURE_HSTS_PRELOAD = config('DJANGO_SECURE_HSTS_PRELOAD', default=False, cast=bool)
+USE_X_FORWARDED_HOST = config('DJANGO_USE_X_FORWARDED_HOST', default=False, cast=bool)
+if config('DJANGO_TRUST_X_FORWARDED_PROTO', default=False, cast=bool):
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
 # Application definition
@@ -52,6 +78,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -85,12 +112,58 @@ WSGI_APPLICATION = 'myportfolio_django.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+default_db_engine = 'postgresql' if APP_ENV == 'production' else 'sqlite3'
+DB_ENGINE = config('DB_ENGINE', default=default_db_engine).strip().lower()
+
+if APP_ENV == 'production' and DB_ENGINE not in ('postgresql', 'postgres', 'django.db.backends.postgresql'):
+    raise RuntimeError('In production, DB_ENGINE must be postgresql.')
+
+if DB_ENGINE in ('postgresql', 'postgres', 'django.db.backends.postgresql'):
+    db_sslmode = config('DB_SSLMODE', default='prefer').strip()
+    db_client_encoding = config('DB_CLIENT_ENCODING', default='UTF8').strip()
+    db_connect_timeout = config('DB_CONNECT_TIMEOUT', default=5, cast=int)
+    db_statement_timeout_ms = config('DB_STATEMENT_TIMEOUT_MS', default=15000, cast=int)
+    db_lock_timeout_ms = config('DB_LOCK_TIMEOUT_MS', default=5000, cast=int)
+    db_idle_in_tx_timeout_ms = config('DB_IDLE_IN_TX_TIMEOUT_MS', default=10000, cast=int)
+    db_options = {}
+    if db_sslmode:
+        db_options['sslmode'] = db_sslmode
+    if db_client_encoding:
+        db_options['client_encoding'] = db_client_encoding
+    # Prevent long blocking waits from feeling like app freeze.
+    if db_connect_timeout > 0:
+        db_options['connect_timeout'] = db_connect_timeout
+    pg_runtime_options = []
+    if db_statement_timeout_ms > 0:
+        pg_runtime_options.append(f'-c statement_timeout={db_statement_timeout_ms}')
+    if db_lock_timeout_ms > 0:
+        pg_runtime_options.append(f'-c lock_timeout={db_lock_timeout_ms}')
+    if db_idle_in_tx_timeout_ms > 0:
+        pg_runtime_options.append(
+            f'-c idle_in_transaction_session_timeout={db_idle_in_tx_timeout_ms}'
+        )
+    if pg_runtime_options:
+        db_options['options'] = ' '.join(pg_runtime_options)
+
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': config('DB_NAME', default='myportfolio'),
+            'USER': config('DB_USER', default='postgres'),
+            'PASSWORD': config('DB_PASSWORD', default='postgres'),
+            'HOST': config('DB_HOST', default='127.0.0.1'),
+            'PORT': config('DB_PORT', default=5432, cast=int),
+            'CONN_MAX_AGE': config('DB_CONN_MAX_AGE', default=60, cast=int),
+            'OPTIONS': db_options,
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / config('SQLITE_NAME', default='db.sqlite3'),
+        }
+    }
 
 
 # Password validation
@@ -115,9 +188,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ja'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Tokyo'
 
 USE_I18N = True
 
@@ -128,6 +201,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / config('DJANGO_STATIC_ROOT', default='staticfiles')
+STATICFILES_STORAGE = config(
+    'DJANGO_STATICFILES_STORAGE',
+    default='whitenoise.storage.CompressedManifestStaticFilesStorage',
+)
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -141,7 +219,7 @@ REST_FRAMEWORK = {
 }
 
 # CORS
-CORS_ALLOWED_ORIGINS = [
+local_cors_allowed_origins = [
     'http://localhost:3000',
     'http://localhost:8000',
     'http://localhost:5173',
@@ -153,19 +231,36 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:5174',
     'http://127.0.0.1:8001',
 ]
+CORS_ALLOWED_ORIGINS = _split_csv(config('CORS_ALLOWED_ORIGINS', default=''))
+if not CORS_ALLOWED_ORIGINS and APP_ENV == 'development':
+    CORS_ALLOWED_ORIGINS = local_cors_allowed_origins
 
-CORS_ALLOWED_ORIGIN_REGEXES = [
-    r"^http://localhost:5\d{3}$",
-    r"^http://127\.0\.0\.1:5\d{3}$",
-]
+CORS_ALLOWED_ORIGIN_REGEXES = _split_csv(config('CORS_ALLOWED_ORIGIN_REGEXES', default=''))
+if not CORS_ALLOWED_ORIGIN_REGEXES and APP_ENV == 'development':
+    CORS_ALLOWED_ORIGIN_REGEXES = [
+        r"^http://localhost:5\d{3}$",
+        r"^http://127\.0\.0\.1:5\d{3}$",
+    ]
 
 # Celery
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+default_redis_url = 'redis://localhost:6379/0'
+CELERY_BROKER_URL = config('CELERY_BROKER_URL', default=default_redis_url)
+CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default=CELERY_BROKER_URL)
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = 'UTC'
+CELERY_TIMEZONE = 'Asia/Tokyo'
+
+# Celery Beat - Scheduled Tasks
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    'run-scraper-daily': {
+        'task': 'scraper.tasks.run_scraper_task',
+        'schedule': crontab(hour=5, minute=0),  # 毎日05:00 UTC
+        'options': {'queue': 'default'},
+    },
+}
 
 # Cache
 CACHES = {
@@ -174,6 +269,10 @@ CACHES = {
         'LOCATION': 'unique-snowflake',
     }
 }
+
+# GPU performance import migration flags
+GPU_PERF_ENABLE_LEGACY_SPECS_SYNC = config('GPU_PERF_ENABLE_LEGACY_SPECS_SYNC', default=False, cast=bool)
+GPU_PERF_ENABLE_LEGACY_SPECS_FALLBACK = config('GPU_PERF_ENABLE_LEGACY_SPECS_FALLBACK', default=False, cast=bool)
 
 # Dospara scraper configuration (override per environment as needed)
 DOSPARA_SCRAPER = {

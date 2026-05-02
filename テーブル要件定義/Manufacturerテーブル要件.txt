@@ -1,0 +1,33 @@
+Manufacturerテーブル要件
+
+識別情報
+id: BIGSERIAL, 主キー
+name: VARCHAR(100), NOT NULL, UNIQUE
+
+説明
+マスターデータ（メーカー・製造元マスタ）
+パーツメーカーの一元管理用。PCPart から FK で参照される。
+重複排除: UNIQUE(name)
+
+制約
+name は NULL 不可、UNIQUE
+同一メーカー名の重複登録を防止
+
+推奨インデックス
+INDEX name（UNIQUE に含まれる）
+
+PostgreSQL DDLサンプル
+
+CREATE TABLE manufacturer (
+  id BIGSERIAL PRIMARY KEY,
+  name VARCHAR(100) NOT NULL UNIQUE
+);
+
+Django Model Reference
+from django.db import models
+
+class Manufacturer(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.name

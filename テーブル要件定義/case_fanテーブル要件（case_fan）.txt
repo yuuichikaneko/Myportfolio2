@@ -1,0 +1,120 @@
+case_fanテーブル要件（case_fan）
+
+スクレイピング元: PC工房 カテゴリID 1932（/category/040902.html）
+
+識別情報
+id: BIGSERIAL, 主キー
+name: VARCHAR(255), NOT NULL
+maker: VARCHAR(100), NOT NULL
+model_code: VARCHAR(120), NULL
+shop_code: VARCHAR(50), NULL, UNIQUE  ← PC工房の product_id
+source_url: TEXT, NOT NULL            ← https://www.pc-koubou.jp/... 形式
+is_active: BOOLEAN, NOT NULL, DEFAULT TRUE
+created_at: TIMESTAMP, NOT NULL, DEFAULT NOW()
+updated_at: TIMESTAMP, NOT NULL, DEFAULT NOW()
+
+ファン仕様
+fan_size_mm: SMALLINT, NOT NULL
+  例: 80, 92, 120, 140, 200
+fan_count: SMALLINT, NOT NULL, DEFAULT 1  ← 1パックに含まれるファン数
+fan_type: VARCHAR(20), NOT NULL, DEFAULT unknown
+  例: air, liquid_radiator_compatible, unknown
+connector_type: VARCHAR(20), NOT NULL, DEFAULT unknown
+  例: 3pin, 4pin_pwm, argb, rgb, unknown
+rpm_min: SMALLINT, NULL
+rpm_max: SMALLINT, NULL
+airflow_cfm: NUMERIC(6,2), NULL       ← 風量 (CFM)
+static_pressure_mmh2o: NUMERIC(6,2), NULL  ← 静圧 (mm-H2O)
+noise_level_db: NUMERIC(4,1), NULL    ← 最大騒音 (dB)
+bearing_type: VARCHAR(30), NULL
+  例: fluid_dynamic, ball, sleeve, rifle, unknown
+has_rgb: BOOLEAN, NOT NULL, DEFAULT FALSE
+has_argb: BOOLEAN, NOT NULL, DEFAULT FALSE
+
+価格・在庫
+price_yen: INTEGER, NOT NULL
+currency: CHAR(3), NOT NULL, DEFAULT JPY
+stock_status: VARCHAR(20), NOT NULL, DEFAULT unknown
+  値: in_stock, low_stock, out_of_stock, unknown
+last_scraped_at: TIMESTAMP, NULL
+
+拡張
+specs_json: JSONB, NOT NULL, DEFAULT '{}'::jsonb
+  保持例: {"spec_text": "120mm / PWM / ARGB / 500-1800rpm", "comment": "3個セット"}
+scraper_source: VARCHAR(50), NOT NULL, DEFAULT 'pckoubou'
+parser_name: VARCHAR(50), NULL
+
+推奨制約
+
+CHECK (price_yen >= 0)
+CHECK (fan_size_mm > 0)
+CHECK (fan_count >= 1)
+CHECK (rpm_min IS NULL OR rpm_min > 0)
+CHECK (rpm_max IS NULL OR rpm_max > 0)
+CHECK (rpm_min IS NULL OR rpm_max IS NULL OR rpm_min <= rpm_max)
+CHECK (airflow_cfm IS NULL OR airflow_cfm > 0)
+CHECK (noise_level_db IS NULL OR noise_level_db >= 0)
+CHECK (stock_status IN ('in_stock','low_stock','out_of_stock','unknown'))
+UNIQUE (shop_code)
+UNIQUE (maker, model_code)（model_code がある場合）
+
+推奨インデックス
+
+UNIQUE: shop_code
+INDEX: fan_size_mm, connector_type
+INDEX: fan_size_mm, price_yen
+INDEX: has_argb, has_rgb
+INDEX: is_active, updated_at
+テキスト検索: name（trigram など）
+
+PCPart との関係
+
+case_fan は PCPart.part_type = 'case_fan' として統合テーブルに保存する。
+個別スペック（fan_size_mm, connector_type 等）は PCPart.specs JSONB に格納し、
+将来的に CaseFanDetail テーブルへ 2NF 分離することを検討する。
+
+PostgreSQL DDLサンプル（単独テーブル設計の場合）
+
+CREATE TABLE case_fan (
+  id BIGSERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  maker VARCHAR(100) NOT NULL,
+  model_code VARCHAR(120),
+  shop_code VARCHAR(50) UNIQUE,
+  source_url TEXT NOT NULL,
+
+  fan_size_mm SMALLINT NOT NULL CHECK (fan_size_mm > 0),
+  fan_count SMALLINT NOT NULL DEFAULT 1 CHECK (fan_count >= 1),
+  fan_type VARCHAR(20) NOT NULL DEFAULT 'unknown',
+  connector_type VARCHAR(20) NOT NULL DEFAULT 'unknown',
+  rpm_min SMALLINT CHECK (rpm_min IS NULL OR rpm_min > 0),
+  rpm_max SMALLINT CHECK (rpm_max IS NULL OR rpm_max > 0),
+  airflow_cfm NUMERIC(6,2) CHECK (airflow_cfm IS NULL OR airflow_cfm > 0),
+  static_pressure_mmh2o NUMERIC(6,2),
+  noise_level_db NUMERIC(4,1) CHECK (noise_level_db IS NULL OR noise_level_db >= 0),
+  bearing_type VARCHAR(30),
+  has_rgb BOOLEAN NOT NULL DEFAULT FALSE,
+  has_argb BOOLEAN NOT NULL DEFAULT FALSE,
+
+  price_yen INTEGER NOT NULL CHECK (price_yen >= 0),
+  currency CHAR(3) NOT NULL DEFAULT 'JPY',
+  stock_status VARCHAR(20) NOT NULL DEFAULT 'unknown',
+  last_scraped_at TIMESTAMP NULL,
+
+  specs_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+  scraper_source VARCHAR(50) NOT NULL DEFAULT 'pckoubou',
+  parser_name VARCHAR(50),
+
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+
+  CHECK (rpm_min IS NULL OR rpm_max IS NULL OR rpm_min <= rpm_max),
+  CHECK (stock_status IN ('in_stock','low_stock','out_of_stock','unknown'))
+);
+
+CREATE INDEX idx_case_fan_size_connector ON case_fan(fan_size_mm, connector_type);
+CREATE INDEX idx_case_fan_size_price ON case_fan(fan_size_mm, price_yen);
+CREATE INDEX idx_case_fan_rgb ON case_fan(has_argb, has_rgb);
+CREATE INDEX idx_case_fan_active_updated ON case_fan(is_active, updated_at);
+CREATE INDEX idx_case_fan_name_trgm ON case_fan USING gin (name gin_trgm_ops);

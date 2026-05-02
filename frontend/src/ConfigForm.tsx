@@ -1,14 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   getMarketPriceRange,
+  getPartsByType,
   getPartPriceRanges,
   getStorageInventory,
+  type UsageCode,
   type CustomBudgetWeights,
   type PartPriceRange,
+  type SavedPartResponse,
   type StorageInventoryResponse,
 } from "./api";
 
-const FALLBACK_MARKET_PRICE_RANGE = {
+type MarketRangeState = {
+  min: number;
+  max: number;
+  default: number;
+  gaming_x3d_recommended_min?: number;
+};
+
+const FALLBACK_MARKET_PRICE_RANGE: MarketRangeState = {
   min: 89980,
   max: 404980,
   default: 250000,
@@ -17,8 +27,9 @@ const FALLBACK_MARKET_PRICE_RANGE = {
 interface ConfigFormProps {
   onSubmit: (
     budget: number,
-    usage: string,
+    usage: UsageCode,
     options: {
+      name: string;
       coolerType: "air" | "liquid";
       radiatorSize: "120" | "240" | "360";
       coolingProfile: "silent" | "performance";
@@ -33,9 +44,9 @@ interface ConfigFormProps {
       osEdition: "auto" | "home" | "pro";
       useCustomBudgetWeights: boolean;
       customBudgetWeights: CustomBudgetWeights;
+      cpuPartId: number | null;
     }
   ) => void;
-  onCancel?: () => void;
   isLoading: boolean;
 }
 
@@ -64,11 +75,11 @@ const CUSTOM_BUDGET_WEIGHT_FIELDS: Array<{ key: keyof CustomBudgetWeights; label
 ];
 
 const USAGE_OPTIONS = [
-  { value: "gaming", label: "ゲーミングPC", icon: "🎮", desc: "GPU重視・高フレームレート向け" },
-  { value: "creator", label: "クリエイターPC", icon: "🎨", desc: "動画編集・3DCG・配信向け" },
-  { value: "business", label: "ビジネスPC", icon: "💼", desc: "オフィス作業・安定運用重視" },
-  { value: "standard", label: "ホーム・日常用PC", icon: "🏠", desc: "日常使い・バランス型" },
-  { value: "video_editing", label: "ワークステーション", icon: "⚙️", desc: "CAD・3DCG・エンジニアリング・高負荷処理向け" },
+  { value: "gaming", label: "ゲーム", icon: "🎮", desc: "GPU重視・高フレームレート向け" },
+  { value: "general", label: "汎用", icon: "🧩", desc: "日常利用・学習・軽い開発向け" },
+  { value: "creator", label: "クリエイト", icon: "🎨", desc: "動画編集・配信・制作向け" },
+  { value: "business", label: "ビジネス", icon: "💼", desc: "業務利用・安定運用向け" },
+  { value: "workstation", label: "ワークステーション", icon: "🛠️", desc: "高負荷計算・ローカルAI・3D制作向け" },
 ] as const;
 
 const COOLER_OPTIONS = [
@@ -83,31 +94,31 @@ const RADIATOR_OPTIONS = [
 ] as const;
 
 const COOLING_PROFILE_OPTIONS = [
-  { value: "silent", label: "静音重視" },
-  { value: "performance", label: "冷却重視" },
+  { value: "silent", label: "静音重視", desc: "低回転・静音ファン構成。音を抑えたい方向け" },
+  { value: "performance", label: "冷却重視", desc: "高回転・冷却効率優先。オーバークロックや高負荷用途向け" },
 ] as const;
 
 const CASE_SIZE_OPTIONS = [
-  { value: "mini", label: "コンパクト" },
-  { value: "mid", label: "ミドル" },
-  { value: "full", label: "フルサイズ" },
+  { value: "mini", label: "コンパクト", desc: "小型・省スペース。CPUクーラー高・ラジエーター寸法に制約あり" },
+  { value: "mid", label: "ミドル", desc: "最もバランスの取れたサイズ。拡張性と置き場所を両立" },
+  { value: "full", label: "フルサイズ", desc: "拡張性・エアフロー最優先。大型クーラー・多数ドライブ対応" },
 ] as const;
 
 const CASE_FAN_POLICY_OPTIONS = [
-  { value: "auto", label: "自動" },
-  { value: "silent", label: "静音重視" },
-  { value: "airflow", label: "冷却重視" },
+  { value: "auto", label: "自動", desc: "用途・ケースサイズに応じてファン構成を自動選択" },
+  { value: "silent", label: "静音重視", desc: "低騒音ファンを優先。静かな環境向け" },
+  { value: "airflow", label: "冷却重視", desc: "高エアフロー構成。長時間負荷・高発熱環境向け" },
 ] as const;
 
 const CPU_VENDOR_OPTIONS = [
-  { value: "any", label: "こだわらない" },
-  { value: "intel", label: "Intel" },
-  { value: "amd", label: "AMD" },
+  { value: "any", label: "こだわらない", desc: "AMD・Intelを問わずコスパ優先で最適選択" },
+  { value: "intel", label: "Intel", desc: "Intel CPUを優先。CPUを直接指定した場合、対応ソケットのマザーボードが自動で選び直されます。" },
+  { value: "amd", label: "AMD", desc: "AMD CPUを優先。CPUを直接指定した場合、対応ソケットのマザーボードが自動で選び直されます。" },
 ] as const;
 
 const BUILD_PRIORITY_OPTIONS = [
-  { value: "cost", label: "コスト重視" },
-  { value: "spec", label: "スペック重視" },
+  { value: "cost", label: "コスト重視", desc: "予算内で最大のコスパを目指す構成" },
+  { value: "spec", label: "スペック重視", desc: "表示予算に20%上乗せして高スペックな構成を優先" },
 ] as const;
 
 const STORAGE_PREFERENCE_OPTIONS = [
@@ -115,10 +126,10 @@ const STORAGE_PREFERENCE_OPTIONS = [
 ] as const;
 
 const MAIN_STORAGE_CAPACITY_OPTIONS = [
-  { value: "512", label: "512GB" },
-  { value: "1024", label: "1TB" },
-  { value: "2048", label: "2TB" },
-  { value: "4096", label: "4TB" },
+  { value: "512", label: "512GB", desc: "軽い用途向けの標準容量。OS・アプリ用途に最低限必要なサイズ" },
+  { value: "1024", label: "1TB", desc: "最もバランスの良い容量。ゲーム・動画編集・日常利用に十分" },
+  { value: "2048", label: "2TB", desc: "大容量データや大作ゲームを多数保存するユーザー向け" },
+  { value: "4096", label: "4TB", desc: "大量の動画・データを扱うプロ・クリエイター向け" },
 ] as const;
 
 const STORAGE_ADDITIONAL_OPTIONS = [
@@ -186,14 +197,14 @@ function inferStorageMediaType(item: StorageInventoryResponse["capacity_summary"
   if (text.includes("ssd") || formFactor.includes("m.2") || formFactor.includes("2.5inch") || text.includes("m.2")) {
     return "ssd";
   }
-  // WD SSD モデル番号
+  // Western Digital の SSD 系モデル番号を SSD として判定する。
   if (/\b(sa500|sn500|sn580|sn700|sn750|sn850)\b/.test(text)) {
     return "ssd";
   }
   if (/(5400|7200|10000|15000)\s*rpm/i.test(item.name)) {
     return "hdd";
   }
-  // HDD キーワード ─ "wd red" 単体は SSD モデルと被るため除外
+  // HDD 系キーワードを判定する。wd red 単体は SSD 系と紛らわしいため除外する。
   const hddKeywords = [
     "barracuda",
     "ironwolf",
@@ -244,12 +255,12 @@ function getMainStorageAnnotation(): string {
   return "デフォルトでは必ず選択されます。";
 }
 
-export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
-  const [marketRange, setMarketRange] = useState(FALLBACK_MARKET_PRICE_RANGE);
+export function ConfigForm({ onSubmit, isLoading }: ConfigFormProps) {
+  const [marketRange, setMarketRange] = useState<MarketRangeState>(FALLBACK_MARKET_PRICE_RANGE);
   const [marketRangeLoading, setMarketRangeLoading] = useState(true);
   const [marketRangeError, setMarketRangeError] = useState<string | null>(null);
   const [budget, setBudget] = useState(FALLBACK_MARKET_PRICE_RANGE.default);
-  const [usage, setUsage] = useState("gaming");
+  const [usage, setUsage] = useState<UsageCode>("gaming");
   const [coolerType, setCoolerType] = useState<"air" | "liquid">("air");
   const [radiatorSize, setRadiatorSize] = useState<"120" | "240" | "360">("240");
   const [coolingProfile, setCoolingProfile] = useState<"silent" | "performance">("performance");
@@ -257,6 +268,11 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
   const [caseFanPolicy, setCaseFanPolicy] = useState<"auto" | "silent" | "airflow">("auto");
   const [cpuVendor, setCpuVendor] = useState<"any" | "intel" | "amd">("any");
   const [buildPriority, setBuildPriority] = useState<"cost" | "spec">("cost");
+  const [selectedCpuPartId, setSelectedCpuPartId] = useState<number | null>(null);
+  const [cpuList, setCpuList] = useState<SavedPartResponse[]>([]);
+  const [cpuListLoading, setCpuListLoading] = useState(true);
+  const [configurationName, setConfigurationName] = useState("");
+  const [selectedPresetIndex, setSelectedPresetIndex] = useState<number | null>(null);
   const previousBuildPriorityRef = useRef<"cost" | "spec">("cost");
   const [storagePreference, setStoragePreference] = useState<"ssd" | "hdd">("ssd");
   const [mainStorageCapacity, setMainStorageCapacity] = useState<"512" | "1024" | "2048" | "4096">("512");
@@ -277,9 +293,10 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
   const [showMarketSummary, setShowMarketSummary] = useState(true);
   const [showStorageDbDetails, setShowStorageDbDetails] = useState(false);
   const [popupMessage, setPopupMessage] = useState<string | null>(null);
-  const [selectedPresetLabel, setSelectedPresetLabel] = useState<string | null>("ミドル");
   const [activeUsageTooltip, setActiveUsageTooltip] = useState<string | null>(null);
   const [activeCoolerTooltip, setActiveCoolerTooltip] = useState<string | null>(null);
+  const [activeCoolingGridTooltip, setActiveCoolingGridTooltip] = useState<{ key: string; desc: string } | null>(null);
+  const [coolingGridTooltipPos, setCoolingGridTooltipPos] = useState({ x: 0, y: 0 });
   const budgetMin = 50000;
   const budgetMax = 1500000;
 
@@ -289,7 +306,12 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
         const range = await getMarketPriceRange();
         if (range.min > 0 && range.max >= range.min) {
           const safeDefault = Math.min(range.max, Math.max(range.min, range.default));
-          setMarketRange({ min: range.min, max: range.max, default: safeDefault });
+          setMarketRange({
+            min: range.min,
+            max: range.max,
+            default: safeDefault,
+            gaming_x3d_recommended_min: range.gaming_x3d_recommended_min,
+          });
           setBudget((current) => {
             if (current < range.min || current > range.max) {
               return safeDefault;
@@ -324,6 +346,21 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
   }, []);
 
   useEffect(() => {
+    const loadCpuList = async () => {
+      setCpuListLoading(true);
+      try {
+        const parts = await getPartsByType("cpu");
+        setCpuList(parts);
+      } catch {
+        setCpuList([]);
+      } finally {
+        setCpuListLoading(false);
+      }
+    };
+    loadCpuList();
+  }, []);
+
+  useEffect(() => {
     const loadStorageInventory = async () => {
       try {
         const inventory = await getStorageInventory();
@@ -338,50 +375,20 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
     loadStorageInventory();
   }, []);
 
-  const previousUsageRef = useRef<string>("");
+  useEffect(() => {
+    if (usage === "general") {
+      setBudget(Math.max(0, marketRange.min - 15000));
+    }
+  }, [usage, marketRange.min]);
 
   useEffect(() => {
-    if (previousUsageRef.current === usage) {
-      return;
-    }
-    previousUsageRef.current = usage;
-
-    // 用途切り替え時にミドルプリセットをデフォルト予算として設定
-    const applyPriority = (v: number) =>
-      Math.max(0, Math.min(budgetMax, buildPriority === "spec" ? Math.round(v * 1.1) : v));
-
-    // business は静的プリセット（sub引き算なし）、その他は base - 15000
-    const middleValues: Record<string, number> = {
-      gaming: 274980 - 15000,       // 259,980
-      creator: 299980 - 15000,      // 284,980
-      video_editing: 299980 - 15000,// 284,980
-      business: 114980,             // 静的プリセットのまま
-      standard: 109980 - 15000,     // 94,980
-    };
-    const middleValue = applyPriority(middleValues[usage] ?? 299980 - 15000);
-    setBudget(middleValue);
-    setSelectedPresetLabel("ミドル");
-  }, [usage, budgetMax, buildPriority]);
-
-  useEffect(() => {
-    const prev = previousBuildPriorityRef.current;
-    if (prev === buildPriority) {
-      return;
-    }
-
-    setBudget((current) => {
-      const clampedCurrent = Math.min(budgetMax, Math.max(budgetMin, current));
-      if (prev === "cost" && buildPriority === "spec") {
-        return Math.min(budgetMax, Math.round(clampedCurrent * 1.1));
-      }
-      if (prev === "spec" && buildPriority === "cost") {
-        return Math.max(budgetMin, Math.round(clampedCurrent / 1.1));
-      }
-      return clampedCurrent;
-    });
-
-    previousBuildPriorityRef.current = buildPriority;
-  }, [buildPriority, budgetMax, budgetMin]);
+    // CPUメーカーが変わったとき、選択済みCPUがそのメーカーに属さなければリセット
+    if (selectedCpuPartId === null) return;
+    const current = cpuList.find((c) => c.id === selectedCpuPartId);
+    if (!current) return;
+    if (cpuVendor === "amd" && !/ryzen|amd/i.test(current.name)) setSelectedCpuPartId(null);
+    if (cpuVendor === "intel" && !/intel|core\s*i/i.test(current.name)) setSelectedCpuPartId(null);
+  }, [cpuVendor, cpuList, selectedCpuPartId]);
 
   useEffect(() => {
     if (!popupMessage) {
@@ -402,13 +409,9 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    const nativeEvent = event.nativeEvent as SubmitEvent;
-    const submitter = nativeEvent.submitter as HTMLElement | null;
-    if (submitter && submitter.getAttribute("data-role") !== "primary-submit") {
-      return;
-    }
     const effectiveBudget = getEffectiveBudgetByPriority(budget);
     onSubmit(effectiveBudget, usage, {
+      name: configurationName.trim(),
       coolerType,
       radiatorSize,
       coolingProfile,
@@ -423,6 +426,7 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
       osEdition,
       useCustomBudgetWeights,
       customBudgetWeights,
+      cpuPartId: selectedCpuPartId,
     });
   };
 
@@ -431,9 +435,30 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
     [customBudgetWeights]
   );
 
+  const effectiveBudget = useMemo(() => getEffectiveBudgetByPriority(budget), [budget]);
+
+  const filteredCpuList = useMemo(() => {
+    return cpuList.filter((cpu) => {
+      if (cpuVendor === "amd") return /ryzen|amd/i.test(cpu.name);
+      if (cpuVendor === "intel") return /intel|core\s*i/i.test(cpu.name);
+      return true;
+    }).sort((a, b) => b.price - a.price);
+  }, [cpuList, cpuVendor]);
+
+  const customBudgetWeightAmounts = useMemo(() => {
+    return CUSTOM_BUDGET_WEIGHT_FIELDS.reduce((acc, field) => {
+      const percentage = customBudgetWeights[field.key] ?? 0;
+      acc[field.key] = Math.round((effectiveBudget * percentage) / 100);
+      return acc;
+    }, {} as Record<keyof CustomBudgetWeights, number>);
+  }, [customBudgetWeights, effectiveBudget]);
+
   const presets = useMemo(() => {
     const min = marketRange.min;
     const sub = 15000;
+    // 注意: ここで算出する金額は UI の初期提案値であり、最終選定は backend 側で再計算される。
+    // backend の用途別固定方針（例: AI premium の CPU/GPU 優先）を変えた場合は、
+    // このプリセット基準値も合わせて見直すこと。
     const applyPriorityPremium = (value: number) => {
       const adjusted = buildPriority === "spec" ? Math.round(value * 1.1) : value;
       return Math.max(0, Math.min(budgetMax, adjusted));
@@ -443,7 +468,13 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
       baseValues.map((price) => applyPriorityPremium(price - sub));
 
     if (usage === "gaming") {
-      const bases = [179980, 274980, 514980, 999980].map((value) => Math.min(budgetMax, value));
+      const gamingX3dMin = marketRange.gaming_x3d_recommended_min ?? 184980;
+      const bases = [
+        Math.max(184980, gamingX3dMin),
+        Math.max(274980, gamingX3dMin + 60000),
+        Math.max(589980, gamingX3dMin + 260000),
+        Math.max(1309980, gamingX3dMin + 700000),
+      ].map((value) => Math.min(budgetMax, value));
       const [entry, middle, high, flagship] = toPresetValues(bases);
       return [
         { label: "ローエンド", value: entry },
@@ -453,8 +484,8 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
       ];
     }
 
-    if (usage === "standard") {
-      const bases = [89980, 109980, 172980, 249980];
+    if (usage === "ai") {
+      const bases = [229980, 329980, 499980, 749980];
       const [entry, middle, high, flagship] = toPresetValues(bases);
       return [
         { label: "ローエンド", value: entry },
@@ -464,9 +495,9 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
       ];
     }
 
-    if (usage === "business") {
-      const costBases = [99980, 114980, 134980, 159980];
-      const [entry, middle, high, flagship] = costBases.map((value) => applyPriorityPremium(value));
+    if (usage === "general") {
+      const bases = [189980, 239980, 379980, 599980];
+      const [entry, middle, high, flagship] = toPresetValues(bases);
       return [
         { label: "ローエンド", value: entry },
         { label: "ミドル", value: middle },
@@ -475,7 +506,9 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
       ];
     }
 
-    const creatorBases = [184980, 299980, 449980, 699980];
+    const creatorBases = buildPriority === "spec"
+      ? [199980, 299980, 449980, 1209980]
+      : [199980, 299980, 449980, 699980];
     const [entry, middle, high, flagship] = toPresetValues(creatorBases);
 
     return [
@@ -484,7 +517,33 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
       { label: "ハイエンド", value: high },
       { label: "プレミアム", value: flagship },
     ];
-  }, [budgetMax, buildPriority, marketRange.min, usage]);
+  }, [budgetMax, buildPriority, marketRange.gaming_x3d_recommended_min, marketRange.min, usage]);
+
+  useEffect(() => {
+    const prev = previousBuildPriorityRef.current;
+    if (prev === buildPriority) {
+      return;
+    }
+
+    if (selectedPresetIndex != null && presets[selectedPresetIndex]) {
+      setBudget(presets[selectedPresetIndex].value);
+      previousBuildPriorityRef.current = buildPriority;
+      return;
+    }
+
+    setBudget((current) => {
+      const clampedCurrent = Math.min(budgetMax, Math.max(budgetMin, current));
+      if (prev === "cost" && buildPriority === "spec") {
+        return Math.min(budgetMax, Math.round(clampedCurrent * 1.2));
+      }
+      if (prev === "spec" && buildPriority === "cost") {
+        return Math.max(budgetMin, Math.round(clampedCurrent / 1.2));
+      }
+      return clampedCurrent;
+    });
+
+    previousBuildPriorityRef.current = buildPriority;
+  }, [buildPriority, budgetMax, budgetMin, presets, selectedPresetIndex]);
 
   const usagePriceHint = useMemo(() => {
     if (presets.length === 0) {
@@ -685,6 +744,17 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
       <div className="mx-auto max-w-4xl space-y-4">
         <form id="config-form" onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-slate-300 bg-white p-5 pb-28">
           <section className="space-y-3">
+            <h2 className="text-base font-semibold text-slate-900">保存名</h2>
+            <input
+              value={configurationName}
+              onChange={(event) => setConfigurationName(event.target.value)}
+              placeholder="例: 9800X3D + RX 7600 構成"
+              maxLength={120}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-600"
+            />
+            <p className="text-xs text-slate-500">未入力でも保存できます。入力すると保存履歴の表示名に使われます。</p>
+          </section>
+          <section className="space-y-3">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-base font-semibold text-slate-900">予算</h2>
               <label className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-700">
@@ -705,11 +775,15 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
                       用途別の推奨予算帯: <span className="font-semibold text-slate-900">{`¥${usagePriceHint.min.toLocaleString("ja-JP")} - ¥${usagePriceHint.max.toLocaleString("ja-JP")}`}</span>
                     </div>
                   )}
+                  {usage === "gaming" && typeof marketRange.gaming_x3d_recommended_min === "number" && (
+                    <p className="text-xs text-blue-700">{`X3D必須構成の推奨下限: ¥${marketRange.gaming_x3d_recommended_min.toLocaleString("ja-JP")}`}</p>
+                  )}
                   {marketRangeError && <p className="text-xs text-amber-700">{marketRangeError}</p>}
                 </div>
               </>
             )}
             <div>
+              <p className="mb-1 text-xs text-slate-400">スライダーを左右にドラッグすると金額を変更できます</p>
               <input
                 type="range"
                 aria-label="予算スライダー"
@@ -719,7 +793,7 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
                 value={Math.min(budgetMax, Math.max(budgetMin, budget))}
                 onChange={(event) => {
                   setBudget(Number(event.target.value));
-                  setSelectedPresetLabel(null);
+                  setSelectedPresetIndex(null);
                 }}
                 className="h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-200 accent-blue-600"
                 style={{ backgroundSize: `${budgetProgress}% 100%` }}
@@ -729,6 +803,7 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
                 <span className="font-semibold text-slate-700">{`現在: ¥${Math.min(budgetMax, Math.max(budgetMin, budget)).toLocaleString("ja-JP")}`}</span>
                 <span>{`¥${budgetMax.toLocaleString("ja-JP")}`}</span>
               </div>
+
             </div>
             <div className="relative">
               <span
@@ -740,11 +815,9 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
               <input
                 type="number"
                 value={budget}
-                onFocus={() => setPopupMessage(`入力範囲: ¥${budgetMin.toLocaleString("ja-JP")} - ¥${budgetMax.toLocaleString("ja-JP")}`)}
                 onChange={(e) => {
                   setBudget(Number(e.target.value));
-                  setSelectedPresetLabel(null);
-                  setPopupMessage(`入力範囲: ¥${budgetMin.toLocaleString("ja-JP")} - ¥${budgetMax.toLocaleString("ja-JP")}`);
+                  setSelectedPresetIndex(null);
                 }}
                 min={50000}
                 max={1500000}
@@ -787,19 +860,30 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
               ))}
             </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {presets.map((preset) => (
-                <button
-                  key={preset.value}
-                  type="button"
-                  onClick={() => {
-                    setBudget(preset.value);
-                    setSelectedPresetLabel(preset.label);
-                  }}
-                  className={segmentButtonClass(selectedPresetLabel === preset.label)}
-                >
-                  {preset.label}
-                </button>
-              ))}
+              {presets.map((preset, index) => {
+                const presetDescs: Record<string, string> = {
+                  "ローエンド": "コスパ重視の基本構成。必要十分なスペックを満たす",
+                  "ミドル": "スペックと価格のバランスが良いスタンダード構成",
+                  "ハイエンド": "高パフォーマンス構成。要求の高い作業・ゲームに対応",
+                  "プレミアム": "最高構成。プロ用途・最高圧のゲーム環境向け",
+                };
+                return (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => {
+                      setBudget(preset.value);
+                      setSelectedPresetIndex(index);
+                    }}
+                    onMouseEnter={(e) => { setActiveCoolingGridTooltip({ key: `preset_${preset.label}`, desc: presetDescs[preset.label] ?? "" }); setCoolingGridTooltipPos({ x: e.clientX, y: e.clientY }); }}
+                    onMouseLeave={() => setActiveCoolingGridTooltip(null)}
+                    onMouseMove={(e) => setCoolingGridTooltipPos({ x: e.clientX, y: e.clientY })}
+                    className={segmentButtonClass(selectedPresetIndex === index)}
+                  >
+                    {preset.label}
+                  </button>
+                );
+              })}
             </div>
           </section>
 
@@ -810,11 +894,82 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
                 <p className="mb-2 text-sm font-medium text-slate-800">CPUメーカー</p>
                 <div className="grid grid-cols-3 gap-2">
                   {CPU_VENDOR_OPTIONS.map((option) => (
-                    <button key={option.value} type="button" onClick={() => setCpuVendor(option.value as "any" | "intel" | "amd")} className={segmentButtonClass(cpuVendor === option.value)}>
-                      {option.label}
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => {
+                        setCpuVendor(option.value as "any" | "intel" | "amd");
+                        if (option.value === "any") setSelectedCpuPartId(null);
+                      }}
+                      onMouseEnter={(e) => { setActiveCoolingGridTooltip({ key: `cpuVendor_${option.value}`, desc: option.desc }); setCoolingGridTooltipPos({ x: e.clientX, y: e.clientY }); }}
+                      onMouseLeave={() => setActiveCoolingGridTooltip(null)}
+                      onMouseMove={(e) => setCoolingGridTooltipPos({ x: e.clientX, y: e.clientY })}
+                      className={segmentButtonClass(cpuVendor === option.value)}
+                    >
+                      {option.value !== "any" && cpuVendor === option.value
+                        ? `${option.label} ▲`
+                        : option.value !== "any"
+                        ? `${option.label} ▼`
+                        : option.label}
                     </button>
                   ))}
                 </div>
+
+                {/* Intel + ゲーミング選択時の注意: ボタン直下に常時表示 */}
+                {cpuVendor === "intel" && usage === "gaming" && (
+                  <p className="mt-1.5 rounded-md bg-amber-50 border border-amber-200 px-3 py-1.5 text-xs text-amber-700">
+                    ⚠️ ゲーミングPC用途の自動選定はAMD（X3D）基準で最適化されています。Intel CPUを選んでもAMDが選ばれます。Intelを選びたい場合はPC構成を提案後に変更してください。
+                  </p>
+                )}
+
+                {selectedCpuPartId && (
+                  <p className="mt-1.5 rounded-md border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs leading-relaxed text-amber-700 whitespace-normal break-words">
+                    ⚠️ このCPUを指定すると、ソケット互換のマザーボードが自動で選び直されます。意図しないマザーボードになる場合は「自動選定」に戻してください。
+                  </p>
+                )}
+
+                {/* アコーディオン: Intel/AMD 選択時に展開 */}
+                {cpuVendor !== "any" && (
+                  <div className="mt-2 rounded-md border border-slate-200 bg-slate-50 overflow-hidden">
+                    {cpuListLoading ? (
+                      <p className="px-3 py-2 text-xs text-slate-400">読み込み中...</p>
+                    ) : filteredCpuList.length === 0 ? (
+                      <p className="px-3 py-2 text-xs text-slate-400">該当CPUがありません</p>
+                    ) : (
+                      <ul className="max-h-48 overflow-y-auto divide-y divide-slate-100">
+                        <li>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedCpuPartId(null)}
+                            className={`w-full px-3 py-2 text-left text-xs transition-colors ${
+                              selectedCpuPartId === null
+                                ? "bg-blue-50 font-semibold text-blue-700"
+                                : "text-slate-500 hover:bg-slate-100"
+                            }`}
+                          >
+                            自動選定（おまかせ）
+                          </button>
+                        </li>
+                        {filteredCpuList.map((cpu) => (
+                          <li key={cpu.id}>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedCpuPartId(cpu.id)}
+                              className={`w-full px-3 py-2 text-left text-xs transition-colors ${
+                                selectedCpuPartId === cpu.id
+                                  ? "bg-blue-50 font-semibold text-blue-700"
+                                  : "text-slate-700 hover:bg-slate-100"
+                              }`}
+                            >
+                              <span className="block truncate">{cpu.name}</span>
+                              <span className="text-slate-400">¥{cpu.price.toLocaleString("ja-JP")}</span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
               </div>
               <div>
                 <p className="mb-2 text-sm font-medium text-slate-800">ビルド優先度</p>
@@ -825,13 +980,16 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
                       type="button"
                       disabled={isLoading || (useCustomBudgetWeights && customBudgetWeightTotal <= 0)}
                       onClick={() => setBuildPriority(option.value as "cost" | "spec")}
+                      onMouseEnter={(e) => { setActiveCoolingGridTooltip({ key: `buildPriority_${option.value}`, desc: option.desc }); setCoolingGridTooltipPos({ x: e.clientX, y: e.clientY }); }}
+                      onMouseLeave={() => setActiveCoolingGridTooltip(null)}
+                      onMouseMove={(e) => setCoolingGridTooltipPos({ x: e.clientX, y: e.clientY })}
                       className={`${segmentButtonClass(buildPriority === option.value)} disabled:cursor-not-allowed disabled:opacity-50`}
                     >
                       {option.label}
                     </button>
                   ))}
                 </div>
-                <p className="mt-2 text-xs text-slate-500">スペック重視に切り替えると表示予算を10%上乗せします。</p>
+                <p className="mt-2 text-xs text-slate-500">スペック重視に切り替えると表示予算を20%上乗せします。</p>
               </div>
             </div>
           </section>
@@ -848,6 +1006,9 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
                         key={option.value}
                         type="button"
                         onClick={() => setMainStorageCapacity(option.value as "512" | "1024" | "2048" | "4096")}
+                        onMouseEnter={(e) => { setActiveCoolingGridTooltip({ key: `mainStorage_${option.value}`, desc: option.desc }); setCoolingGridTooltipPos({ x: e.clientX, y: e.clientY }); }}
+                        onMouseLeave={() => setActiveCoolingGridTooltip(null)}
+                        onMouseMove={(e) => setCoolingGridTooltipPos({ x: e.clientX, y: e.clientY })}
                         className={segmentButtonClass(mainStorageCapacity === option.value)}
                       >
                         {option.label}
@@ -868,13 +1029,12 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
                           setStorage2CapacityGb(null);
                           setStorage2ProductId(null);
                         }}
-                        title={option.desc}
-                        className={`${segmentButtonClass(storagePreference2 === option.value)} group relative`}
+                        onMouseEnter={(e) => { setActiveCoolingGridTooltip({ key: `storage2_${option.value}`, desc: option.desc }); setCoolingGridTooltipPos({ x: e.clientX, y: e.clientY }); }}
+                        onMouseLeave={() => setActiveCoolingGridTooltip(null)}
+                        onMouseMove={(e) => setCoolingGridTooltipPos({ x: e.clientX, y: e.clientY })}
+                        className={segmentButtonClass(storagePreference2 === option.value)}
                       >
-                        <span className="block">{option.label}</span>
-                        <span className="pointer-events-none absolute -top-12 left-1/2 z-30 w-64 -translate-x-1/2 rounded-md border border-blue-200 bg-white px-2 py-1 text-[11px] font-normal text-blue-800 opacity-0 shadow-md transition group-hover:opacity-100 group-focus-visible:opacity-100">
-                          {option.desc}
-                        </span>
+                        {option.label}
                       </button>
                     ))}
                   </div>
@@ -928,13 +1088,12 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
                           setStorage3CapacityGb(null);
                           setStorage3ProductId(null);
                         }}
-                        title={option.desc}
-                        className={`${segmentButtonClass(storagePreference3 === option.value)} group relative`}
+                        onMouseEnter={(e) => { setActiveCoolingGridTooltip({ key: `storage3_${option.value}`, desc: option.desc }); setCoolingGridTooltipPos({ x: e.clientX, y: e.clientY }); }}
+                        onMouseLeave={() => setActiveCoolingGridTooltip(null)}
+                        onMouseMove={(e) => setCoolingGridTooltipPos({ x: e.clientX, y: e.clientY })}
+                        className={segmentButtonClass(storagePreference3 === option.value)}
                       >
-                        <span className="block">{option.label}</span>
-                        <span className="pointer-events-none absolute -top-12 left-1/2 z-30 w-64 -translate-x-1/2 rounded-md border border-blue-200 bg-white px-2 py-1 text-[11px] font-normal text-blue-800 opacity-0 shadow-md transition group-hover:opacity-100 group-focus-visible:opacity-100">
-                          {option.desc}
-                        </span>
+                        {option.label}
                       </button>
                     ))}
                   </div>
@@ -988,31 +1147,33 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
 
             <div className="space-y-2">
               <p className="text-sm font-medium text-slate-800">CPUクーラー方式</p>
-              {COOLER_OPTIONS.map((option) => (
-                <label
-                  key={option.value}
-                  className={`relative block rounded-lg border p-3 ${coolerType === option.value ? "border-blue-700 bg-blue-50" : "border-slate-300"}`}
-                  onMouseEnter={() => setActiveCoolerTooltip(option.value)}
-                  onMouseLeave={() => setActiveCoolerTooltip((current) => (current === option.value ? null : current))}
-                >
-                  <input
-                    type="radio"
-                    name="coolerType"
-                    value={option.value}
-                    checked={coolerType === option.value}
-                    onChange={(e) => setCoolerType(e.target.value as "air" | "liquid")}
-                    onFocus={() => setActiveCoolerTooltip(option.value)}
-                    onBlur={() => setActiveCoolerTooltip((current) => (current === option.value ? null : current))}
-                    className="mr-2"
-                  />
-                  <span className="font-medium text-slate-900">{option.label}</span>
-                  {activeCoolerTooltip === option.value && (
-                    <span className="pointer-events-none absolute -top-11 left-1/2 z-30 w-max max-w-[90%] -translate-x-1/2 rounded-md border border-blue-200 bg-white px-3 py-1 text-xs font-medium text-blue-800 shadow-md">
-                      {option.desc}
-                    </span>
-                  )}
-                </label>
-              ))}
+              <div className="grid grid-cols-2 gap-2">
+                {COOLER_OPTIONS.map((option) => (
+                  <label
+                    key={option.value}
+                    className={`relative block rounded-lg border p-3 ${coolerType === option.value ? "border-blue-700 bg-blue-50" : "border-slate-300"}`}
+                    onMouseEnter={() => setActiveCoolerTooltip(option.value)}
+                    onMouseLeave={() => setActiveCoolerTooltip((current) => (current === option.value ? null : current))}
+                  >
+                    <input
+                      type="radio"
+                      name="coolerType"
+                      value={option.value}
+                      checked={coolerType === option.value}
+                      onChange={(e) => setCoolerType(e.target.value as "air" | "liquid")}
+                      onFocus={() => setActiveCoolerTooltip(option.value)}
+                      onBlur={() => setActiveCoolerTooltip((current) => (current === option.value ? null : current))}
+                      className="mr-2"
+                    />
+                    <span className="font-medium text-slate-900">{option.label}</span>
+                    {activeCoolerTooltip === option.value && (
+                      <span className="pointer-events-none absolute -top-11 left-1/2 z-30 w-max max-w-[90%] -translate-x-1/2 rounded-md border border-blue-200 bg-white px-3 py-1 text-xs font-medium text-blue-800 shadow-md">
+                        {option.desc}
+                      </span>
+                    )}
+                  </label>
+                ))}
+              </div>
             </div>
 
             {coolerType === "liquid" && (
@@ -1033,7 +1194,15 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
                 <p className="mb-2 text-sm font-medium text-slate-800">クーラー方針</p>
                 <div className="grid grid-cols-2 gap-2">
                   {COOLING_PROFILE_OPTIONS.map((option) => (
-                    <button key={option.value} type="button" onClick={() => setCoolingProfile(option.value as "silent" | "performance")} className={segmentButtonClass(coolingProfile === option.value)}>
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setCoolingProfile(option.value as "silent" | "performance")}
+                      onMouseEnter={(e) => { setActiveCoolingGridTooltip({ key: `coolingProfile_${option.value}`, desc: option.desc }); setCoolingGridTooltipPos({ x: e.clientX, y: e.clientY }); }}
+                      onMouseLeave={() => setActiveCoolingGridTooltip(null)}
+                      onMouseMove={(e) => setCoolingGridTooltipPos({ x: e.clientX, y: e.clientY })}
+                      className={segmentButtonClass(coolingProfile === option.value)}
+                    >
                       {option.label}
                     </button>
                   ))}
@@ -1043,7 +1212,15 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
                 <p className="mb-2 text-sm font-medium text-slate-800">ケースサイズ</p>
                 <div className="grid grid-cols-3 gap-2">
                   {CASE_SIZE_OPTIONS.map((option) => (
-                    <button key={option.value} type="button" onClick={() => setCaseSize(option.value as "mini" | "mid" | "full")} className={segmentButtonClass(caseSize === option.value)}>
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setCaseSize(option.value as "mini" | "mid" | "full")}
+                      onMouseEnter={(e) => { setActiveCoolingGridTooltip({ key: `caseSize_${option.value}`, desc: option.desc }); setCoolingGridTooltipPos({ x: e.clientX, y: e.clientY }); }}
+                      onMouseLeave={() => setActiveCoolingGridTooltip(null)}
+                      onMouseMove={(e) => setCoolingGridTooltipPos({ x: e.clientX, y: e.clientY })}
+                      className={segmentButtonClass(caseSize === option.value)}
+                    >
                       {option.label}
                     </button>
                   ))}
@@ -1057,6 +1234,9 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
                       key={option.value}
                       type="button"
                       onClick={() => setCaseFanPolicy(option.value as "auto" | "silent" | "airflow")}
+                      onMouseEnter={(e) => { setActiveCoolingGridTooltip({ key: `caseFan_${option.value}`, desc: option.desc }); setCoolingGridTooltipPos({ x: e.clientX, y: e.clientY }); }}
+                      onMouseLeave={() => setActiveCoolingGridTooltip(null)}
+                      onMouseMove={(e) => setCoolingGridTooltipPos({ x: e.clientX, y: e.clientY })}
                       className={segmentButtonClass(caseFanPolicy === option.value)}
                     >
                       {option.label}
@@ -1065,6 +1245,15 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
                 </div>
               </div>
             </div>
+
+            {activeCoolingGridTooltip && (
+              <div
+                className="pointer-events-none fixed z-50 rounded-md border border-blue-200 bg-white px-3 py-1 text-xs font-medium text-blue-800 shadow-md"
+                style={{ left: coolingGridTooltipPos.x + 14, top: coolingGridTooltipPos.y - 36 }}
+              >
+                {activeCoolingGridTooltip.desc}
+              </div>
+            )}
 
             {(caseSize === "mini" || caseSize === "mid") && (
               <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
@@ -1081,10 +1270,12 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
                   key={option.value}
                   type="button"
                   onClick={() => setOsEdition(option.value as "auto" | "home" | "pro")}
+                  onMouseEnter={(e) => { setActiveCoolingGridTooltip({ key: `os_${option.value}`, desc: option.desc }); setCoolingGridTooltipPos({ x: e.clientX, y: e.clientY }); }}
+                  onMouseLeave={() => setActiveCoolingGridTooltip(null)}
+                  onMouseMove={(e) => setCoolingGridTooltipPos({ x: e.clientX, y: e.clientY })}
                   className={segmentButtonClass(osEdition === option.value)}
                 >
-                  <span className="block">{option.label}</span>
-                  <span className="mt-1 block text-[11px] font-normal opacity-80">{option.desc}</span>
+                  {option.label}
                 </button>
               ))}
             </div>
@@ -1102,7 +1293,10 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
                 <div className="mx-auto grid w-full max-w-2xl gap-3 sm:grid-cols-2">
                   {CUSTOM_BUDGET_WEIGHT_FIELDS.map((field) => (
                     <label key={field.key} className="mx-auto flex w-full max-w-xs items-center justify-between rounded-lg border border-slate-300 p-3 text-sm text-slate-700">
-                      <span className="font-medium">{field.label}</span>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{field.label}</span>
+                        <span className="text-xs text-slate-500">{`約 ¥${customBudgetWeightAmounts[field.key].toLocaleString("ja-JP")}`}</span>
+                      </div>
                       <div className="flex items-center gap-2">
                         <input
                           type="number"
@@ -1124,7 +1318,7 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
                   ))}
                 </div>
                 <p className={`text-center text-sm font-semibold ${customBudgetWeightTotal === 100 ? "text-emerald-700" : "text-rose-700"}`}>
-                  合計: {customBudgetWeightTotal}%
+                  {`合計: ${customBudgetWeightTotal}%（予算 ¥${effectiveBudget.toLocaleString("ja-JP")} ベース）`}
                 </p>
               </>
             )}
@@ -1141,7 +1335,6 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
           <button
             type="submit"
             form="config-form"
-            data-role="primary-submit"
             disabled={!canSubmit}
             className={`w-full rounded-lg px-4 py-3 text-base font-semibold transition ${
               canSubmit
@@ -1151,15 +1344,6 @@ export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
           >
             {isLoading ? "構成を生成中..." : "PC構成を提案してもらう"}
           </button>
-          {isLoading && onCancel && (
-            <button
-              type="button"
-              onClick={onCancel}
-              className="mt-2 w-full rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
-            >
-              キャンセル
-            </button>
-          )}
         </div>
       </div>
 

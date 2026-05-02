@@ -1,0 +1,10 @@
+1.	Ryzen 5 7500F | perf=2801 | price=¥24170 | value=0.115887
+2.	Ryzen 7 9700X | perf=3904 | price=¥40180 | value=0.097163
+3.	Ryzen 5 7600X | perf=2981 | price=¥32000 | value=0.093156
+4.	Ryzen 5 9600 | perf=3090 | price=¥33700 | value=0.091691
+5.	Ryzen 5 9600X | perf=3163 | price=¥35280 | value=0.089654
+6.	Ryzen 5 7600 | perf=2843 | price=¥32000 | value=0.088844
+7.	Ryzen 7 7700 | perf=3622 | price=¥41800 | value=0.086651
+8.	Ryzen 5 7600X3D | perf=2718 | price=¥32000 | value=0.084937
+9.	Ryzen 9 5900XT | perf=4624 | price=¥58800 | value=0.078639
+10	Ryzen 7 8700G | perf=3329 | price=¥42500 | value=0.078329

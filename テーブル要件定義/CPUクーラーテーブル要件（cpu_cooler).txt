@@ -1,0 +1,89 @@
+CPUクーラーテーブル要件（cpu_cooler)
+1. 識別情報（Identification）
+id (PK, AUTO_INCREMENT) – 一意識別子
+name (VARCHAR 255, NOT NULL) – クーラー名 (例: "Noctua NH-D15")
+maker (VARCHAR 100, NOT NULL) – メーカー (例: "Noctua", "Corsair", "Arctic Cooling")
+model_code (VARCHAR 100, nullable) – 型番
+jan_code (VARCHAR 20, unique, nullable) – JAN コード
+source_url (URL, NOT NULL) – PC工房 商品ページ URL
+created_at (TIMESTAMP, default=now) – 作成日時
+updated_at (TIMESTAMP, default=now, on_update=now) – 更新日時
+is_active (BOOLEAN, default=true) – アクティブフラグ
+2. 互換性情報（Compatibility）
+primary_socket (VARCHAR 50, NOT NULL) – 主対応ソケット (例: "LGA1700", "AM5")
+cooler_type (ENUM, NOT NULL) – クーラー形状
+tower_air（タワー型空冷）
+low_profile_air（ロープロ空冷）
+liquid_aio（液冷 AIO）
+custom_loop（カスタムループ）
+max_tdp_w (INT, NOT NULL, > 0) – 対応 TDP 上限 (W) (例: 250)
+backplate_required (BOOLEAN, default=false) – バックプレート必須
+fan_included_count (INT, default=not null) – 付属ファン数 (0=別売)
+3. 仕様情報（Specifications）
+height_mm (INT, nullable) – 高さ (mm)
+socket_count (INT, default=1) – 対応ソケット数 (複数対応の場合)
+noise_level_db (DECIMAL 3,1, nullable) – 騒音レベル (dB)
+rpm_min (INT, nullable) – 最小回転数 (rpm)
+rpm_max (INT, nullable) – 最大回転数 (rpm)
+warranty_years (INT, default=5) – 保証期間（年）
+4. 価格・在庫（Price/Stock）
+price_yen (INT, NOT NULL, >= 0) – 価格（円）
+currency (CHAR 3, default='JPY') – 通貨コード
+stock_status (ENUM, default='unknown')
+in_stock – 在庫有
+low_stock – 残り わずか
+out_of_stock – 在庫なし
+unknown – 不明
+last_scraped_at (TIMESTAMP) – 最終スクレイプ日時
+5. 制約＆デフォルト（Constraints）
+6. インデックス（Indexes）
+PRIMARY: id
+UNIQUE: (maker, model_code), source_url
+INDEX: primary_socket, maker, cooler_type, price_yen, updated_at, max_tdp_w
+FULLTEXT (mysql) / GIN (postgresql): name テキスト検索用
+補助テーブル：CPUクーラーソケット互換性
+CPU クーラーが複数ソケット対応の場合、別テーブルで管理することをお勧めします：
+
+cpu_cooler_socket_compatibility テーブル
+利点：
+
+Noctua NH-D15（LGA1700, AM5 対応）のような多対応クーラーを効率的に管理
+CPU ↔ Cooler 互換性チェックを SQL で簡潔に記述可能
+JSONフィールド（拡張属性用）
+個別の仕様（回転音制御技術、RGB対応など）は specs JSONB として保持：
+
+このスキーマで対応可能な用途：
+✅ "予算内で CPU クーラーを選択"
+✅ "選択 CPU + Cooler TDP 互換性チェック"
+✅ "ケースサイズ（高さ）内に収まるクーラー検索"
+✅ "複数ソケット対応クーラーの柔軟な管理"
+
+CHECK (price_yen >= 0)
+CHECK (max_tdp_w > 0)
+CHECK (height_mm IS NULL OR height_mm > 0)
+CHECK (socket_count >= 1 AND socket_count <= 10)
+UNIQUE (maker, model_code)  -- または (maker, name) 両方も検討
+
+CREATE TABLE cpu_cooler_socket_compatibility (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  cpu_cooler_id INT NOT NULL (FK → cpu_cooler.id),
+  socket VARCHAR(50) NOT NULL,          -- "LGA1700", "AM5" など
+  supported_from_gen INT,               -- サポート開始世代（nullable）
+  supported_to_gen INT,                 -- サポート終了世代（nullable）
+  notes TEXT,                           -- "バックプレート別売" など
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE (cpu_cooler_id, socket),
+  FOREIGN KEY (cpu_cooler_id) REFERENCES cpu_cooler(id) ON DELETE CASCADE,
+  INDEX (socket, cpu_cooler_id)
+);
+
+{
+  "rgb_enabled": false,
+  "pwm_controllable": true,
+  "mounting_hardware": "universal_intel_amd",
+  "included_fans": ["120mm NF-P12", "120mm NF-P12"],
+  "mounting_type": "push_pins",
+  "color": "brown",
+  "weight_g": 1250
+}
+

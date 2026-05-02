@@ -1,0 +1,82 @@
+実行順ランブック（このリポジトリ用）
+
+作業フォルダへ移動
+PowerShell で実行:
+cd F:\Python\Myportfolio
+
+Python 仮想環境を有効化
+PowerShell で実行:
+. Activate.ps1
+
+PostgreSQL 用の環境変数ファイルを準備
+参照元: .env.postgresql.example
+編集対象: .env
+
+.env を PostgreSQL 設定にする
+最低限この値を確認:
+APP_ENV=development
+DB_ENGINE=postgresql
+DB_NAME=myportfolio
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_HOST=127.0.0.1
+DB_PORT=5432
+
+設定が Django に反映されるか確認（1行コマンド）
+PowerShell で実行:
+python.exe manage.py shell -c "from django.conf import settings; print(settings.DATABASES['default']['ENGINE']); print(settings.DATABASES['default']['NAME'])"
+
+出力チェック
+想定:
+
+1行目が django.db.backends.postgresql
+
+2行目が PostgreSQL の DB 名（myportfolio など）
+
+まずは migrate 計画だけ確認
+PowerShell で実行:
+python.exe manage.py migrate --plan
+
+安全 migrate を実行（推奨手順）
+実行ファイル: safe_postgres_migrate.ps1
+PowerShell で実行:
+powershell -NoProfile -ExecutionPolicy Bypass -File safe_postgres_migrate.ps1
+
+フリーズ対策を強める場合（必要時のみ）
+PowerShell で実行:
+powershell -NoProfile -ExecutionPolicy Bypass -File safe_postgres_migrate.ps1 -AutoTerminateIdleBlockers -MinIdleTxSec 30 -TimeoutSec 300 -RetryTimeoutSec 180
+
+Django サーバー起動
+PowerShell で実行:
+python.exe manage.py runserver 8001
+または VS Code タスク:
+
+Restart Django Server
+
+Django Dev Server
+
+稼働確認
+ブラウザで確認:
+http://127.0.0.1:8001/api/
+
+問題時の診断
+監視スクリプト: postgres_freeze_watch.ps1
+診断ロジック: postgres_pg_activity.py
+まずは以下を実行:
+powershell -NoProfile -ExecutionPolicy Bypass -File postgres_freeze_watch.ps1
+
+失敗時の即時ロールバック（移行前状態へ戻す）
+編集対象: .env
+以下に戻す:
+DB_ENGINE=sqlite3
+SQLITE_NAME=db.sqlite3
+その後サーバー再起動:
+python.exe manage.py runserver 8001
+
+最短実行セット（覚えるコマンド）
+
+powershell -NoProfile -ExecutionPolicy Bypass -File safe_postgres_migrate.ps1
+python.exe manage.py runserver 8001
+失敗時は .env を sqlite3 に戻して再起動
+
+

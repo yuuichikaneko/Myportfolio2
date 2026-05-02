@@ -1,0 +1,2285 @@
+{
+  "source_name": "dospara_cpu_comparison_pages",
+  "source_urls": [
+    "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html",
+    "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+  ],
+  "exclude_intel_13_14": true,
+  "entry_count": 340,
+  "excluded_count": 33,
+  "entries": [
+    {
+      "vendor": "intel",
+      "model_name": "Core Ultra 9 285K",
+      "perf_score": 13474,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core Ultra 7 270K Plus",
+      "perf_score": 13257,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core Ultra 7 265KF",
+      "perf_score": 11744,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core Ultra 7 265K",
+      "perf_score": 11744,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core Ultra 9 285",
+      "perf_score": 11470,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core Ultra 7 265F",
+      "perf_score": 9979,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core Ultra 7 265",
+      "perf_score": 9979,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-12900KS",
+      "perf_score": 8694,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core Ultra 5 245KF",
+      "perf_score": 8657,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core Ultra 5 245K",
+      "perf_score": 8657,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-12900KF",
+      "perf_score": 8231,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-12900K",
+      "perf_score": 8231,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core Ultra 5 235",
+      "perf_score": 8004,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core Ultra 5 245",
+      "perf_score": 7925,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core Ultra 7 265T",
+      "perf_score": 7795,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 9 9950X3D",
+      "perf_score": 7390,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-12900F",
+      "perf_score": 7155,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-12900",
+      "perf_score": 7155,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 9 9950X",
+      "perf_score": 6928,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-12700KF",
+      "perf_score": 6863,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-12700K",
+      "perf_score": 6863,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 9 7950X3D",
+      "perf_score": 6559,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 9 7950X",
+      "perf_score": 6550,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-10980XE",
+      "perf_score": 6405,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-9980XE",
+      "perf_score": 6301,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core Ultra 5 225F",
+      "perf_score": 6235,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core Ultra 5 225",
+      "perf_score": 6091,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-12700F",
+      "perf_score": 6063,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-12700",
+      "perf_score": 6063,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 9 9900X3D",
+      "perf_score": 5922,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-7980XE",
+      "perf_score": 5917,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 9 9900X",
+      "perf_score": 5731,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-10940X",
+      "perf_score": 5532,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-12600KF",
+      "perf_score": 5512,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-12600K",
+      "perf_score": 5512,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 9 7900X",
+      "perf_score": 5399,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 9 7900X3D",
+      "perf_score": 5287,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-10920X",
+      "perf_score": 5162,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 9 7900",
+      "perf_score": 5064,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-11900KF",
+      "perf_score": 4991,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-11900K",
+      "perf_score": 4991,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-11700KF",
+      "perf_score": 4869,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-11700K",
+      "perf_score": 4869,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 9 5950X",
+      "perf_score": 4771,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-7920X",
+      "perf_score": 4695,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 9 5900XT",
+      "perf_score": 4624,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-11900F",
+      "perf_score": 4476,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-11900",
+      "perf_score": 4476,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-10900X",
+      "perf_score": 4473,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-10900K",
+      "perf_score": 4464,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 7 9850X3D",
+      "perf_score": 4373,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-12600",
+      "perf_score": 4270,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 7 9800X3D",
+      "perf_score": 4208,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-11700F",
+      "perf_score": 4154,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-11700",
+      "perf_score": 4154,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-9820X",
+      "perf_score": 4108,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 9 5900X",
+      "perf_score": 4099,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-7900X",
+      "perf_score": 4008,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-12500",
+      "perf_score": 3947,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-12400F",
+      "perf_score": 3918,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-12400",
+      "perf_score": 3918,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 7 9700X",
+      "perf_score": 3904,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-11600KF",
+      "perf_score": 3902,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-11600K",
+      "perf_score": 3902,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-9900KS",
+      "perf_score": 3879,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 7 7700X",
+      "perf_score": 3745,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-10700K",
+      "perf_score": 3708,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 7 7700",
+      "perf_score": 3622,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-9900K",
+      "perf_score": 3615,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 7 7800X3D",
+      "perf_score": 3609,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 9 5900",
+      "perf_score": 3573,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Intel WS E5-2687W V4",
+      "perf_score": 3551,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-6950X",
+      "perf_score": 3517,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-11500",
+      "perf_score": 3414,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-11400F",
+      "perf_score": 3378,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-11400",
+      "perf_score": 3378,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 7 8700G",
+      "perf_score": 3329,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 7 8700F",
+      "perf_score": 3278,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-9900",
+      "perf_score": 3247,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-10700",
+      "perf_score": 3207,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 5 9600X",
+      "perf_score": 3163,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 5 9600",
+      "perf_score": 3090,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 5 7600X",
+      "perf_score": 2981,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 7 5800X3D",
+      "perf_score": 2979,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 7 5800XT",
+      "perf_score": 2948,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 7 5800X",
+      "perf_score": 2916,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Intel WS E5-2687W V3",
+      "perf_score": 2911,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-9700K",
+      "perf_score": 2880,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 5 7600",
+      "perf_score": 2843,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-8086K",
+      "perf_score": 2813,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 5 7500F",
+      "perf_score": 2801,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 7 5700X",
+      "perf_score": 2800,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i3-12100F",
+      "perf_score": 2795,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i3-12100",
+      "perf_score": 2795,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 7 5700X3D",
+      "perf_score": 2769,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-5960X",
+      "perf_score": 2732,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 5 7600X3D",
+      "perf_score": 2718,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-8700K",
+      "perf_score": 2714,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 7 5800",
+      "perf_score": 2704,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 5 8600G",
+      "perf_score": 2660,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-9700",
+      "perf_score": 2639,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-9900T",
+      "perf_score": 2617,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-7800X",
+      "perf_score": 2598,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 5 8400F",
+      "perf_score": 2577,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 7 5700G",
+      "perf_score": 2559,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 7 5700",
+      "perf_score": 2552,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-8700",
+      "perf_score": 2549,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Intel WS E5-2687W V2",
+      "perf_score": 2467,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-10400",
+      "perf_score": 2422,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 5 5600XT",
+      "perf_score": 2348,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 5 5600T",
+      "perf_score": 2310,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 5 5600X3D",
+      "perf_score": 2300,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 5 5600X",
+      "perf_score": 2299,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-6850K",
+      "perf_score": 2274,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 5 5600",
+      "perf_score": 2267,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 5 8500G",
+      "perf_score": 2259,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-6800K",
+      "perf_score": 2143,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 5 5600GT",
+      "perf_score": 2131,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-9600K",
+      "perf_score": 2131,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 7 4700G",
+      "perf_score": 2117,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 5 5600G",
+      "perf_score": 2071,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-5930K",
+      "perf_score": 2070,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 5 5500",
+      "perf_score": 2030,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Intel WS E5-2687W",
+      "perf_score": 2006,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 5 5500GT",
+      "perf_score": 2000,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-4960X",
+      "perf_score": 1987,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-5820K",
+      "perf_score": 1966,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-7700K",
+      "perf_score": 1927,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-8500",
+      "perf_score": 1903,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-9400",
+      "perf_score": 1892,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-4930K",
+      "perf_score": 1876,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Intel WS E5-2680",
+      "perf_score": 1853,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-8400",
+      "perf_score": 1846,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-6700K",
+      "perf_score": 1787,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i3-10105F",
+      "perf_score": 1779,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i3-10105",
+      "perf_score": 1779,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i3-10100",
+      "perf_score": 1744,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-7700",
+      "perf_score": 1728,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-3970X",
+      "perf_score": 1721,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 5 4500",
+      "perf_score": 1685,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 5 4600G",
+      "perf_score": 1683,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-3960X",
+      "perf_score": 1682,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Intel WS E3-1275 V5",
+      "perf_score": 1661,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-3930K",
+      "perf_score": 1640,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-4790K",
+      "perf_score": 1612,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-6700",
+      "perf_score": 1608,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Intel WS E5-2620 V3",
+      "perf_score": 1552,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Intel WS E3-1276 V3",
+      "perf_score": 1513,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-7700T",
+      "perf_score": 1505,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-4790",
+      "perf_score": 1452,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-990X",
+      "perf_score": 1429,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-4771",
+      "perf_score": 1429,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-4770K",
+      "perf_score": 1429,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-4770",
+      "perf_score": 1413,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-6770HQ",
+      "perf_score": 1404,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-4790S",
+      "perf_score": 1394,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 3 5300G",
+      "perf_score": 1372,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-7600K",
+      "perf_score": 1364,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-4770S",
+      "perf_score": 1346,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Pentium G7400",
+      "perf_score": 1342,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i3-9100",
+      "perf_score": 1341,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Intel WS E3-1275 V2",
+      "perf_score": 1331,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-4820K",
+      "perf_score": 1302,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-3770K",
+      "perf_score": 1301,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-3770",
+      "perf_score": 1283,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Intel WS E5-2620 V2",
+      "perf_score": 1246,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-3770S",
+      "perf_score": 1235,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-5675C",
+      "perf_score": 1218,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i3-8100",
+      "perf_score": 1212,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-7500",
+      "perf_score": 1206,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Intel WS E3-1225 V5",
+      "perf_score": 1191,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 3 4100",
+      "perf_score": 1163,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-3820",
+      "perf_score": 1158,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-2700K",
+      "perf_score": 1139,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-6500",
+      "perf_score": 1121,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-4690",
+      "perf_score": 1118,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Intel WS E3-1226 V3",
+      "perf_score": 1105,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-4670",
+      "perf_score": 1096,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-7400",
+      "perf_score": 1095,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-3770T",
+      "perf_score": 1083,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-4590",
+      "perf_score": 1076,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Intel WS E3-1245 V2",
+      "perf_score": 1070,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Intel WS E5-2620",
+      "perf_score": 1065,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Intel WS E3-1225 V3",
+      "perf_score": 1062,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 3 4300G",
+      "perf_score": 1051,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-4570",
+      "perf_score": 1047,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-4590S",
+      "perf_score": 1025,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-4670K",
+      "perf_score": 1007,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-4570S",
+      "perf_score": 1003,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-3570K",
+      "perf_score": 994,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-3570",
+      "perf_score": 986,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-4460",
+      "perf_score": 984,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-4440",
+      "perf_score": 959,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Intel WS E3-1225 V2",
+      "perf_score": 942,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-4430",
+      "perf_score": 933,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-3470",
+      "perf_score": 932,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Pentium G6605",
+      "perf_score": 898,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Celeron G6900",
+      "perf_score": 896,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-3470S",
+      "perf_score": 875,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i3-7100",
+      "perf_score": 862,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-2500K",
+      "perf_score": 828,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i3-6100",
+      "perf_score": 820,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i3-4170",
+      "perf_score": 715,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i3-4340",
+      "perf_score": 702,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i3-4160",
+      "perf_score": 700,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i3-4150",
+      "perf_score": 680,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i3-4130",
+      "perf_score": 667,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-6260U",
+      "perf_score": 637,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-5557U",
+      "perf_score": 632,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-860",
+      "perf_score": 605,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-920",
+      "perf_score": 574,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-760",
+      "perf_score": 535,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i3-6100U",
+      "perf_score": 526,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Celeron G4930",
+      "perf_score": 510,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i3-3250",
+      "perf_score": 493,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-5250U",
+      "perf_score": 490,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core 2 Quad Q9550",
+      "perf_score": 475,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Celeron G4900",
+      "perf_score": 474,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i3-3240",
+      "perf_score": 471,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i3-3225",
+      "perf_score": 456,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i3-3220",
+      "perf_score": 455,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-650",
+      "perf_score": 451,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Celeron G3930",
+      "perf_score": 450,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Celeron G3900",
+      "perf_score": 431,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i3-5010U",
+      "perf_score": 430,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i3-3240T",
+      "perf_score": 416,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Pentium G3258",
+      "perf_score": 412,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i3-3220T",
+      "perf_score": 391,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i3-2100",
+      "perf_score": 372,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core 2 Quad Q6600",
+      "perf_score": 369,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Celeron G1840",
+      "perf_score": 357,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen Threadripper PRO 3995WX",
+      "perf_score": 350,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Celeron G1820",
+      "perf_score": 334,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i3-540",
+      "perf_score": 312,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Celeron G1610",
+      "perf_score": 309,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Celeron N4000",
+      "perf_score": 286,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen Threadripper 3970X",
+      "perf_score": 266,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen Threadripper PRO 3975WX",
+      "perf_score": 264,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Atom x7-Z8700",
+      "perf_score": 264,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Pentium G620",
+      "perf_score": 248,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core 2 Duo E8400",
+      "perf_score": 244,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Celeron G530",
+      "perf_score": 230,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Atom x5-Z8550",
+      "perf_score": 229,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core 2 Duo E6300",
+      "perf_score": 206,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Atom x5-Z8350",
+      "perf_score": 179,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen Threadripper PRO 3955WX",
+      "perf_score": 169,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 9 3950X",
+      "perf_score": 163,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 9 3900X",
+      "perf_score": 138,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen Threadripper 2990WX",
+      "perf_score": 136,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen Threadripper 1950X",
+      "perf_score": 117,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Atom Z3735F",
+      "perf_score": 108,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Celeron E1200",
+      "perf_score": 103,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Celeron N2820",
+      "perf_score": 101,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 7 3800XT",
+      "perf_score": 99,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 7 3800X",
+      "perf_score": 97,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 7 3700X",
+      "perf_score": 95,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Atom N2800",
+      "perf_score": 89,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Celeron G440",
+      "perf_score": 84,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 5 3600XT",
+      "perf_score": 78,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 5 3600X",
+      "perf_score": 77,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Atom 330",
+      "perf_score": 76,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 5 3600",
+      "perf_score": 75,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 7 2700X",
+      "perf_score": 74,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 7 1800X",
+      "perf_score": 69,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 7 2700",
+      "perf_score": 66,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 7 1700X",
+      "perf_score": 66,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 7 1700",
+      "perf_score": 62,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 5 2600X",
+      "perf_score": 59,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 5 2600",
+      "perf_score": 56,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 5 1600X",
+      "perf_score": 55,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 5 3500",
+      "perf_score": 54,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 3 3300X",
+      "perf_score": 53,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 5 1600",
+      "perf_score": 52,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 5 3400G",
+      "perf_score": 39,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 5 1500X",
+      "perf_score": 38,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 5 2400G",
+      "perf_score": 37,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Atom 230",
+      "perf_score": 34,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 5 1400",
+      "perf_score": 33,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 3 3200G",
+      "perf_score": 30,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 3 2200G",
+      "perf_score": 29,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 3 1300X",
+      "perf_score": 29,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "FX-9590",
+      "perf_score": 29,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Ryzen 3 1200",
+      "perf_score": 27,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "FX-9370",
+      "perf_score": 27,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Pentium 4 2.40GHz",
+      "perf_score": 26,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "FX-8370",
+      "perf_score": 26,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "FX-8350",
+      "perf_score": 26,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "FX-8370E",
+      "perf_score": 23,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "FX-8320",
+      "perf_score": 23,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "FX-8300",
+      "perf_score": 23,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "FX-8150",
+      "perf_score": 23,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "FX-8320E",
+      "perf_score": 22,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Athlon 3000G",
+      "perf_score": 19,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "FX-6300",
+      "perf_score": 18,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Athlon 200GE",
+      "perf_score": 17,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Phenom II X6 1090T",
+      "perf_score": 16,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "FX-6100",
+      "perf_score": 16,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "A10-9700",
+      "perf_score": 15,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "A10-7890K",
+      "perf_score": 15,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "A10-7870K",
+      "perf_score": 15,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "A8-7600",
+      "perf_score": 14,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "A10-8750",
+      "perf_score": 14,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "A10-7860K",
+      "perf_score": 14,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "A10-7850K",
+      "perf_score": 14,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "A10-7800",
+      "perf_score": 14,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "A10-6800K",
+      "perf_score": 14,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "FX-4300",
+      "perf_score": 13,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "A8-7650K",
+      "perf_score": 13,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "A8-6600K",
+      "perf_score": 13,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "A10-7700K",
+      "perf_score": 13,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "A10-6790K",
+      "perf_score": 13,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "A10-6700",
+      "perf_score": 13,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "A10-5800K",
+      "perf_score": 13,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "A8-5600K",
+      "perf_score": 12,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Phenom II X4 955",
+      "perf_score": 11,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "FX-4100",
+      "perf_score": 11,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "A8-6500",
+      "perf_score": 11,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "A8-3870K",
+      "perf_score": 10,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "A10-6700T",
+      "perf_score": 10,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Phenom II X4 910e",
+      "perf_score": 9,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Phenom II X4 810",
+      "perf_score": 9,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "A6-3670",
+      "perf_score": 9,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Athlon 5350",
+      "perf_score": 8,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "A6-9500",
+      "perf_score": 8,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "A6-7470K",
+      "perf_score": 8,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Phenom II X3 720",
+      "perf_score": 7,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "A6-7400K",
+      "perf_score": 7,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "A4-7300",
+      "perf_score": 7,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Phenom II X2 555",
+      "perf_score": 6,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Athlon 5150",
+      "perf_score": 6,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "A6-6400K",
+      "perf_score": 6,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "A4-6320",
+      "perf_score": 6,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "A4-6300",
+      "perf_score": 6,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "A4-5300",
+      "perf_score": 6,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Sempron 3850",
+      "perf_score": 5,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "A6-5400K",
+      "perf_score": 5,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "A4-4000",
+      "perf_score": 5,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Sempron X2 190",
+      "perf_score": 4,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "A4-3300",
+      "perf_score": 4,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    },
+    {
+      "vendor": "amd",
+      "model_name": "Sempron 2650",
+      "perf_score": 2,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_amd_cpu.html"
+    }
+  ],
+  "excluded_entries": [
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-14900KS",
+      "perf_score": 12066,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-14900K",
+      "perf_score": 11686,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-14900KF",
+      "perf_score": 11686,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-14900",
+      "perf_score": 9346,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-14900F",
+      "perf_score": 9346,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-14700K",
+      "perf_score": 10439,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-14700KF",
+      "perf_score": 10439,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-14700",
+      "perf_score": 8285,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-14700F",
+      "perf_score": 8285,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-14700T",
+      "perf_score": 6246,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-14600K",
+      "perf_score": 7699,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-14600KF",
+      "perf_score": 7699,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-14500",
+      "perf_score": 6204,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-14400",
+      "perf_score": 5120,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-14400F",
+      "perf_score": 5120,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i3-14100",
+      "perf_score": 3079,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i3-14100F",
+      "perf_score": 3079,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-13900KS",
+      "perf_score": 12104,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-13900K",
+      "perf_score": 11653,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-13900KF",
+      "perf_score": 11653,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-13900",
+      "perf_score": 9695,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i9-13900F",
+      "perf_score": 9695,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-13700K",
+      "perf_score": 9148,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-13700KF",
+      "perf_score": 9148,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-13700",
+      "perf_score": 7715,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i7-13700F",
+      "perf_score": 7715,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-13600K",
+      "perf_score": 7514,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-13600KF",
+      "perf_score": 7514,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-13500",
+      "perf_score": 6198,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-13400",
+      "perf_score": 5016,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i5-13400F",
+      "perf_score": 5016,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i3-13100",
+      "perf_score": 2933,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    },
+    {
+      "vendor": "intel",
+      "model_name": "Core i3-13100F",
+      "perf_score": 8694,
+      "source_url": "https://www.dospara.co.jp/5info/cts_lp_intel_cpu.html",
+      "excluded_reason": "intel_13th_14th_generation"
+    }
+  ]
+}

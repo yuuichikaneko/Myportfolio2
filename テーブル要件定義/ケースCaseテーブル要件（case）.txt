@@ -1,0 +1,87 @@
+Caseテーブル要件（case）
+
+識別情報
+id: BIGSERIAL, 主キー
+name: VARCHAR(255), NOT NULL
+maker: VARCHAR(100), NOT NULL
+model_code: VARCHAR(120), NULL
+shop_code: VARCHAR(50), NULL, UNIQUE
+source_url: TEXT, NOT NULL
+is_active: BOOLEAN, NOT NULL, DEFAULT TRUE
+created_at: TIMESTAMP, NOT NULL, DEFAULT NOW()
+updated_at: TIMESTAMP, NOT NULL, DEFAULT NOW()
+形状・互換性
+form_factor: VARCHAR(30), NOT NULL, DEFAULT unknown
+値例: mini_itx, micro_atx, atx, eatx, unknown
+max_mb_form_factor: VARCHAR(30), NULL
+case_type: VARCHAR(30), NOT NULL, DEFAULT tower
+値例: tower, mini_tower, cube, open_frame, htpc, unknown
+side_panel_type: VARCHAR(30), NULL
+値例: glass, mesh, steel, acrylic
+color: VARCHAR(40), NULL
+冷却・ファン仕様（現行データに最重要）
+included_fan_count: SMALLINT, NOT NULL, DEFAULT 0
+supported_fan_count: SMALLINT, NOT NULL, DEFAULT 0
+front_fan_slots: SMALLINT, NOT NULL, DEFAULT 0
+rear_fan_slots: SMALLINT, NOT NULL, DEFAULT 0
+top_fan_slots: SMALLINT, NOT NULL, DEFAULT 0
+bottom_fan_slots: SMALLINT, NOT NULL, DEFAULT 0
+side_fan_slots: SMALLINT, NOT NULL, DEFAULT 0
+radiator_front_mm: SMALLINT, NULL
+radiator_top_mm: SMALLINT, NULL
+radiator_rear_mm: SMALLINT, NULL
+クリアランス・寸法
+max_gpu_length_mm: INTEGER, NULL
+max_cpu_cooler_height_mm: INTEGER, NULL
+max_psu_length_mm: INTEGER, NULL
+width_mm: INTEGER, NULL
+height_mm: INTEGER, NULL
+depth_mm: INTEGER, NULL
+weight_kg: NUMERIC(6,2), NULL
+ドライブベイ
+drive_bay_35_count: SMALLINT, NOT NULL, DEFAULT 0
+drive_bay_25_count: SMALLINT, NOT NULL, DEFAULT 0
+expansion_slots: SMALLINT, NULL
+価格・在庫
+price_yen: INTEGER, NOT NULL
+currency: CHAR(3), NOT NULL, DEFAULT JPY
+stock_status: VARCHAR(20), NOT NULL, DEFAULT unknown
+値: in_stock, low_stock, out_of_stock, unknown
+last_scraped_at: TIMESTAMP, NULL
+拡張
+specs_json: JSONB, NOT NULL, DEFAULT {}::jsonb
+scraper_source: VARCHAR(50), NOT NULL, DEFAULT pckoubou
+parser_name: VARCHAR(50), NULL
+推奨制約
+
+CHECK (price_yen >= 0)
+CHECK (included_fan_count >= 0)
+CHECK (supported_fan_count >= 0)
+CHECK (front_fan_slots >= 0 AND rear_fan_slots >= 0 AND top_fan_slots >= 0 AND bottom_fan_slots >= 0 AND side_fan_slots >= 0)
+CHECK (max_gpu_length_mm IS NULL OR max_gpu_length_mm > 0)
+CHECK (max_cpu_cooler_height_mm IS NULL OR max_cpu_cooler_height_mm > 0)
+CHECK (max_psu_length_mm IS NULL OR max_psu_length_mm > 0)
+CHECK (width_mm IS NULL OR width_mm > 0)
+CHECK (height_mm IS NULL OR height_mm > 0)
+CHECK (depth_mm IS NULL OR depth_mm > 0)
+CHECK (weight_kg IS NULL OR weight_kg > 0)
+CHECK (stock_status IN ('in_stock','low_stock','out_of_stock','unknown'))
+UNIQUE (shop_code)
+推奨インデックス
+
+UNIQUE: shop_code
+INDEX: form_factor, max_mb_form_factor
+INDEX: max_gpu_length_mm
+INDEX: max_cpu_cooler_height_mm
+INDEX: price_yen
+INDEX: included_fan_count, supported_fan_count
+INDEX: is_active, updated_at
+検索強化する場合は name に trigram index
+configuration側の case_id 定義
+
+case_id: BIGINT NULL
+外部キー: case_id → case.id, ON DELETE SET NULL
+インデックス: configuration(case_id)
+PostgreSQL DDLサンプル（簡略）
+
+必要なら次に、case・gpu・cpu_cooler・psuを横断した物理互換チェック用のSQLルール（入る/入らない判定）までまとめて作れま

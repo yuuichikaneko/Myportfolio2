@@ -1,0 +1,30 @@
+FormFactorテーブル要件
+
+識別情報
+id: BIGSERIAL, 主キー
+name: VARCHAR(30), NOT NULL, UNIQUE
+
+説明
+マスターデータ（フォームファクター参照テーブル）
+各パーツの物理形状・規格を標準化。
+例: ATX, Micro-ATX, Mini-ITX, M.2, 3.5inch など
+
+用途
+- Case: ケースサイズ（ATX, Micro-ATX など）
+- PSU: 電源フォームファクター
+- Motherboard: マザーボード規格
+- Memory: メモリ形状（DIMM, SO-DIMM など）
+- Storage: ストレージ形態（3.5inch HDD, 2.5inch SSD, M.2 など）
+
+制約
+name は NULL 不可、UNIQUE
+
+推奨インデックス
+INDEX name（UNIQUE に含まれる）
+
+PostgreSQL DDLサンプル
+
+CREATE TABLE form_factor (
+  id BIGSERIAL PRIMARY KEY,
+  name VARCHAR(30) NOT NULL UNIQUE
+);

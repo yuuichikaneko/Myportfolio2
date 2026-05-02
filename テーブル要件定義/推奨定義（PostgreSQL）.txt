@@ -1,0 +1,40 @@
+推奨定義（PostgreSQL）
+
+-- storage マスタ（既出）
+-- storage(id PK, ...)
+
+-- 構成テーブルに 3 本のストレージ FK を持たせる
+ALTER TABLE configuration
+  ADD COLUMN storage_id  BIGINT NULL,
+  ADD COLUMN storage2_id BIGINT NULL,
+  ADD COLUMN storage3_id BIGINT NULL;
+
+ALTER TABLE configuration
+  ADD CONSTRAINT fk_configuration_storage1
+    FOREIGN KEY (storage_id) REFERENCES storage(id) ON DELETE SET NULL,
+  ADD CONSTRAINT fk_configuration_storage2
+    FOREIGN KEY (storage2_id) REFERENCES storage(id) ON DELETE SET NULL,
+  ADD CONSTRAINT fk_configuration_storage3
+    FOREIGN KEY (storage3_id) REFERENCES storage(id) ON DELETE SET NULL;
+
+重複選択防止の制約（推奨）
+
+ALTER TABLE configuration
+  ADD CONSTRAINT chk_storage_distinct_12
+    CHECK (storage2_id IS NULL OR storage_id IS NULL OR storage2_id <> storage_id),
+  ADD CONSTRAINT chk_storage_distinct_13
+    CHECK (storage3_id IS NULL OR storage_id IS NULL OR storage3_id <> storage_id),
+  ADD CONSTRAINT chk_storage_distinct_23
+    CHECK (storage3_id IS NULL OR storage2_id IS NULL OR storage3_id <> storage2_id);
+
+インデックス（推奨）
+
+CREATE INDEX idx_configuration_storage_id  ON configuration(storage_id);
+CREATE INDEX idx_configuration_storage2_id ON configuration(storage2_id);
+CREATE INDEX idx_configuration_storage3_id ON configuration(storage3_id);
+
+運用ルール（実務向け）
+
+storage_id は基本ディスク（OS用）として優先採用
+storage2_id, storage3_id は追加ディスクとして任意
+合計容量や合計価格はアプリ側で計算、またはビューで算出

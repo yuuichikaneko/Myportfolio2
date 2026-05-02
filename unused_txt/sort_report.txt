@@ -1,0 +1,32 @@
+﻿RESTORE_COUNT=17
+KEEP_COUNT=11
+--- restore_candidates ---
+テーブル要件定義（ドラフト v1）.txt
+一括起動手順.txt
+INSTALLED_PACKAGES.txt
+ゲーミングPC 構成要件定義（ドラフト v0.1）.txt
+バックフロント起動手順.txt
+✅ 自動スクレイピング.txt
+テーブル要件定義（ドラフト v1）_1.txt
+ケースCaseテーブル要件（case）.txt
+cpuテーブルの要件.txt
+CPUクーラーテーブル要件（cpu_cooler).txt
+マザーボードテーブル要件（motherboard）.txt
+Storageテーブル要件（storage）.txt
+推奨定義（PostgreSQL）.txt
+OSテーブル要件（os）.txt
+PC電源PSUテーブル要件（psu）.txt
+✅ システム要件定義（PC構成提案Webアプリ）.txt
+GPUテーブル要件（gpu）.txt
+--- keep_confirmed ---
+# Python.txt
+Flask への移行.txt
+GPUグレード別.txt
+AMDコスパ順.txt
+Intelスペック順txt.txt
+Intelコスパ順.txt
+AMDCPUスペック順.txt
+Intel ゲーミング用コスパ順（性能3000以上）.txt
+testlog.txt
+メモリテーブル定義.txt
+メモリテーブル定義r.txt

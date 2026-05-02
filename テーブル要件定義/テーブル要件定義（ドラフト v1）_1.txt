@@ -1,0 +1,58 @@
+テーブル要件定義（ドラフト v1）
+
+pc_part（パーツマスタ）
+目的: スクレイピング取得したパーツ情報の正本
+主キー: id（bigint）
+必須カラム:
+part_type（cpu/gpu/memory等、varchar）
+name（varchar）
+price（integer）
+specs（jsonb）
+url（text）
+scraped_at（timestamp）
+updated_at（timestamp）
+制約:
+UNIQUE(part_type, name)（重複排除）
+price >= 0
+推奨インデックス:
+(part_type, updated_at desc)
+(part_type, price)
+GIN(specs)（将来の属性検索用）
+configuration（構成結果）
+目的: 生成した構成案の保存
+主キー: id（bigint）
+必須カラム:
+budget（integer）
+usage（varchar）
+total_price（integer）
+created_at（timestamp）
+is_deleted（boolean）
+deleted_at（timestamp, nullable）
+外部キー:
+cpu_id, cpu_cooler_id, gpu_id, motherboard_id, memory_id, storage_id, storage2_id, storage3_id, os_id, psu_id, case_id
+参照先はすべて pc_part(id)
+削除時挙動: SET NULL
+制約:
+budget > 0
+total_price >= 0
+推奨インデックス:
+(created_at desc)
+(usage, created_at desc)
+(is_deleted, created_at desc)
+scraper_status（スクレイパー状態）
+目的: 最終実行・成功失敗回数・キャッシュ設定の管理
+主キー: id（bigint、実運用は1レコード固定でも可）
+必須カラム:
+last_run（timestamp, nullable）
+next_run（timestamp, nullable）
+total_scraped（integer）
+success_count（integer）
+error_count（integer）
+cache_enabled（boolean）
+cache_ttl_seconds（integer）
+updated_at（timestamp）
+制約:
+total_scraped >= 0
+success_count >= 0
+error_count >= 0
+cache_ttl_seconds > 0

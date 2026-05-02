@@ -1,0 +1,69 @@
+アプリ一括起動手順（Windows）
+
+対象
+- Django（バックエンド）
+- Flask API Bridge（Django API 互換レイヤー）
+- Frontend（Vite）
+- Celery Worker（オートスクレイパー実行）
+- Celery Beat（オートスクレイパー定期実行）
+
+前提
+1. プロジェクトルート
+F:\Python\Myportfolio
+
+2. Python 仮想環境
+.venv を使用（自動で参照されます）
+
+3. Node.js / npm
+frontend の npm run dev が実行できること
+
+4. Redis
+127.0.0.1:6379 が利用可能であること
+※ 起動スクリプトは Redis 未起動時に redis-server の自動起動を試行します（redis-server が PATH にある場合）
+
+起動方法（PowerShell 推奨）
+1. プロジェクトフォルダへ移動
+Set-Location F:\Python\Myportfolio
+
+2. 一括起動スクリプト実行
+.\start_django_frontend.ps1
+
+起動方法（cmd / バッチ）
+1. プロジェクトフォルダへ移動
+cd /d F:\Python\Myportfolio
+
+2. 一括起動スクリプト実行
+start_django_frontend.bat
+
+起動後に立ち上がるサービス
+- 起動前に Django migration を自動実行（manage.py migrate）
+- Django: http://127.0.0.1:8001
+- Flask: http://127.0.0.1:8002
+- Frontend: http://127.0.0.1:5173 〜 5200 の空きポート（実際のポートは起動ログに表示）
+- Frontend は VITE_API_URL=http://127.0.0.1:8002/api で起動（Flask API を優先利用）
+- Celery Worker: 自動スクレイピング実行
+- Celery Beat: スケジューラ実行
+
+停止方法
+- 開いた各ターミナルで Ctrl + C
+- まとめて閉じる場合は、起動で開かれたターミナルウィンドウを閉じる
+
+トラブルシュート
+1. Redis 警告が出る場合
+- Redis を起動する（例: redis-server）
+- または Redis をインストールして PATH を通す
+
+2. Frontend が起動しない場合
+- frontend フォルダで npm install を実行
+- その後、再度一括起動
+
+3. Django が起動しない場合
+- .venv が存在するか確認
+- 依存関係を再インストール（必要時）
+
+4. Flask が起動しない場合
+- .venv に Flask / Flask-Cors が入っているか確認
+- 必要なら `f:/Python/Myportfolio/.venv/Scripts/python.exe -m pip install -r django/django_requirements.txt` を実行
+
+補足
+- 既存の手動手順は「バックフロント起動手順.txt」を参照してください。

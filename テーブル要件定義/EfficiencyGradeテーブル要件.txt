@@ -1,0 +1,24 @@
+EfficiencyGradeテーブル要件
+
+識別情報
+id: BIGSERIAL, 主キー
+name: VARCHAR(20), NOT NULL, UNIQUE
+
+説明
+マスターデータ（電源効率グレード参照テーブル）
+電源ユニット (PSU) の効率等級を標準化。
+例: 80+ Bronze, 80+ Silver, 80+ Gold, 80+ Platinum など
+
+制約
+name は NULL 不可、UNIQUE
+効率グレード名の一意性
+
+推奨インデックス
+INDEX name（UNIQUE に含まれる）
+
+PostgreSQL DDLサンプル
+
+CREATE TABLE efficiency_grade (
+  id BIGSERIAL PRIMARY KEY,
+  name VARCHAR(20) NOT NULL UNIQUE
+);

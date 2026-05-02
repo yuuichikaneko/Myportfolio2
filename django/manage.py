@@ -6,6 +6,8 @@ import sys
 
 def main():
     """Run administrative tasks."""
+    # Prevent Windows locale-dependent decode errors from libpq messages.
+    os.environ.setdefault('PGCLIENTENCODING', 'UTF8')
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'myportfolio_django.settings')
     try:
         from django.core.management import execute_from_command_line

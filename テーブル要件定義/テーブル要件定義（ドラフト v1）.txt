@@ -1,0 +1,164 @@
+テーブル要件定義（ドラフト v1）
+
+pc_part（パーツマスタ）
+目的: スクレイピング取得したパーツ情報の正本
+主キー: id（bigint）
+必須カラム:
+part_type（cpu/gpu/memory等、varchar）
+name（varchar）
+price（integer）
+specs（jsonb）
+url（text）
+scraped_at（timestamp）
+updated_at（timestamp）
+制約:
+UNIQUE(part_type, name)（重複排除）
+price >= 0
+推奨インデックス:
+(part_type, updated_at desc)
+(part_type, price)
+GIN(specs)（将来の属性検索用）
+configuration（構成結果）
+目的: 生成した構成案の保存
+主キー: id（bigint）
+必須カラム:
+budget（integer）
+usage（varchar）
+total_price（integer）
+created_at（timestamp）
+is_deleted（boolean）
+deleted_at（timestamp, nullable）
+外部キー:
+cpu_id, cpu_cooler_id, gpu_id, motherboard_id, memory_id, storage_id, storage2_id, storage3_id, os_id, psu_id, case_id
+参照先はすべて pc_part(id)
+削除時挙動: SET NULL
+制約:
+budget > 0
+total_price >= 0
+推奨インデックス:
+(created_at desc)
+(usage, created_at desc)
+(is_deleted, created_at desc)
+scraper_status（スクレイパー状態）
+目的: 最終実行・成功失敗回数・キャッシュ設定の管理
+主キー: id（bigint、実運用は1レコード固定でも可）
+必須カラム:
+last_run（timestamp, nullable）
+next_run（timestamp, nullable）
+total_scraped（integer）
+success_count（integer）
+error_count（integer）
+cache_enabled（boolean）
+cache_ttl_seconds（integer）
+updated_at（timestamp）
+制約:
+total_scraped >= 0
+success_count >= 0
+error_count >= 0
+cache_ttl_seconds > 0
+
+---
+
+ゲーミングPC 構成要件定義（ドラフト v0.1）
+
+1. 目的
+- ゲーミングPCの構成生成で、予算帯と重視方針（コスト重視/スペック重視）ごとに一貫した選定結果を出す。
+- ハイエンド以上のコスト重視では、スクレイピングした相場データを使って過剰予算を自動補正する。
+
+2. 用語定義
+- 予算帯:
+	- low: 179,980〜462,480円
+	- middle: 462,481〜744,980円
+	- high: 744,981〜1,027,480円
+	- premium: 1,027,481〜1,309,980円
+- 重視方針:
+	- cost: コスト重視
+	- spec: スペック重視
+	
+
+3. 共通必須要件（ゲーミング）
+- usage は gaming 固定。
+- GPU性能目安は low 以外でベンチマークスコア 5000 以上を目標にする。
+- CPU は AMD 系を優先し、X3D系を優先候補に含める。
+- ケースはマザーボードフォームファクタ互換、およびGPU長さ互換を満たす。
+
+4. 構成別要件（予算帯 × 方針）
+
+4-1. low帯
+- cost:
+	- スクレイピング相場の上限（market_max）を基準に予算補正を行う。
+	- 最低構成を成立させる（在庫優先、互換優先）。
+	- X3Dは必須にしない（候補として許容）。
+	- 予算内でベンチマークスコアがCPUとGPUの合計で5000以上を目標
+
+- spec:
+	- スクレイピング相場の上限（market_max）を基準に予算補正を行う。
+	- low帯specは探索コスト増のため、cost近似構成へ自動切替を許容。
+	- コスト重視より上位のパーツを選ぶ、予算内でコスト重視＋15000円
+	- GPUは5050まで。
+
+4-2. middle帯
+- cost:
+	- スクレイピング相場の上限（market_max）を基準に予算補正を行う。
+	- 価格効率（性能/価格）を優先。
+	- CPU過剰投資を抑制し、GPU予算を確保。
+	- X3Dは必須にしない（候補として許容）。
+- spec:
+	- スクレイピング相場の上限（market_max）を基準に予算補正を行う。
+	- コスト重視より上位のパーツを選ぶ、予算内でコスト重視＋15000円
+	- X3Dは必須に、GPUは5060まで。
+
+4-3. high帯
+- cost:
+	- スクレイピング相場の上限（market_max）を基準に予算補正を行う。
+	- 補正後はハイエンド帯CPU方針として Ryzen 7 9800X3D を選定対象の軸にする。
+	- GPUは5060ti、9070まで
+- spec:
+	- スクレイピング相場の上限（market_max）を基準に予算補正を行う。
+	- コスト重視より上位のパーツを選ぶ、予算内でコスト重視＋20000円
+	- GPUは5070、9070XTまで。
+
+4-4. premium帯
+- cost:
+	- スクレイピング相場の上限（market_max）を基準に予算補正を行う。
+	- highより上位のパーツを選ぶ、予算内でコスト重視
+	- 補正後はプレミアム帯CPU方針として Ryzen 7 9850X3D を選定対象の軸にする。
+- spec:
+	- スクレイピング相場の上限（market_max）を基準に予算補正を行う。
+	- 予算上限まで性能最優先で選定。
+	- プレミアムGPU帯候補を優先(9070XT以上)。
+
+5. コスト重視時の追加制約（gaming + cost）
+- CPU価格キャップ目安: 50,000円（全体バランス維持）。
+- マザーボード上限チップセット: X870（X870Eは除外）。
+- メモリ速度上限目安: DDR5-5600（PC5-44800以上は除外対象）。
+
+6. 相場補正要件
+- データソース: https://www.pc-koubou.jp/products/list.php（スクレイピング）。
+- 取得項目: データソースの最低価格から最高価格を4等分し、下から low, middle, high, premium に分類する
+	- 算出例（min=179,980 / max=1,309,980 の場合）:
+		- low: 179,980〜462,480円
+		- middle: 462,481〜744,980円
+		- high: 744,981〜1,027,480円
+		- premium: 1,027,481〜1,309,980円
+- 補正条件:
+	- usage = gaming
+	- build_priority = cost
+- 補正後レスポンス項目:
+	- market_budget_adjusted: true/false
+	- market_budget_note: 補正文言
+
+7. フロント表示要件
+- market_budget_adjusted=true の場合、結果画面に「相場変動により補正しました。」を表示する。
+- market_budget_note がある場合、補正詳細を同じバナー内に表示する。
+
+8. 受け入れ基準（最小）
+- ケース互換違反（フォームファクタ/GPU長）が0件。
+- gaming + cost + high/premium で market_budget_adjusted が期待通りに付与される。
+- gaming + high で CPUが9800X3D系、gaming + premium で CPUが9850X3D系になる。
+- 補正メッセージがフロントで表示される。
+
+9. 今後の拡張案
+- 予算帯を固定閾値でなく、相場分位（p50/p75/p90）で動的分類する。
+- 相場取得失敗時に前回成功値をキャッシュ利用する。
+- ベンダー別（AMD/NVIDIA）でGPU帯定義を分離する。

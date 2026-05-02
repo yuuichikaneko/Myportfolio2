@@ -1,0 +1,24 @@
+LicenseTypeテーブル要件
+
+識別情報
+id: BIGSERIAL, 主キー
+name: VARCHAR(30), NOT NULL, UNIQUE
+
+説明
+マスターデータ（ライセンスタイプ参照テーブル）
+OS ライセンスの種類を標準化。
+例: Retail, OEM, Volume License など
+
+制約
+name は NULL 不可、UNIQUE
+ライセンスタイプ名の一意性
+
+推奨インデックス
+INDEX name（UNIQUE に含まれる）
+
+PostgreSQL DDLサンプル
+
+CREATE TABLE license_type (
+  id BIGSERIAL PRIMARY KEY,
+  name VARCHAR(30) NOT NULL UNIQUE
+);

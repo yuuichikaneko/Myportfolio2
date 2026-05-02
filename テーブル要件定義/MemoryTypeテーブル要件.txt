@@ -1,0 +1,24 @@
+MemoryTypeテーブル要件
+
+識別情報
+id: BIGSERIAL, 主キー
+name: VARCHAR(20), NOT NULL, UNIQUE
+
+説明
+マスターデータ（メモリタイプ参照テーブル）
+メモリの規格・世代を標準化。
+例: DDR4, DDR5 など
+
+制約
+name は NULL 不可、UNIQUE
+メモリ規格名の一意性
+
+推奨インデックス
+INDEX name（UNIQUE に含まれる）
+
+PostgreSQL DDLサンプル
+
+CREATE TABLE memory_type (
+  id BIGSERIAL PRIMARY KEY,
+  name VARCHAR(20) NOT NULL UNIQUE
+);

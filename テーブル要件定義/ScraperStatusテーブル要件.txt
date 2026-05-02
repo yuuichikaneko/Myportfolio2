@@ -1,0 +1,66 @@
+ScraperStatusテーブル要件
+
+識別情報
+id: BIGSERIAL, 主キー
+updated_at: TIMESTAMP, NOT NULL, DEFAULT NOW(), AUTO UPDATE
+
+説明
+スクレイパー実行状態トラッキング
+スクレイピングタスク全体の実行状況を一元管理。
+実運用では通常 1 レコード固定（latest status）。
+
+スクレイピング実行管理
+last_run: TIMESTAMP, NOT NULL, DEFAULT NULL
+最後の実行時刻。初回実行時は NULL。
+
+next_run: TIMESTAMP, NOT NULL, DEFAULT NULL
+次回予定実行時刻。スケジューラが参照・更新。
+
+total_scraped: INTEGER, NOT NULL, DEFAULT 0
+累計スクレイピング成功規約件数（総計）
+
+success_count: INTEGER, NOT NULL, DEFAULT 0
+最後の実行での成功件数
+
+error_count: INTEGER, NOT NULL, DEFAULT 0
+最後の実行でのエラー件数
+
+キャッシュ管理
+cache_enabled: BOOLEAN, NOT NULL, DEFAULT TRUE
+キャッシュ機能の有効/無効
+
+cache_ttl_seconds: INTEGER, NOT NULL, DEFAULT 3600
+キャッシュの有効期限（秒）。デフォルト 1 時間。
+
+制約
+total_scraped >= 0
+success_count >= 0
+error_count >= 0
+cache_ttl_seconds >= 0
+
+推奨インデックス
+INDEX updated_at DESC
+INDEX next_run（スケジューラが参照）
+
+PostgreSQL DDLサンプル
+
+CREATE TABLE scraper_status (
+  id BIGSERIAL PRIMARY KEY,
+  last_run TIMESTAMP,
+  next_run TIMESTAMP,
+  total_scraped INTEGER NOT NULL DEFAULT 0 CHECK (total_scraped >= 0),
+  success_count INTEGER NOT NULL DEFAULT 0 CHECK (success_count >= 0),
+  error_count INTEGER NOT NULL DEFAULT 0 CHECK (error_count >= 0),
+  cache_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  cache_ttl_seconds INTEGER NOT NULL DEFAULT 3600 CHECK (cache_ttl_seconds >= 0),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_scraper_status_updated_at ON scraper_status(updated_at DESC);
+CREATE INDEX idx_scraper_status_next_run ON scraper_status(next_run);
+
+運用上の注意
+- 通常、このテーブルは 1 レコード固定で管理
+- SELECT で常に最新レコードを取得
+- スケジューラは next_run カラムをポーリング
+- 実行完了後に last_run, next_run, success_count, error_count を更新

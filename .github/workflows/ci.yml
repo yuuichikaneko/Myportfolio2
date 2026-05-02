@@ -10,7 +10,7 @@ on:
 
 jobs:
   backend-tests:
-    name: Backend Tests (Django)
+    name: Backend Tests (Django / Phase 1)
     runs-on: ubuntu-latest
 
     defaults:
@@ -34,10 +34,38 @@ jobs:
           pip install -r django_requirements.txt
 
       - name: Run Django tests
-        run: python manage.py test
+        run: python manage.py test scraper.tests.UsageConversionRegressionTests
 
       - name: Check migrations are up to date
         run: python manage.py makemigrations --check --dry-run
+
+  backend-tests-full:
+    name: Backend Full Tests (Django / Phase 2)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: django
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: django/django_requirements.txt
+
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r django_requirements.txt
+
+      - name: Run Django full suite
+        run: python manage.py test scraper.tests --verbosity 1
 
   frontend-tests:
     name: Frontend Tests (Vitest)

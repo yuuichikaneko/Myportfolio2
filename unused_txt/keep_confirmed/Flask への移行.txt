@@ -1,0 +1,50 @@
+現在のスタック（Django + Celery + Vue Vite）から Flask への移行を視野に入れて、最適な組み合わせをアドバイスするには、既存 Django API の構造を確認してからの方が正確です。
+
+既存 Django API を確認しました。現在の構成から最適な組み合わせをアドバイスします。
+
+現状分析
+Django は **Django REST Framework (RESTful)**を使用中：
+
+GET /api/parts/ - PC パーツ一覧
+GET /api/configurations/ - PC構成
+POST /api/generate-config/ - 構成提案実行
+GET /api/scraper-status/ - スクレイパーステータス
+推奨: Flask + RESTful API
+観点	RESTful	GraphQL
+学習曲線	低い（既存 Django と同じ）	中程度
+実装速度	高速（Flask-RESTX で 1-2 時間）	遅い（スキーマ定義に時間）
+Celery 連携	⭐⭐⭐（タスク ID 返却が簡潔）	⭐⭐（非同期パターンが複雑）
+クエリ効率	フロント側でフィルタ（N+1 の可能性）	クエリ最適化
+現在の必要性	100%（既存 API 互換性）	0%（ユースケース外）
+将来拡張	簡単（エンドポイント追加）	柔軟（スキーマ変更）
+Flask での実装パターン（推奨構成）
+① Flask-RESTX（最小変更）
+メリット:
+
+Django DRF と同じ REST 設計
+Swagger UI 自動生成
+Flask-RESTX: 300 行で Django API > Flask 化完了
+② GraphQL （将来向け・今は不要）
+いつ検討するか:
+
+フロント UI が 20+ 異なる API 呼び出しを複数組み合わせる場合
+モバイル版開発で帯域幅最適化が必須の場合
+複雑なフィルタリングを頻繁に必要とする場合
+現在：不要な理由
+
+API 呼び出しは定型化（parts, config, status）
+単純フィルタ（part_type='cpu', budget=150000）
+Celery 非同期処理は REST の方がシンプル
+実装時間比較
+RESTful	GraphQL
+Flask API 実装	2-3h	6-8h
+フロント修正	0h（互換）	4-6h（クエリ置き換え）
+テスト	2h	4h
+合計	4-5h	14-18h
+最終推奨
+✅ 最初は Flask + RESTful
+実装ステップ（フェーズ 2-4 の後）
+flask_service/api.py 作成（Flask-RESTX ベース）
+models.py から to_dict() メソッド追加
+Celery タスクエンドポイント統合
+フロント：BASE_URL を Django → Flask に変更（1行）

@@ -1,75 +1,28 @@
-import requests
-from collections import Counter
-import scraper.dospara_scraper as ds
+﻿"""Memory 繧ｹ繧ｯ繝ｬ繧､繝斐Φ繧ｰ (PC蟾･謌ｿ)
+譌ｧ: dospara SBR1017 繝｡繝｢繝ｪ繧ｫ繝・ざ繝ｪ繝ｼ逕ｨ縲・
+"""
+import os, sys, django
+sys.path.insert(0, os.path.dirname(__file__))
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "myportfolio_django.settings")
+django.setup()
+
+from scraper.pckoubou_scraper import scrape_pckoubou_category
 from scraper.models import PCPart
 
-URL = "https://www.dospara.co.jp/SBR1017?srule=01&includeNotInventory=false"
-
-config = ds.get_dospara_scraper_config()
-session = requests.Session()
-
-resp = session.get(URL, headers=config["headers"], timeout=30)
-resp.raise_for_status()
-
-codes = ds._collect_ic_codes_from_category_pages(
-    html=resp.text,
-    category_url=URL,
-    headers=config["headers"],
-    timeout=20,
-    session=session,
-    max_codes=2000,
-)
-
-products_map = ds._fetch_products_by_codes(
-    codes=codes,
-    api_url=config["products_api_url"],
-    headers=config["headers"],
-    timeout=20,
-    batch_size=config["batch_size"],
-    session=session,
-)
-
-parts = ds._build_parts_from_products_map(products_map, URL, max_items=2000)
-
-created = 0
-updated = 0
-skipped = 0
-found_type_counter = Counter()
-saved_type_counter = Counter()
-
+parts = scrape_pckoubou_category("memory")
+created = updated = 0
 for p in parts:
-    part_type = p.get("part_type")
-    found_type_counter[part_type or "unknown"] += 1
-    if not part_type:
-        skipped += 1
-        continue
-
     _, is_created = PCPart.objects.update_or_create(
-        url=p.get("url"),
-        defaults={
-            "name": p.get("name"),
-            "price": p.get("price"),
-            "specs": p.get("specs", {}),
-            "part_type": part_type,
-        },
+        part_type=p["part_type"], name=p["name"],
+        defaults={"price": p["price"], "url": p["url"],
+                  "specs": p.get("specs", {"source": "pckoubou"}),
+                  "stock_status": p.get("stock_status", "unknown"), "is_active": True},
     )
-    if is_created:
-        created += 1
-    else:
-        updated += 1
-    saved_type_counter[part_type] += 1
+    if is_created: created += 1
+    else: updated += 1
 
-print(
-    {
-        "status": "success",
-        "source_url": URL,
-        "codes_found": len(codes),
-        "fetched_parts": len(parts),
-        "saved_created": created,
-        "saved_updated": updated,
-        "skipped": skipped,
-        "found_type_counts": dict(found_type_counter),
-        "saved_type_counts": dict(saved_type_counter),
-        "db_total_parts": PCPart.objects.count(),
-    }
-)
+mem_qs = PCPart.objects.filter(part_type="memory")
+print({"status": "success", "part_type": "memory", "fetched": len(parts),
+       "created": created, "updated": updated,
+       "memory_total_in_db": mem_qs.count(),
+       "db_total_parts": PCPart.objects.count()})

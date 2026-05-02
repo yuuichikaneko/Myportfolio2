@@ -1,0 +1,15 @@
+順位	CPU	価格	性能目安	コスパ値（性能÷価格）
+1	Intel Core Ultra 5 245KF BOX	32,780円	8,657	0.2641
+2	Intel Core Ultra 7 265KF BOX	45,980円	11,744	0.2554
+3	Intel Core Ultra 5 225F BOX	24,850円	6,235	0.2509
+4	Intel Core Ultra 5 245K BOX	34,980円	8,657	0.2475
+5	Intel Core Ultra 7 265K BOX	47,780円	11,744	0.2458
+6	Intel Core Ultra 5 225 BOX	28,370円	6,091	0.2147
+7	Intel Core i3 12100F BOX	14,580円	2,795	0.1917
+8	Intel Core Ultra 7 265F BOX	52,380円	9,979	0.1905
+9	Intel Core Ultra 5 235 BOX	43,980円	8,004	0.1820
+10	Intel Core Ultra 7 265 BOX	56,860円	9,979	0.1755
+11	Intel Core i5 12400F BOX	23,980円	3,918	0.1634
+12	Intel Core i5 12400 BOX	25,980円	3,918	0.1508
+13	Intel Core Ultra 9 285K BOX	96,999円	13,474	0.1389
+14	Intel Core i3 12100 BOX	22,980円	2,795	0.1216

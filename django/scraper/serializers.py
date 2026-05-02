@@ -2,6 +2,25 @@ from rest_framework import serializers
 from .models import PCPart, Configuration, ScraperStatus
 
 
+def _classify_budget_tier(budget):
+    if budget <= 220000:
+        return 'low'
+    if budget <= 300000:
+        return 'middle'
+    if budget <= 500000:
+        return 'high'
+    return 'premium'
+
+
+def _budget_tier_label_jp(budget_tier):
+    return {
+        'low': 'ローエンド',
+        'middle': 'ミドル',
+        'high': 'ハイエンド',
+        'premium': 'プレミアム',
+    }.get(budget_tier, '不明')
+
+
 class PCPartSerializer(serializers.ModelSerializer):
     part_type_display = serializers.CharField(source='get_part_type_display', read_only=True)
     
@@ -13,6 +32,8 @@ class PCPartSerializer(serializers.ModelSerializer):
 
 class ConfigurationSerializer(serializers.ModelSerializer):
     usage_display = serializers.CharField(source='get_usage_display', read_only=True)
+    budget_tier = serializers.SerializerMethodField()
+    budget_tier_label = serializers.SerializerMethodField()
     cpu_data = PCPartSerializer(source='cpu', read_only=True)
     cpu_cooler_data = PCPartSerializer(source='cpu_cooler', read_only=True)
     gpu_data = PCPartSerializer(source='gpu', read_only=True)
@@ -24,16 +45,23 @@ class ConfigurationSerializer(serializers.ModelSerializer):
     os_data = PCPartSerializer(source='os', read_only=True)
     psu_data = PCPartSerializer(source='psu', read_only=True)
     case_data = PCPartSerializer(source='case', read_only=True)
-    
+    case_fan_data = PCPartSerializer(source='case_fan', read_only=True)
+
     class Meta:
         model = Configuration
         fields = [
-            'id', 'budget', 'usage', 'usage_display', 'total_price',
-            'cpu', 'cpu_cooler', 'gpu', 'motherboard', 'memory', 'storage', 'storage2', 'storage3', 'os', 'psu', 'case',
-            'cpu_data', 'cpu_cooler_data', 'gpu_data', 'motherboard_data', 'memory_data', 'storage_data', 'storage2_data', 'storage3_data', 'os_data', 'psu_data', 'case_data',
+            'id', 'name', 'budget', 'budget_tier', 'budget_tier_label', 'usage', 'usage_display', 'total_price',
+            'cpu', 'cpu_cooler', 'gpu', 'motherboard', 'memory', 'storage', 'storage2', 'storage3', 'os', 'psu', 'case', 'case_fan',
+            'cpu_data', 'cpu_cooler_data', 'gpu_data', 'motherboard_data', 'memory_data', 'storage_data', 'storage2_data', 'storage3_data', 'os_data', 'psu_data', 'case_data', 'case_fan_data',
             'created_at'
         ]
         read_only_fields = ['id', 'total_price', 'created_at']
+
+    def get_budget_tier(self, obj):
+        return _classify_budget_tier(int(getattr(obj, 'budget', 0) or 0))
+
+    def get_budget_tier_label(self, obj):
+        return _budget_tier_label_jp(self.get_budget_tier(obj))
 
 
 class ScraperStatusSerializer(serializers.ModelSerializer):

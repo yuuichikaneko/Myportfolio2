@@ -1,0 +1,46 @@
+cpuテーブルの要件は、最小でも次を押さえると運用しやすいです。
+
+識別・管理
+id（PK）
+name（商品名）
+maker（AMD / Intel）
+model_code（型番）
+jan_code（任意、取れるなら）
+source_url（取得元URL）
+created_at / updated_at
+is_active（販売終了管理）
+互換性（最重要）
+socket（AM5, LGA1700 など）
+memory_type（DDR4 / DDR5）
+pcie_generation（任意）
+integrated_graphics（有無）
+cooler_included（付属クーラー有無）
+性能・仕様
+cores（物理コア数）
+threads（スレッド数）
+base_clock_mhz
+boost_clock_mhz
+l3_cache_mb
+tdp_w
+process_nm（任意）
+価格・在庫
+price_yen
+currency
+stock_status（in_stock / low_stock / out_of_stock）
+last_scraped_at（最終取得時刻）
+制約
+maker は列挙値で制約
+socket は列挙値またはマスタ参照
+cores, threads, tdp_w, price_yen は 0 以上
+同一商品の重複防止として unique（maker, model_code）または unique（name, socket）
+インデックス
+socket
+maker
+price_yen
+updated_at
+（検索用途）name の前方一致・全文検索用インデックス
+実装方針としては、
+
+互換判定に使う項目（socket, memory_type, tdp_w, cores/threads）は列化
+それ以外の可変情報は JSON に残す
+のハイブリッドが一番現実的です。
