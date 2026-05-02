@@ -33,7 +33,7 @@ async function parseApiError(response: Response, fallbackMessage: string): Promi
 
 export interface GenerateConfigRequest {
   budget: number;
-  usage: "gaming" | "creator" | "business" | "standard" | "video_editing" | "general";
+  usage: "gaming" | "creator" | "business" | "standard" | "video_editing";
   cooler_type?: "air" | "liquid";
   radiator_size?: "120" | "240" | "360";
   cooling_profile?: "silent" | "performance";
@@ -91,7 +91,7 @@ export interface SavedPartResponse {
 export interface SavedConfigurationResponse {
   id: number;
   budget: number;
-  usage: "gaming" | "creator" | "business" | "standard" | "video_editing" | "general";
+  usage: "gaming" | "creator" | "business" | "standard" | "video_editing";
   usage_display: string;
   total_price: number;
   cpu_data: SavedPartResponse | null;
@@ -116,7 +116,8 @@ interface PaginatedResponse<T> {
 }
 
 export async function generateConfig(
-  request: GenerateConfigRequest
+  request: GenerateConfigRequest,
+  signal?: AbortSignal,
 ): Promise<GenerateConfigResponse> {
   const response = await safeFetch(`${API_BASE_URL}/configurations/generate/`, {
     method: "POST",
@@ -124,6 +125,7 @@ export async function generateConfig(
       "Content-Type": "application/json",
     },
     body: JSON.stringify(request),
+    signal,
   });
 
   if (!response.ok) {

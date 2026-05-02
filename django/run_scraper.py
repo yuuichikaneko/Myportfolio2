@@ -36,6 +36,7 @@ try:
                 'price': part['price'],
                 'url': part['url'],
                 'specs': part.get('specs', {}),
+                'chipset': part.get('chipset', ''),
             }
         )
         if created:
@@ -55,11 +56,11 @@ try:
     print(f"\n現在のDB: 全 {PCPart.objects.count()} 個のパーツ")
     
     # パーツタイプ別集計
-    for part_type in sorted(PCPart.objects.values_list('part_type', flat=True).distinct()):
+    for part_type in sorted(set(PCPart.objects.values_list('part_type', flat=True))):
         count = PCPart.objects.filter(part_type=part_type).count()
         print(f"  {part_type}: {count}個")
-    
-    print("\n=" * 60)
+
+    print("\n" + "=" * 60)
     print("スクレイピング完了！")
     print("=" * 60)
     

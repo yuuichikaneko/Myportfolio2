@@ -28,6 +28,8 @@ SECRET_KEY = 'django-insecure-rb8ad(4fam%q@k_hv-02p29fmx*a7af&pax#l64oiw_27!e&*k
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+FRONTEND_DEV_SERVER_URL = config('FRONTEND_DEV_SERVER_URL', default='http://127.0.0.1:5173')
+
 ALLOWED_HOSTS = []
 
 

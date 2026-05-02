@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ConfigForm } from "./ConfigForm";
 import { ResultView } from "./ResultView";
 import {
@@ -12,11 +12,20 @@ import {
   ScraperStatus,
 } from "./api";
 
+type UsageFilter =
+  | "all"
+  | "gaming"
+  | "creator"
+  | "business"
+  | "standard"
+  | "video_editing";
+
 function App() {
   const [result, setResult] = useState<GenerateConfigResponse | null>(null);
   const [selectedSavedConfig, setSelectedSavedConfig] = useState<SavedConfigurationResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const generateAbortControllerRef = useRef<AbortController | null>(null);
   const [scraperStatus, setScraperStatus] = useState<ScraperStatus | null>(null);
   const [statusLoading, setStatusLoading] = useState(true);
   const [showStatus, setShowStatus] = useState(false);
@@ -27,7 +36,7 @@ function App() {
   const [historyBulkDeleting, setHistoryBulkDeleting] = useState(false);
   const [deleteTargetConfig, setDeleteTargetConfig] = useState<SavedConfigurationResponse | null>(null);
   const [showHistory, setShowHistory] = useState(false);
-  const [historyUsageFilter, setHistoryUsageFilter] = useState<"all" | "gaming" | "video_editing" | "general">("all");
+  const [historyUsageFilter, setHistoryUsageFilter] = useState<UsageFilter>("all");
   const [historyQuery, setHistoryQuery] = useState("");
   const [historyDeleteScope, setHistoryDeleteScope] = useState<"filtered" | "all">("filtered");
   const [historyToastMessage, setHistoryToastMessage] = useState<string | null>(null);
@@ -135,10 +144,13 @@ function App() {
     setIsLoading(true);
     setError(null);
 
+    const abortController = new AbortController();
+    generateAbortControllerRef.current = abortController;
+
     try {
       const response = await generateConfig({
         budget,
-        usage: usage as "gaming" | "creator" | "business" | "standard" | "video_editing" | "general",
+        usage: usage as "gaming" | "creator" | "business" | "standard" | "video_editing",
         cooler_type: options.coolerType,
         radiator_size: options.radiatorSize,
         cooling_profile: options.coolingProfile,
@@ -152,18 +164,30 @@ function App() {
         storage3_part_id: options.storage3PartId ?? undefined,
         os_edition: options.osEdition,
         custom_budget_weights: options.useCustomBudgetWeights ? options.customBudgetWeights : undefined,
-      });
+      }, abortController.signal);
       setResult(response);
       setSelectedSavedConfig(null);
-      setHistoryLoading(true);
-      await fetchSavedConfigurations();
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "予期しないエラーが発生しました"
-      );
-    } finally {
       setIsLoading(false);
+      setHistoryLoading(true);
+      fetchSavedConfigurations();
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        // ユーザーによるキャンセル
+      } else {
+        setError(
+          err instanceof Error ? err.message : "予期しないエラーが発生しました"
+        );
+      }
+      setIsLoading(false);
+    } finally {
+      generateAbortControllerRef.current = null;
     }
+  };
+
+  const handleCancelGenerate = () => {
+    generateAbortControllerRef.current?.abort();
+    generateAbortControllerRef.current = null;
+    setIsLoading(false);
   };
 
   const handleBack = () => {
@@ -393,13 +417,15 @@ function App() {
           <div className="space-y-2 mb-4">
             <select
               value={historyUsageFilter}
-              onChange={(e) => setHistoryUsageFilter(e.target.value as "all" | "gaming" | "video_editing" | "general")}
+              onChange={(e) => setHistoryUsageFilter(e.target.value as UsageFilter)}
               className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-700"
             >
               <option value="all">用途: すべて</option>
               <option value="gaming">用途: ゲーミング</option>
-              <option value="video_editing">用途: 動画編集</option>
-              <option value="general">用途: 汎用</option>
+              <option value="creator">用途: クリエイター</option>
+              <option value="business">用途: ビジネス</option>
+              <option value="standard">用途: ホーム・日常用</option>
+              <option value="video_editing">用途: ワークステーション</option>
             </select>
             <input
               value={historyQuery}
@@ -532,7 +558,7 @@ function App() {
       {activeResult ? (
         <ResultView config={activeResult} onBack={handleBack} />
       ) : (
-        <ConfigForm onSubmit={handleGenerateConfig} isLoading={isLoading} />
+        <ConfigForm onSubmit={handleGenerateConfig} onCancel={handleCancelGenerate} isLoading={isLoading} />
       )}
     </>
   );

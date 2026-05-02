@@ -384,11 +384,71 @@ export function ResultView({ config, onBack }: ResultProps) {
     gaming: "ゲーミングPC",
     creator: "クリエイターPC",
     business: "ビジネスPC",
-    standard: "スタンダードPC",
-    video_editing: "動画編集PC",
-    general: "汎用PC",
+    standard: "ホーム・日常用PC",
+    video_editing: "ワークステーション",
   };
   const usageLabel = USAGE_LABELS[config.usage] ?? config.usage;
+
+  const inferBudgetTierLabel = (usage: string, budget: number, buildPriority?: string): string => {
+    const presetByUsage: Record<string, Array<{ label: string; value: number }>> = {
+      gaming: [
+        { label: "ローエンド", value: 164980 },
+        { label: "ミドル", value: 259980 },
+        { label: "ハイエンド", value: 499980 },
+        { label: "プレミアム", value: 984980 },
+      ],
+      creator: [
+        { label: "ローエンド", value: 169980 },
+        { label: "ミドル", value: 284980 },
+        { label: "ハイエンド", value: 434980 },
+        { label: "プレミアム", value: 684980 },
+      ],
+      video_editing: [
+        { label: "ローエンド", value: 169980 },
+        { label: "ミドル", value: 284980 },
+        { label: "ハイエンド", value: 434980 },
+        { label: "プレミアム", value: 684980 },
+      ],
+      business: [
+        { label: "ローエンド", value: 99980 },
+        { label: "ミドル", value: 114980 },
+        { label: "ハイエンド", value: 134980 },
+        { label: "プレミアム", value: 159980 },
+      ],
+      standard: [
+        { label: "ローエンド", value: 74980 },
+        { label: "ミドル", value: 94980 },
+        { label: "ハイエンド", value: 157980 },
+        { label: "プレミアム", value: 234980 },
+      ],
+    };
+
+    const presets = presetByUsage[usage] ?? presetByUsage.standard;
+    // spec優先時は×1.1で予算が水増しされているため÷1.1で元の値に戻してからラベルを判定
+    const effectiveBudget = buildPriority === "spec" ? Math.round(budget / 1.1) : budget;
+    const closest = presets.reduce((best, current) => {
+      const bestDiff = Math.abs(best.value - effectiveBudget);
+      const currentDiff = Math.abs(current.value - effectiveBudget);
+      return currentDiff < bestDiff ? current : best;
+    }, presets[0]);
+
+    return closest.label;
+  };
+
+  const budgetTierLabel = inferBudgetTierLabel(
+    config.usage,
+    config.budget,
+    "build_priority" in config ? config.build_priority : undefined
+  );
+
+  const buildPriorityLabel =
+    !isSavedConfiguration(config) && config.build_priority
+      ? config.build_priority === "cost"
+        ? "コスト重視"
+        : config.build_priority === "spec"
+          ? "スペック重視"
+          : "バランス"
+      : null;
 
   const selectionSummary = {
     coolerType:
@@ -481,6 +541,15 @@ export function ResultView({ config, onBack }: ResultProps) {
               保存済み構成ID: {configurationId}
             </p>
           )}
+
+          <div className="mb-6 flex flex-wrap items-center gap-2">
+            <span className="inline-flex rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-800">
+              {budgetTierLabel}
+            </span>
+            <span className="inline-flex rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-800">
+              {buildPriorityLabel ?? "方針情報なし"}
+            </span>
+          </div>
 
           {isSavedConfiguration(config) && (
             <p className="text-sm text-gray-500 -mt-4 mb-6">

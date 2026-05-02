@@ -35,6 +35,7 @@ interface ConfigFormProps {
       customBudgetWeights: CustomBudgetWeights;
     }
   ) => void;
+  onCancel?: () => void;
   isLoading: boolean;
 }
 
@@ -66,7 +67,8 @@ const USAGE_OPTIONS = [
   { value: "gaming", label: "ゲーミングPC", icon: "🎮", desc: "GPU重視・高フレームレート向け" },
   { value: "creator", label: "クリエイターPC", icon: "🎨", desc: "動画編集・3DCG・配信向け" },
   { value: "business", label: "ビジネスPC", icon: "💼", desc: "オフィス作業・安定運用重視" },
-  { value: "standard", label: "スタンダードPC", icon: "🖥️", desc: "日常使い・バランス型" },
+  { value: "standard", label: "ホーム・日常用PC", icon: "🏠", desc: "日常使い・バランス型" },
+  { value: "video_editing", label: "ワークステーション", icon: "⚙️", desc: "CAD・3DCG・エンジニアリング・高負荷処理向け" },
 ] as const;
 
 const COOLER_OPTIONS = [
@@ -242,7 +244,7 @@ function getMainStorageAnnotation(): string {
   return "デフォルトでは必ず選択されます。";
 }
 
-export function ConfigForm({ onSubmit, isLoading }: ConfigFormProps) {
+export function ConfigForm({ onSubmit, onCancel, isLoading }: ConfigFormProps) {
   const [marketRange, setMarketRange] = useState(FALLBACK_MARKET_PRICE_RANGE);
   const [marketRangeLoading, setMarketRangeLoading] = useState(true);
   const [marketRangeError, setMarketRangeError] = useState<string | null>(null);
@@ -275,6 +277,7 @@ export function ConfigForm({ onSubmit, isLoading }: ConfigFormProps) {
   const [showMarketSummary, setShowMarketSummary] = useState(true);
   const [showStorageDbDetails, setShowStorageDbDetails] = useState(false);
   const [popupMessage, setPopupMessage] = useState<string | null>(null);
+  const [selectedPresetLabel, setSelectedPresetLabel] = useState<string | null>("ミドル");
   const [activeUsageTooltip, setActiveUsageTooltip] = useState<string | null>(null);
   const [activeCoolerTooltip, setActiveCoolerTooltip] = useState<string | null>(null);
   const budgetMin = 50000;
@@ -335,11 +338,30 @@ export function ConfigForm({ onSubmit, isLoading }: ConfigFormProps) {
     loadStorageInventory();
   }, []);
 
+  const previousUsageRef = useRef<string>("");
+
   useEffect(() => {
-    if (usage === "business" || usage === "standard") {
-      setBudget(Math.max(0, marketRange.min - 15000));
+    if (previousUsageRef.current === usage) {
+      return;
     }
-  }, [usage, marketRange.min]);
+    previousUsageRef.current = usage;
+
+    // 用途切り替え時にミドルプリセットをデフォルト予算として設定
+    const applyPriority = (v: number) =>
+      Math.max(0, Math.min(budgetMax, buildPriority === "spec" ? Math.round(v * 1.1) : v));
+
+    // business は静的プリセット（sub引き算なし）、その他は base - 15000
+    const middleValues: Record<string, number> = {
+      gaming: 274980 - 15000,       // 259,980
+      creator: 299980 - 15000,      // 284,980
+      video_editing: 299980 - 15000,// 284,980
+      business: 114980,             // 静的プリセットのまま
+      standard: 109980 - 15000,     // 94,980
+    };
+    const middleValue = applyPriority(middleValues[usage] ?? 299980 - 15000);
+    setBudget(middleValue);
+    setSelectedPresetLabel("ミドル");
+  }, [usage, budgetMax, buildPriority]);
 
   useEffect(() => {
     const prev = previousBuildPriorityRef.current;
@@ -380,6 +402,11 @@ export function ConfigForm({ onSubmit, isLoading }: ConfigFormProps) {
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
+    const nativeEvent = event.nativeEvent as SubmitEvent;
+    const submitter = nativeEvent.submitter as HTMLElement | null;
+    if (submitter && submitter.getAttribute("data-role") !== "primary-submit") {
+      return;
+    }
     const effectiveBudget = getEffectiveBudgetByPriority(budget);
     onSubmit(effectiveBudget, usage, {
       coolerType,
@@ -416,7 +443,7 @@ export function ConfigForm({ onSubmit, isLoading }: ConfigFormProps) {
       baseValues.map((price) => applyPriorityPremium(price - sub));
 
     if (usage === "gaming") {
-      const bases = [184980, 274980, 589980, 1309980].map((value) => Math.min(budgetMax, value));
+      const bases = [179980, 274980, 514980, 999980].map((value) => Math.min(budgetMax, value));
       const [entry, middle, high, flagship] = toPresetValues(bases);
       return [
         { label: "ローエンド", value: entry },
@@ -438,12 +465,7 @@ export function ConfigForm({ onSubmit, isLoading }: ConfigFormProps) {
     }
 
     if (usage === "business") {
-      const costBases = [
-        Math.max(0, min - sub),
-        Math.max(0, Math.round((min * 1.3) / 10000) * 10000 - sub),
-        Math.max(0, Math.round((min * 1.7) / 10000) * 10000 - sub),
-        Math.max(0, Math.round((min * 2.2) / 10000) * 10000 - sub),
-      ];
+      const costBases = [99980, 114980, 134980, 159980];
       const [entry, middle, high, flagship] = costBases.map((value) => applyPriorityPremium(value));
       return [
         { label: "ローエンド", value: entry },
@@ -453,7 +475,7 @@ export function ConfigForm({ onSubmit, isLoading }: ConfigFormProps) {
       ];
     }
 
-    const creatorBases = [199980, 299980, 449980, 699980];
+    const creatorBases = [184980, 299980, 449980, 699980];
     const [entry, middle, high, flagship] = toPresetValues(creatorBases);
 
     return [
@@ -695,7 +717,10 @@ export function ConfigForm({ onSubmit, isLoading }: ConfigFormProps) {
                 max={budgetMax}
                 step={1000}
                 value={Math.min(budgetMax, Math.max(budgetMin, budget))}
-                onChange={(event) => setBudget(Number(event.target.value))}
+                onChange={(event) => {
+                  setBudget(Number(event.target.value));
+                  setSelectedPresetLabel(null);
+                }}
                 className="h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-200 accent-blue-600"
                 style={{ backgroundSize: `${budgetProgress}% 100%` }}
               />
@@ -718,6 +743,7 @@ export function ConfigForm({ onSubmit, isLoading }: ConfigFormProps) {
                 onFocus={() => setPopupMessage(`入力範囲: ¥${budgetMin.toLocaleString("ja-JP")} - ¥${budgetMax.toLocaleString("ja-JP")}`)}
                 onChange={(e) => {
                   setBudget(Number(e.target.value));
+                  setSelectedPresetLabel(null);
                   setPopupMessage(`入力範囲: ¥${budgetMin.toLocaleString("ja-JP")} - ¥${budgetMax.toLocaleString("ja-JP")}`);
                 }}
                 min={50000}
@@ -765,8 +791,11 @@ export function ConfigForm({ onSubmit, isLoading }: ConfigFormProps) {
                 <button
                   key={preset.value}
                   type="button"
-                  onClick={() => setBudget(preset.value)}
-                  className={segmentButtonClass(budget === preset.value)}
+                  onClick={() => {
+                    setBudget(preset.value);
+                    setSelectedPresetLabel(preset.label);
+                  }}
+                  className={segmentButtonClass(selectedPresetLabel === preset.label)}
                 >
                   {preset.label}
                 </button>
@@ -1112,6 +1141,7 @@ export function ConfigForm({ onSubmit, isLoading }: ConfigFormProps) {
           <button
             type="submit"
             form="config-form"
+            data-role="primary-submit"
             disabled={!canSubmit}
             className={`w-full rounded-lg px-4 py-3 text-base font-semibold transition ${
               canSubmit
@@ -1121,6 +1151,15 @@ export function ConfigForm({ onSubmit, isLoading }: ConfigFormProps) {
           >
             {isLoading ? "構成を生成中..." : "PC構成を提案してもらう"}
           </button>
+          {isLoading && onCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              className="mt-2 w-full rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
+            >
+              キャンセル
+            </button>
+          )}
         </div>
       </div>
 

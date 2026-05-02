@@ -881,6 +881,73 @@ class ScraperApiTests(APITestCase):
 		)
 		self.assertIn('DDR5', spec_parts['motherboard']['name'])
 
+	def test_generate_config_gaming_cost_prefers_16gb_even_under_220k(self):
+		PCPart.objects.create(
+			part_type='cpu',
+			name='Intel Core i5 14400F Under220k',
+			price=32000,
+			specs={'socket': 'LGA1700'},
+			url='https://example.com/cpu-intel-14400f-under220k',
+		)
+		PCPart.objects.create(
+			part_type='motherboard',
+			name='B760 DDR4 Board Under220k',
+			price=14000,
+			specs={'socket': 'LGA1700', 'memory_type': 'DDR4', 'form_factor': 'MicroATX'},
+			url='https://example.com/mb-b760-ddr4-under220k',
+		)
+		PCPart.objects.create(
+			part_type='memory',
+			name='DDR4 8GB Under220k',
+			price=3000,
+			specs={'memory_type': 'DDR4', 'capacity_gb': 8},
+			url='https://example.com/mem-ddr4-8-under220k',
+		)
+		PCPart.objects.create(
+			part_type='memory',
+			name='DDR4 16GB Under220k',
+			price=5000,
+			specs={'memory_type': 'DDR4', 'capacity_gb': 16},
+			url='https://example.com/mem-ddr4-16-under220k',
+		)
+		PCPart.objects.create(
+			part_type='storage',
+			name='NVMe 1TB Under220k',
+			price=12000,
+			specs={'interface': 'NVMe', 'capacity_gb': 1000},
+			url='https://example.com/ssd-under220k',
+		)
+		PCPart.objects.create(
+			part_type='psu',
+			name='750W PSU Under220k',
+			price=9000,
+			specs={'wattage': 750},
+			url='https://example.com/psu-under220k',
+		)
+		PCPart.objects.create(
+			part_type='case',
+			name='ATX Case Under220k',
+			price=9000,
+			specs={'supported_form_factors': ['MicroATX', 'ATX']},
+			url='https://example.com/case-under220k',
+		)
+
+		response = self.client.post(
+			'/api/configurations/generate/',
+			{
+				'budget': 165000,
+				'usage': 'gaming',
+				'cpu_vendor': 'intel',
+				'build_priority': 'cost',
+			},
+			format='json',
+		)
+
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		parts = {p['category']: p for p in response.data['parts']}
+		self.assertIn('DDR4', parts['memory']['name'])
+		self.assertIn('16GB', parts['memory']['name'])
+
 	def test_generate_config_gaming_cost_falls_back_to_8gb_when_16gb_unavailable(self):
 		PCPart.objects.create(
 			part_type='cpu',
@@ -1276,6 +1343,94 @@ class ScraperApiTests(APITestCase):
 		self.assertNotIn('gt 710', parts['gpu']['name'].lower())
 		# gaming+spec ではメモリを無制限に上げず、GPU優先を維持
 		self.assertNotIn('64GB', parts['memory']['name'])
+
+	def test_generate_config_gaming_spec_prefers_16gb_when_target_pool_lacks_16gb(self):
+		PCPart.objects.create(
+			part_type='cpu',
+			name='Intel Core Ultra 5 225F Spec16GB',
+			price=24850,
+			specs={'socket': 'LGA1851'},
+			url='https://example.com/cpu-ultra5-225f-spec16gb',
+		)
+		PCPart.objects.create(
+			part_type='gpu',
+			name='ASUS RTX 5060 Ti 8GB Spec16GB',
+			price=88686,
+			specs={'vram': '8GB'},
+			url='https://example.com/gpu-rtx5060ti-spec16gb',
+		)
+		PCPart.objects.create(
+			part_type='motherboard',
+			name='H810M K Spec16GB',
+			price=7980,
+			specs={'socket': 'LGA1851', 'memory_type': 'DDR5', 'form_factor': 'MicroATX'},
+			url='https://example.com/mb-h810m-k-spec16gb',
+		)
+		PCPart.objects.create(
+			part_type='memory',
+			name='DDR5 8GB Spec16GB',
+			price=13580,
+			specs={'memory_type': 'DDR5', 'capacity_gb': 8},
+			url='https://example.com/mem-ddr5-8-spec16gb',
+		)
+		PCPart.objects.create(
+			part_type='memory',
+			name='DDR5 16GB Spec16GB',
+			price=15580,
+			specs={'memory_type': 'DDR5', 'capacity_gb': 16},
+			url='https://example.com/mem-ddr5-16-spec16gb',
+		)
+		PCPart.objects.create(
+			part_type='storage',
+			name='NVMe 512GB Spec16GB',
+			price=13979,
+			specs={'interface': 'NVMe', 'capacity_gb': 512},
+			url='https://example.com/ssd-512-spec16gb',
+		)
+		PCPart.objects.create(
+			part_type='psu',
+			name='650W PSU Spec16GB',
+			price=6480,
+			specs={'wattage': 650},
+			url='https://example.com/psu-650-spec16gb',
+		)
+		PCPart.objects.create(
+			part_type='case',
+			name='Mid Case Spec16GB',
+			price=3580,
+			specs={'supported_form_factors': ['MicroATX', 'ATX']},
+			url='https://example.com/case-mid-spec16gb',
+		)
+		PCPart.objects.create(
+			part_type='cpu_cooler',
+			name='Air Cooler Spec16GB',
+			price=3780,
+			specs={'cooler_type': 'air'},
+			url='https://example.com/cooler-air-spec16gb',
+		)
+		PCPart.objects.create(
+			part_type='os',
+			name='Windows 11 Home Spec16GB',
+			price=17352,
+			url='https://example.com/os-spec16gb',
+		)
+
+		response = self.client.post(
+			'/api/configurations/generate/',
+			{
+				'budget': 181478,
+				'usage': 'gaming',
+				'build_priority': 'spec',
+				'cpu_vendor': 'any',
+				'cooler_type': 'air',
+				'case_size': 'mid',
+			},
+			format='json',
+		)
+
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		parts = {p['category']: p for p in response.data['parts']}
+		self.assertIn('16GB', parts['memory']['name'])
 
 	def test_generate_config_gaming_spec_gpu_price_not_lower_than_memory(self):
 		PCPart.objects.create(

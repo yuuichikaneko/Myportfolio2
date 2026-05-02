@@ -1,29 +1,5 @@
 Set-Location "$PSScriptRoot"
 
-function Get-FreePort {
-	param(
-		[int]$StartPort = 5173,
-		[int]$EndPort = 5200
-	)
-
-	for ($port = $StartPort; $port -le $EndPort; $port++) {
-		$listener = $null
-		try {
-			$listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $port)
-			$listener.Start()
-			$listener.Stop()
-			return $port
-		}
-		catch {
-			if ($listener) {
-				$listener.Stop()
-			}
-		}
-	}
-
-	throw "No free port found in range $StartPort-$EndPort"
-}
-
 Write-Output "============================================================"
 Write-Output "Django + Frontend Startup"
 Write-Output "============================================================"
@@ -39,9 +15,9 @@ Start-Process powershell -ArgumentList '-NoExit', '-Command', "cd '$PSScriptRoot
 
 Start-Sleep -Seconds 2
 
-$frontendPort = Get-FreePort
+$frontendPort = 5173
 Write-Output "[2] Starting Frontend on port $frontendPort..."
-Start-Process powershell -ArgumentList '-NoExit', '-Command', "cd '$PSScriptRoot/frontend'; npm run dev -- --host 127.0.0.1 --port $frontendPort"
+Start-Process powershell -ArgumentList '-NoExit', '-Command', "cd '$PSScriptRoot/frontend'; npm run dev -- --host 127.0.0.1 --port $frontendPort --strictPort"
 
 Write-Output ""
 Write-Output "============================================================"

@@ -20,6 +20,21 @@ class PCPart(models.Model):
     price = models.IntegerField()
     specs = models.JSONField(default=dict)
     url = models.URLField()
+    chipset = models.CharField(max_length=50, blank=True, default='')
+    currency = models.CharField(max_length=3, blank=True, default='')
+    efficiency_grade = models.CharField(max_length=20, blank=True, default='')
+    form_factor = models.CharField(max_length=30, blank=True, default='')
+    interface = models.CharField(max_length=30, blank=True, default='')
+    is_active = models.BooleanField(default=False)
+    license_type = models.CharField(max_length=30, blank=True, default='')
+    maker = models.CharField(max_length=100, blank=True, default='')
+    memory_type = models.CharField(max_length=20, blank=True, default='')
+    model_code = models.CharField(max_length=120, blank=True, default='')
+    os_edition = models.CharField(max_length=50, blank=True, default='')
+    os_family = models.CharField(max_length=30, blank=True, default='')
+    socket = models.CharField(max_length=50, blank=True, default='')
+    stock_status = models.CharField(max_length=20, blank=True, default='')
+    vram_type = models.CharField(max_length=20, blank=True, default='')
     scraped_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -35,10 +50,13 @@ class Configuration(models.Model):
     """PC 構成モデル"""
     USAGE_CHOICES = [
         ('gaming', 'Gaming'),
-        ('video_editing', 'Video Editing'),
-        ('general', 'General'),
+        ('creator', 'Creator'),
+        ('business', 'Business'),
+        ('standard', 'Standard'),
+        ('video_editing', 'Workstation'),
     ]
     
+    name = models.CharField(max_length=120, blank=True, default='')
     budget = models.IntegerField()
     usage = models.CharField(max_length=20, choices=USAGE_CHOICES)
     cpu = models.ForeignKey(PCPart, on_delete=models.SET_NULL, null=True, related_name='cfg_cpu')
