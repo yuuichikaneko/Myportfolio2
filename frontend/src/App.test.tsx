@@ -325,4 +325,16 @@ describe("App history panel", () => {
       expect(screen.getByRole("button", { name: "保存履歴 2" })).toBeInTheDocument();
     });
   });
+
+  it("sets middle preset budget when switching usage to standard", async () => {
+    render(<App />);
+
+    await screen.findByRole("radio", { name: "🏠 ホーム・日常用PC" });
+    const standardUsageRadio = screen.getByRole("radio", { name: "🏠 ホーム・日常用PC" });
+    await userEvent.click(standardUsageRadio);
+
+    await waitFor(() => {
+      expect(screen.getByRole("spinbutton")).toHaveValue(94980);
+    });
+  });
 });
