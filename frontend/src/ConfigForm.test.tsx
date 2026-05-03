@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigForm } from "./ConfigForm";
@@ -124,32 +124,59 @@ describe("ConfigForm presets", () => {
     render(<ConfigForm onSubmit={() => undefined} isLoading={false} />);
 
     await waitFor(() => {
-      expect(screen.getByRole("radio", { name: /クリエイターPC/ })).toBeInTheDocument();
+      expect(screen.getByRole("radio", { name: /クリエイト/ })).toBeInTheDocument();
     });
 
-    await userEvent.click(screen.getByRole("radio", { name: /クリエイターPC/ }));
+    await userEvent.click(screen.getByRole("radio", { name: /クリエイト/ }));
     await userEvent.click(screen.getByRole("button", { name: "スペック重視" }));
 
     const premiumButtons = screen.getAllByRole("button", { name: "プレミアム" });
     const premiumButton = premiumButtons[premiumButtons.length - 1];
     await userEvent.click(premiumButton);
 
-    expect(screen.getByRole("spinbutton")).toHaveValue(1314478);
+    expect(screen.getByRole("spinbutton")).toHaveValue(1410076);
   });
 
   it("keeps the general middle preset above the low-end tier", async () => {
     render(<ConfigForm onSubmit={() => undefined} isLoading={false} />);
 
     await waitFor(() => {
-      expect(screen.getByRole("radio", { name: /汎用PC/ })).toBeInTheDocument();
+      expect(screen.getByRole("radio", { name: /汎用・家庭用/ })).toBeInTheDocument();
     });
 
-    await userEvent.click(screen.getByRole("radio", { name: /汎用PC/ }));
+    await userEvent.click(screen.getByRole("radio", { name: /汎用・家庭用/ }));
     const middleButtons = screen.getAllByRole("button", { name: "ミドル" });
     const middleButton = middleButtons[0];
     await userEvent.click(middleButton);
 
     expect(screen.getByRole("spinbutton")).toHaveValue(224980);
     expect(screen.getByRole("spinbutton")).not.toHaveValue(85000);
+  });
+
+  it("submits general low-end budget after changing from middle to low-end", async () => {
+    const onSubmit = vi.fn();
+    render(<ConfigForm onSubmit={onSubmit} isLoading={false} />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("radio", { name: /汎用・家庭用/ })).toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByRole("radio", { name: /汎用・家庭用/ }));
+
+    const lowEndButton = screen.getByRole("button", { name: "ローエンド" });
+    await userEvent.click(lowEndButton);
+    expect(screen.getByRole("spinbutton")).toHaveValue(174980);
+
+    const form = document.getElementById("config-form");
+    expect(form).toBeTruthy();
+    fireEvent.submit(form as HTMLFormElement);
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalled();
+    });
+
+    const [submittedBudget, submittedUsage] = onSubmit.mock.calls[0];
+    expect(submittedBudget).toBe(174980);
+    expect(submittedUsage).toBe("general");
   });
 });

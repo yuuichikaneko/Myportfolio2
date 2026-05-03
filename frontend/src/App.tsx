@@ -174,6 +174,8 @@ function App() {
       caseFanPolicy: "auto" | "silent" | "airflow";
       cpuVendor: "any" | "intel" | "amd";
       buildPriority: "cost" | "spec";
+      selectedBudgetTier?: "low" | "middle" | "high" | "premium";
+      cpuPartId: number | null;
       storagePreference: "ssd" | "hdd";
       mainStorageCapacity: "512" | "1024" | "2048" | "4096";
       storage2PartId: number | null;
@@ -193,6 +195,7 @@ function App() {
       const response = await generateConfig({
         budget,
         usage,
+        selected_budget_tier: options.selectedBudgetTier,
         name: options.name || undefined,
         cooler_type: options.coolerType,
         radiator_size: options.radiatorSize,
