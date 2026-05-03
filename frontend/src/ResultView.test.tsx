@@ -1,6 +1,10 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import {
+  compareCpuSelectionMaterial,
+  getLatestCpuSelectionMaterial,
+} from "./api";
 import type { GenerateConfigResponse, SavedConfigurationResponse } from "./api";
 import { ResultView } from "./ResultView";
 
@@ -295,6 +299,7 @@ describe("ResultView", () => {
       os_data: null,
       psu_data: null,
       case_data: null,
+      case_fan_data: null,
       created_at: "2026-04-05T12:00:00Z",
     };
 
@@ -530,6 +535,95 @@ describe("ResultView", () => {
 
     expect(screen.getByText("付属CPUクーラーを使用")).toBeInTheDocument();
     expect(screen.getByText("CPUクーラーは未選択ですが、CPU付属クーラーを前提にしています。")).toBeInTheDocument();
+  });
+
+  it("shows workstation threadripper comparison entries for premium spec", async () => {
+    vi.mocked(getLatestCpuSelectionMaterial).mockResolvedValueOnce({
+      source_name: "dospara_cpu_comparison_pages",
+      source_urls: ["https://example.com/threadripper"],
+      exclude_intel_13_14: true,
+      entry_count: 3,
+      excluded_count: 0,
+      entries: {
+        count: 3,
+        next: null,
+        previous: null,
+        results: [
+          { vendor: "amd", model_name: "RYZEN Threadripper 9970X", perf_score: 12000, source_url: "https://example.com/tr9970x" },
+          { vendor: "amd", model_name: "RYZEN Threadripper 9960X", perf_score: 11400, source_url: "https://example.com/tr9960x" },
+          { vendor: "amd", model_name: "RYZEN Threadripper 7960X", perf_score: 9800, source_url: "https://example.com/tr7960x" },
+        ],
+      },
+    });
+    vi.mocked(compareCpuSelectionMaterial).mockResolvedValueOnce({
+      requested_models: ["RYZEN Threadripper 9970X", "RYZEN Threadripper 9960X", "RYZEN Threadripper 7960X"],
+      missing_models: [],
+      results: [
+        { vendor: "amd", model_name: "RYZEN Threadripper 9970X", perf_score: 12000, source_url: "https://example.com/tr9970x" },
+        { vendor: "amd", model_name: "RYZEN Threadripper 9960X", perf_score: 11400, source_url: "https://example.com/tr9960x" },
+        { vendor: "amd", model_name: "RYZEN Threadripper 7960X", perf_score: 9800, source_url: "https://example.com/tr7960x" },
+      ],
+    });
+
+    const config: GenerateConfigResponse = {
+      usage: "workstation",
+      build_priority: "spec",
+      budget: 999980,
+      requested_budget: 999980,
+      configuration_id: 1301,
+      total_price: 899800,
+      estimated_power_w: 680,
+      parts: [
+        { category: "cpu", name: "AMD Ryzen Threadripper 9960X BOX", price: 293800, url: "https://example.com/tr9960x" },
+        { category: "gpu", name: "RTX PRO 5000", price: 259800, url: "https://example.com/gpu" },
+      ],
+    };
+
+    await renderResultView(config);
+
+    expect(screen.getByText("RYZEN Threadripper 9960X")).toBeInTheDocument();
+    expect(vi.mocked(compareCpuSelectionMaterial)).toHaveBeenCalledWith([
+      "RYZEN Threadripper 9970X",
+      "RYZEN Threadripper 9960X",
+      "RYZEN Threadripper 7960X",
+    ]);
+  });
+
+  it("shows workstation unavailable message when cpu material does not include the selected cpu", async () => {
+    vi.mocked(getLatestCpuSelectionMaterial).mockResolvedValueOnce({
+      source_name: "dospara_cpu_comparison_pages",
+      source_urls: ["https://example.com/amd"],
+      exclude_intel_13_14: true,
+      entry_count: 2,
+      excluded_count: 0,
+      entries: {
+        count: 2,
+        next: null,
+        previous: null,
+        results: [
+          { vendor: "amd", model_name: "RYZEN Threadripper 9960X", perf_score: 11400, source_url: "https://example.com/tr9960x" },
+          { vendor: "amd", model_name: "RYZEN Threadripper 9970X", perf_score: 12000, source_url: "https://example.com/tr9970x" },
+        ],
+      },
+    });
+
+    const config: GenerateConfigResponse = {
+      usage: "workstation",
+      build_priority: "spec",
+      budget: 624980,
+      requested_budget: 624980,
+      configuration_id: 1302,
+      total_price: 599800,
+      estimated_power_w: 540,
+      parts: [
+        { category: "cpu", name: "AMD Ryzen 9 9950X3D2 Dual Edition BOX", price: 178000, url: "https://example.com/9950x3d2" },
+        { category: "gpu", name: "RTX PRO 5000", price: 259800, url: "https://example.com/gpu" },
+      ],
+    };
+
+    await renderResultView(config);
+
+    expect(screen.getByText("CPU選考資料は RYZEN 9 9950X3D2 をまだ収録していません。")).toBeInTheDocument();
   });
 
   it("allows manual part replacement from result screen", async () => {

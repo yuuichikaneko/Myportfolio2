@@ -42,6 +42,7 @@ const savedConfigurationsFixture = [
     os_data: null,
     psu_data: null,
     case_data: null,
+    case_fan_data: null,
     created_at: "2026-03-14T10:00:00Z",
   },
   {
@@ -62,6 +63,7 @@ const savedConfigurationsFixture = [
     os_data: null,
     psu_data: null,
     case_data: null,
+    case_fan_data: null,
     created_at: "2026-03-14T11:00:00Z",
   },
 ];
@@ -326,15 +328,15 @@ describe("App history panel", () => {
     });
   });
 
-  it("sets middle preset budget when switching usage to standard", async () => {
+  it("sets middle preset budget when switching usage to general", async () => {
     render(<App />);
 
-    await screen.findByRole("radio", { name: "🏠 ホーム・日常用PC" });
-    const standardUsageRadio = screen.getByRole("radio", { name: "🏠 ホーム・日常用PC" });
-    await userEvent.click(standardUsageRadio);
+    await screen.findByRole("radio", { name: /汎用・家庭用/ });
+    const generalUsageRadio = screen.getByRole("radio", { name: /汎用・家庭用/ });
+    await userEvent.click(generalUsageRadio);
 
     await waitFor(() => {
-      expect(screen.getByRole("spinbutton")).toHaveValue(94980);
+      expect(screen.getByRole("spinbutton")).toHaveValue(224980);
     });
   });
 });

@@ -37,6 +37,7 @@ interface ConfigFormProps {
       caseFanPolicy: "auto" | "silent" | "airflow";
       cpuVendor: "any" | "intel" | "amd";
       buildPriority: "cost" | "spec";
+      selectedBudgetTier?: "low" | "middle" | "high" | "premium";
       storagePreference: "ssd" | "hdd";
       mainStorageCapacity: "512" | "1024" | "2048" | "4096";
       storage2PartId: number | null;
@@ -76,9 +77,9 @@ const CUSTOM_BUDGET_WEIGHT_FIELDS: Array<{ key: keyof CustomBudgetWeights; label
 
 const USAGE_OPTIONS = [
   { value: "gaming", label: "ゲーム", icon: "🎮", desc: "GPU重視・高フレームレート向け" },
-  { value: "general", label: "汎用", icon: "🧩", desc: "日常利用・学習・軽い開発向け" },
   { value: "creator", label: "クリエイト", icon: "🎨", desc: "動画編集・配信・制作向け" },
   { value: "business", label: "ビジネス", icon: "💼", desc: "業務利用・安定運用向け" },
+  { value: "general", label: "汎用・家庭用", icon: "🧩", desc: "日常利用・学習・軽い開発向け" },
   { value: "workstation", label: "ワークステーション", icon: "🛠️", desc: "高負荷計算・ローカルAI・3D制作向け" },
 ] as const;
 
@@ -118,8 +119,10 @@ const CPU_VENDOR_OPTIONS = [
 
 const BUILD_PRIORITY_OPTIONS = [
   { value: "cost", label: "コスト重視", desc: "予算内で最大のコスパを目指す構成" },
-  { value: "spec", label: "スペック重視", desc: "表示予算に20%上乗せして高スペックな構成を優先" },
+  { value: "spec", label: "スペック重視", desc: "用途に応じて予算を上乗せして高スペックな構成を優先" },
 ] as const;
+
+const PRESET_TIER_CODES = ["low", "middle", "high", "premium"] as const;
 
 const STORAGE_PREFERENCE_OPTIONS = [
   { value: "ssd", label: "SSD" },
@@ -274,6 +277,7 @@ export function ConfigForm({ onSubmit, isLoading }: ConfigFormProps) {
   const [configurationName, setConfigurationName] = useState("");
   const [selectedPresetIndex, setSelectedPresetIndex] = useState<number | null>(null);
   const previousBuildPriorityRef = useRef<"cost" | "spec">("cost");
+  const previousUsageRef = useRef<UsageCode>("gaming");
   const [storagePreference, setStoragePreference] = useState<"ssd" | "hdd">("ssd");
   const [mainStorageCapacity, setMainStorageCapacity] = useState<"512" | "1024" | "2048" | "4096">("512");
   const [storagePreference2, setStoragePreference2] = useState<"none" | "nvme_ssd" | "sata_ssd" | "hdd">("none");
@@ -376,12 +380,6 @@ export function ConfigForm({ onSubmit, isLoading }: ConfigFormProps) {
   }, []);
 
   useEffect(() => {
-    if (usage === "general") {
-      setBudget(Math.max(0, marketRange.min - 15000));
-    }
-  }, [usage, marketRange.min]);
-
-  useEffect(() => {
     // CPUメーカーが変わったとき、選択済みCPUがそのメーカーに属さなければリセット
     if (selectedCpuPartId === null) return;
     const current = cpuList.find((c) => c.id === selectedCpuPartId);
@@ -419,6 +417,7 @@ export function ConfigForm({ onSubmit, isLoading }: ConfigFormProps) {
       caseFanPolicy,
       cpuVendor,
       buildPriority,
+      selectedBudgetTier: selectedPresetIndex !== null ? PRESET_TIER_CODES[selectedPresetIndex] : undefined,
       storagePreference,
       mainStorageCapacity,
       storage2PartId: storage2ProductId,
@@ -459,8 +458,14 @@ export function ConfigForm({ onSubmit, isLoading }: ConfigFormProps) {
     // 注意: ここで算出する金額は UI の初期提案値であり、最終選定は backend 側で再計算される。
     // backend の用途別固定方針（例: AI premium の CPU/GPU 優先）を変えた場合は、
     // このプリセット基準値も合わせて見直すこと。
+    // spec 乗数は用途によって異なる
+    const specMultiplier =
+      usage === "gaming" || usage === "workstation" ? 1.20
+      : usage === "creator" || usage === "video_editing" ? 1.18
+      : usage === "standard" || usage === "business" ? 1.15
+      : 1.10;
     const applyPriorityPremium = (value: number) => {
-      const adjusted = buildPriority === "spec" ? Math.round(value * 1.1) : value;
+      const adjusted = buildPriority === "spec" ? Math.round(value * specMultiplier) : value;
       return Math.max(0, Math.min(budgetMax, adjusted));
     };
 
@@ -506,6 +511,40 @@ export function ConfigForm({ onSubmit, isLoading }: ConfigFormProps) {
       ];
     }
 
+    // workstation: ローカルAI・DeepLearning・数値計算・CAD向け高負荷構成
+    // cost: GPU32%・メモリ14%中心の標準ワークステーション配分
+    // spec: GPU45%に引き上げてVRAM優先（LLM・ディープラーニング向け）
+    if (usage === "workstation") {
+      const bases = buildPriority === "spec"
+        // spec: GPU最優先で予算20%上乗せ
+        ? [394980, 479980, 639980, 1014980]
+        // cost: 標準ワークステーション構成
+        : [394980, 479980, 639980, 1014980];
+      const [entry, middle, high, flagship] = toPresetValues(bases);
+      return [
+        { label: "ローエンド", value: entry },
+        { label: "ミドル", value: middle },
+        { label: "ハイエンド", value: high },
+        { label: "プレミアム", value: flagship },
+      ];
+    }
+
+    // standard / business: コスパ重視はiGPU構成、スペック重視はdGPU解禁
+    if (usage === "standard" || usage === "business") {
+      const bases = buildPriority === "spec"
+        // spec: 予算 160k 以上を確保して dGPU 解禁しきい値を超える
+        ? [175980, 245980, 379980, 569980]
+        // cost: iGPU 構成向けの現実的な予算帯
+        : [119980, 159980, 239980, 359980];
+      const [entry, middle, high, flagship] = toPresetValues(bases);
+      return [
+        { label: "ローエンド", value: entry },
+        { label: "ミドル", value: middle },
+        { label: "ハイエンド", value: high },
+        { label: "プレミアム", value: flagship },
+      ];
+    }
+
     const creatorBases = buildPriority === "spec"
       ? [199980, 299980, 449980, 1209980]
       : [199980, 299980, 449980, 699980];
@@ -518,6 +557,37 @@ export function ConfigForm({ onSubmit, isLoading }: ConfigFormProps) {
       { label: "プレミアム", value: flagship },
     ];
   }, [budgetMax, buildPriority, marketRange.gaming_x3d_recommended_min, marketRange.min, usage]);
+
+  // 初回表示時に価格帯プリセットの選択状態が空にならないよう、ミドルを既定選択にする
+  useEffect(() => {
+    if (selectedPresetIndex !== null) {
+      return;
+    }
+    if (presets.length > 1) {
+      setSelectedPresetIndex(1);
+      setBudget((current) => {
+        // 手入力や復元値がある場合は尊重し、レンジ外のみミドルへ補正する
+        if (current >= budgetMin && current <= budgetMax) {
+          return current;
+        }
+        return presets[1].value;
+      });
+    }
+  }, [budgetMax, budgetMin, presets, selectedPresetIndex]);
+
+  // 用途切替時はミドルプリセット（index=1）にリセットする
+  useEffect(() => {
+    if (previousUsageRef.current === usage) {
+      return;
+    }
+    previousUsageRef.current = usage;
+    if (presets.length > 1) {
+      setSelectedPresetIndex(1);
+      setBudget(presets[1].value);
+    }
+  // presets は usage 変化時に同時に更新されるため依存に含める
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [usage, presets]);
 
   useEffect(() => {
     const prev = previousBuildPriorityRef.current;
@@ -533,11 +603,16 @@ export function ConfigForm({ onSubmit, isLoading }: ConfigFormProps) {
 
     setBudget((current) => {
       const clampedCurrent = Math.min(budgetMax, Math.max(budgetMin, current));
+      const switchMultiplier =
+        usage === "gaming" || usage === "workstation" ? 1.20
+        : usage === "creator" || usage === "video_editing" ? 1.18
+        : usage === "standard" || usage === "business" ? 1.15
+        : 1.10;
       if (prev === "cost" && buildPriority === "spec") {
-        return Math.min(budgetMax, Math.round(clampedCurrent * 1.2));
+        return Math.min(budgetMax, Math.round(clampedCurrent * switchMultiplier));
       }
       if (prev === "spec" && buildPriority === "cost") {
-        return Math.max(budgetMin, Math.round(clampedCurrent / 1.2));
+        return Math.max(budgetMin, Math.round(clampedCurrent / switchMultiplier));
       }
       return clampedCurrent;
     });
@@ -843,7 +918,7 @@ export function ConfigForm({ onSubmit, isLoading }: ConfigFormProps) {
                     value={option.value}
                     checked={usage === option.value}
                     onChange={(e) => {
-                      const nextUsage = e.target.value;
+                      const nextUsage = e.target.value as UsageCode;
                       setUsage(nextUsage);
                     }}
                     onFocus={() => setActiveUsageTooltip(option.value)}

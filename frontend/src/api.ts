@@ -60,6 +60,7 @@ async function parseApiError(response: Response, fallbackMessage: string): Promi
 export interface GenerateConfigRequest {
   budget: number;
   usage: UsageCode;
+  selected_budget_tier?: "low" | "middle" | "high" | "premium";
   name?: string;
   cooler_type?: "air" | "liquid";
   radiator_size?: "120" | "240" | "360";

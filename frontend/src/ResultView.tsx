@@ -137,6 +137,7 @@ function formatGpuModelLabel(entry: GpuPerformanceEntryResponse) {
 function extractCpuModelKey(text: string) {
   const normalized = text.replace(/\s+/g, " ").trim();
   const patterns = [
+    /Ryzen\s+Threadripper(?:\s+PRO)?\s+\d{4}[A-Z]*/i,
     /Ryzen\s+[3579]\s+\d{4}[A-Z0-9]*/i,
     /Core\s+Ultra\s+[3579]\s+\d{3}[A-Z]*/i,
     /Core\s+i[3579]\s*-?\s*\d{4,5}[A-Z]*/i,
@@ -160,6 +161,13 @@ function normalizeCpuModelKey(text: string) {
 
 function formatCpuModelLabel(entry: CpuSelectionEntryResponse) {
   return entry.model_name;
+}
+
+function buildCpuSelectionUnavailableMessage(currentCpuModelKey: string, usageCode: string) {
+  if (usageCode === "workstation") {
+    return `CPU選考資料は ${currentCpuModelKey} をまだ収録していません。`;
+  }
+  return `CPU選考資料に ${currentCpuModelKey} が見つかりませんでした。`;
 }
 
 const GAMING_CPU_EXCLUDED_MODELS = new Set([
@@ -1274,7 +1282,7 @@ export function ResultView({ config, onBack, onSavedConfiguration }: ResultProps
     gaming: "ゲーミングPC",
     creator: "クリエイターPC",
     ai: "AI PC（ローカルAI）",
-    general: "汎用PC（事務・学習向け）",
+    general: "汎用・家庭用PC（事務・学習向け）",
   };
   const usageCode = normalizeUsageCode(config.usage);
   const usageLabel = USAGE_LABELS[usageCode] ?? config.usage;
@@ -1478,7 +1486,7 @@ export function ResultView({ config, onBack, onSavedConfiguration }: ResultProps
               excluded_count: latest.excluded_count,
               exclude_intel_13_14: latest.exclude_intel_13_14,
             });
-            setCpuComparisonError(`CPU選考資料に ${currentCpuModelKey} が見つかりませんでした。`);
+            setCpuComparisonError(buildCpuSelectionUnavailableMessage(currentCpuModelKey, usageCode));
           }
           return;
         }
@@ -1516,7 +1524,7 @@ export function ResultView({ config, onBack, onSavedConfiguration }: ResultProps
     return () => {
       cancelled = true;
     };
-  }, [currentCpuModelKey, gamingCpuRankingMode, isGamingUsage]);
+  }, [currentCpuModelKey, gamingCpuRankingMode, isGamingUsage, usageCode]);
 
   const selectionSummary = {
     coolerType:
