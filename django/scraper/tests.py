@@ -512,6 +512,13 @@ class ScraperApiTests(APITestCase):
 	def test_generate_config_general_spec_middle_budget_prefers_cheaper_cpu_when_perf_score_missing(self):
 		PCPart.objects.create(
 			part_type='cpu',
+			name='AMD Athlon 3000G BOX',
+			price=3580,
+			specs={'socket': 'AM4', 'core_count': 2, 'thread_count': 4},
+			url='https://www.dospara.co.jp/SBR999/IC999athlon3000g-spec.html',
+		)
+		PCPart.objects.create(
+			part_type='cpu',
 			name='Intel インテル® Core™ Ultra 5 プロセッサー 250K Plus',
 			price=43800,
 			specs={'socket': 'LGA1851'},
@@ -597,6 +604,7 @@ class ScraperApiTests(APITestCase):
 		self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
 		parts = {p['category']: p for p in response.data['parts']}
 		self.assertIn('cpu', parts)
+		self.assertNotIn('athlon', str(parts['cpu']['name']).lower())
 		self.assertIn('250k plus', str(parts['cpu']['name']).lower())
 		self.assertNotIn('265kf', str(parts['cpu']['name']).lower())
 
