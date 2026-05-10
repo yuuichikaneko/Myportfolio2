@@ -10,9 +10,14 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='configuration',
-            name='name',
-            field=models.CharField(blank=True, db_index=True, default='', max_length=120),
+        migrations.SeparateDatabaseAndState(
+            state_operations=[
+                migrations.AddField(
+                    model_name='configuration',
+                    name='name',
+                    field=models.CharField(blank=True, db_index=True, default='', max_length=120),
+                ),
+            ],
+            database_operations=[],
         ),
     ]

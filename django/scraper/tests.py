@@ -400,6 +400,115 @@ class ScraperApiTests(APITestCase):
 		self.assertLessEqual(int(parts['storage']['price']), 22000)
 		self.assertNotIn('990 pro', str(parts['storage']['name']).lower())
 
+	def test_generate_config_general_cost_middle_budget_prefers_cheaper_intel_cpu(self):
+		PCPart.objects.create(
+			part_type='cpu',
+			name='AMD Ryzen 5 7600X BOX',
+			price=39800,
+			specs={'socket': 'AM5'},
+			url='https://www.dospara.co.jp/SBR999/IC9997600x.html',
+		)
+		PCPart.objects.create(
+			part_type='cpu',
+			name='Intel インテル® Core™ Ultra 5 プロセッサー 225',
+			price=28370,
+			specs={'socket': 'LGA1851'},
+			url='https://www.dospara.co.jp/SBR999/IC999225-cost.html',
+		)
+		PCPart.objects.create(
+			part_type='cpu',
+			name='Intel インテル® Core™ Ultra 7 プロセッサー 265KF',
+			price=45980,
+			specs={'socket': 'LGA1851'},
+			url='https://www.dospara.co.jp/SBR999/IC999265kf-cost.html',
+		)
+		PCPart.objects.create(
+			part_type='cpu',
+			name='Intel インテル® Core™ Ultra 5 プロセッサー 235',
+			price=43980,
+			specs={'socket': 'LGA1851'},
+			url='https://www.dospara.co.jp/SBR999/IC999235-cost.html',
+		)
+		PCPart.objects.create(
+			part_type='motherboard',
+			name='ASRock B860M Pro-A WiFi Cost',
+			price=21980,
+			specs={'socket': 'LGA1851', 'memory_type': 'DDR5', 'form_factor': 'MicroATX'},
+			url='https://www.dospara.co.jp/SBR999/IC999860-cost.html',
+		)
+		PCPart.objects.create(
+			part_type='motherboard',
+			name='ASRock B650M Pro RS Cost',
+			price=18980,
+			specs={'socket': 'AM5', 'memory_type': 'DDR5', 'form_factor': 'MicroATX'},
+			url='https://www.dospara.co.jp/SBR999/IC999b650-cost.html',
+		)
+		PCPart.objects.create(
+			part_type='memory',
+			name='DDR5 16GB General Cost Mid',
+			price=9980,
+			specs={'memory_type': 'DDR5', 'capacity_gb': 16, 'speed_mhz': 5600},
+			url='https://www.dospara.co.jp/SBR999/IC999mem-cost-mid.html',
+		)
+		PCPart.objects.create(
+			part_type='storage',
+			name='NVMe 1TB General Cost Mid',
+			price=8980,
+			specs={'interface': 'NVMe', 'capacity_gb': 1000},
+			url='https://www.dospara.co.jp/SBR999/IC999sto-cost-mid.html',
+		)
+		PCPart.objects.create(
+			part_type='cpu_cooler',
+			name='LGA1851 Air Cooler Cost',
+			price=2980,
+			specs={'supported_sockets': ['LGA1851']},
+			url='https://www.dospara.co.jp/SBR999/IC999cool-cost-mid.html',
+		)
+		PCPart.objects.create(
+			part_type='psu',
+			name='500W PSU General Cost Mid',
+			price=4980,
+			specs={'wattage': 500},
+			url='https://www.dospara.co.jp/SBR999/IC999psu-cost-mid.html',
+		)
+		PCPart.objects.create(
+			part_type='case',
+			name='MicroATX Case General Cost Mid',
+			price=5980,
+			specs={'supported_form_factors': ['MicroATX', 'ATX']},
+			url='https://www.dospara.co.jp/SBR999/IC999case-cost-mid.html',
+		)
+		PCPart.objects.create(
+			part_type='os',
+			name='Microsoft Windows 11 Home 日本語パッケージ版',
+			price=16480,
+			specs={},
+			url='https://www.dospara.co.jp/SBR170/IC479478.html',
+		)
+
+		response = self.client.post(
+			'/api/generate-config/',
+			{
+				'budget': 224980,
+				'usage': 'general',
+				'build_priority': 'cost',
+				'os_edition': 'home',
+			},
+			format='json',
+		)
+
+		self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+		parts = {p['category']: p for p in response.data['parts']}
+		self.assertIn('cpu', parts)
+		self.assertIn('ultra 5', str(parts['cpu']['name']).lower())
+		self.assertNotIn('265kf', str(parts['cpu']['name']).lower())
+		self.assertLess(int(parts['cpu']['price']), 45980)
+		cpu_adjustments = [
+			adj for adj in response.data.get('part_adjustments', [])
+			if str(adj.get('part_type', '')).lower() == 'cpu'
+		]
+		self.assertFalse(cpu_adjustments, response.data.get('part_adjustments'))
+
 	def test_generate_config_general_spec_excludes_x3d_cpu(self):
 		PCPart.objects.create(
 			part_type='cpu',

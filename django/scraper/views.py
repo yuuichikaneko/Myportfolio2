@@ -1,4 +1,4 @@
-import re
+﻿import re
 import random
 import time
 from collections import defaultdict
@@ -1228,6 +1228,17 @@ def _pick_general_cost_cpu_candidate(candidates):
     )[0]
 
 
+def _prefer_general_cost_cpu_budget_band(candidates, target_price, usage, build_priority, budget):
+    if not candidates:
+        return candidates
+    if _is_general_cost_low_tier(usage, build_priority, budget):
+        return candidates
+
+    floor_price = int(target_price * 0.8)
+    banded_candidates = [p for p in candidates if int(getattr(p, 'price', 0) or 0) >= floor_price]
+    return banded_candidates or candidates
+
+
 def _is_ai_latest_generation_cpu(part):
     text = f"{getattr(part, 'name', '')} {getattr(part, 'url', '')}".lower()
     intel_latest = re.search(r'core\s*ultra\s*[3579]\s*2\d{2}[a-z]*', text) is not None
@@ -1308,10 +1319,11 @@ def _matches_workstation_cpu_tier(part, budget_tier, build_priority='spec'):
 
 def _is_supported_intel_client_cpu(part):
     text = f"{getattr(part, 'name', '')} {getattr(part, 'url', '')}".lower()
+    normalized_text = ' '.join(text.replace('™', ' ').replace('®', ' ').split())
     intel_tokens = ('intel', 'core', 'pentium', 'celeron', 'ultra')
-    if not any(token in text for token in intel_tokens):
+    if not any(token in normalized_text for token in intel_tokens):
         return True
-    return any(token in text for token in ('core i', 'core ultra', 'pentium', 'celeron'))
+    return any(token in normalized_text for token in ('core i', 'core ultra', 'pentium', 'celeron'))
 
 
 def _pick_workstation_cpu(candidates, build_priority='spec'):
@@ -4561,8 +4573,15 @@ def _pick_part_by_target(part_type, budget, usage, weights_override=None, option
                 return picked_general_low_tier_cpu
         if part_type == 'cpu' and usage in {'general', 'business', 'standard'} and build_priority == 'spec':
             return max(within_target, key=lambda p: (_get_cpu_perf_score(p) or 0, p.price))
-        if part_type == 'cpu' and _is_general_cost_low_tier(usage, build_priority, budget):
-            picked_general_cost_cpu = _pick_general_cost_cpu_candidate(within_target)
+        if part_type == 'cpu' and usage in {'general', 'business', 'standard'} and build_priority == 'cost':
+            general_cost_pool = _prefer_general_cost_cpu_budget_band(
+                within_target,
+                target_price,
+                usage,
+                build_priority,
+                budget,
+            )
+            picked_general_cost_cpu = _pick_general_cost_cpu_candidate(general_cost_pool)
             if picked_general_cost_cpu:
                 return picked_general_cost_cpu
         if part_type == 'psu':
@@ -4694,7 +4713,7 @@ def _pick_part_by_target(part_type, budget, usage, weights_override=None, option
             picked_general_low_tier_cpu = _pick_general_low_tier_cpu_candidate(candidates)
             if picked_general_low_tier_cpu:
                 return picked_general_low_tier_cpu
-        if part_type == 'cpu' and _is_general_cost_low_tier(usage, build_priority, budget):
+        if part_type == 'cpu' and usage in {'general', 'business', 'standard'} and build_priority == 'cost':
             picked_general_cost_cpu = _pick_general_cost_cpu_candidate(candidates)
             if picked_general_cost_cpu:
                 return picked_general_cost_cpu
@@ -6498,7 +6517,7 @@ def _upgrade_parts_with_surplus(selected_parts, total_price, budget, usage, opti
             if part_type == 'cpu_cooler' and _is_general_cost_low_tier(usage, build_priority, budget):
                 # 汎用 low + cost はクーラーの過剰上振れを防ぐ。
                 continue
-            if part_type == 'cpu' and _is_general_cost_low_tier(usage, build_priority, budget):
+            if part_type == 'cpu' and usage in {'general', 'business', 'standard'} and build_priority == 'cost':
                 # 汎用 low + cost は AM4/Intel 優先の安価CPU方針を維持する。
                 continue
             current = selected_parts.get(part_type)
@@ -6656,6 +6675,9 @@ def _upgrade_parts_with_surplus(selected_parts, total_price, budget, usage, opti
                     else:
                         gpu_pool = _prefer_rx_xt_value_candidates(gpu_pool)
                     better = gpu_pool[0]
+                elif part_type == 'cpu' and build_priority == 'cost' and usage in {'general', 'business', 'standard'}:
+                    # コスト重視の汎用系では最安・コスパ優先（Intel優先→価格昇順）で選ぶ
+                    better = _pick_general_cost_cpu_candidate(better_candidates)
                 else:
                     better = better_candidates[0]
 
