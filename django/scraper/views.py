@@ -4572,7 +4572,8 @@ def _pick_part_by_target(part_type, budget, usage, weights_override=None, option
             if picked_general_low_tier_cpu:
                 return picked_general_low_tier_cpu
         if part_type == 'cpu' and usage in {'general', 'business', 'standard'} and build_priority == 'spec':
-            return max(within_target, key=lambda p: (_get_cpu_perf_score(p) or 0, p.price))
+            # 性能スコア同点（または未取得）時は、上位価格固定を避けて安価側を優先する。
+            return max(within_target, key=lambda p: ((_get_cpu_perf_score(p) or 0), -int(getattr(p, 'price', 0) or 0)))
         if part_type == 'cpu' and usage in {'general', 'business', 'standard'} and build_priority == 'cost':
             general_cost_pool = _prefer_general_cost_cpu_budget_band(
                 within_target,
