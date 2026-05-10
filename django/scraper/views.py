@@ -368,6 +368,93 @@ CPU_VENDOR_KEYWORDS = {
     'amd': ['amd', 'ryzen', 'athlon', 'epyc', 'threadripper'],
 }
 
+# 汎用・家庭用CPUティア表（general/business/standard向け）。
+# シンプル化：各予算帯で単一ティアのみ許可
+GENERAL_HOME_CPU_ALLOWED_TIERS_BY_BUDGET = {
+    'low': {'entry'},
+    'middle': {'mainstream'},
+    'high': {'performance'},
+    'premium': {'enthusiast'},
+}
+
+GENERAL_HOME_CPU_NAME_PATTERNS_BY_TIER = {
+    'entry': (
+        r'athlon',
+        r'sempron',
+        r'processor\s*300',
+        r'celeron',
+        r'pentium',
+        r'\bn\d{3}\b',
+        r'core\s*i3\b',
+        r'ryzen\s*3\b',
+    ),
+    'mainstream': (
+        r'core\s*i5\b',
+        r'core\s*ultra\s*5\b',
+        r'ryzen\s*5\b',
+    ),
+    'performance': (
+        r'core\s*i7\b',
+        r'core\s*ultra\s*7\b',
+        r'ryzen\s*7\b',
+    ),
+    'enthusiast': (
+        r'core\s*i9\b',
+        r'core\s*ultra\s*9\b',
+        r'ryzen\s*9\b',
+    ),
+}
+
+# 汎用・家庭用CPUティア表の exact table。
+# まずこの表に一致するCPUを優先分類し、その後に汎用パターン/コア数へフォールバックする。
+GENERAL_HOME_CPU_EXACT_NAME_PATTERNS_BY_TIER = {
+    'entry': (
+        r'athlon\s*3000g\b',
+        r'processor\s*300\b',
+        r'ryzen\s*3\s*5300g\b',
+        r'ryzen\s*5\s*3400g\b',
+        r'ryzen\s*5\s*5500\b',
+        r'ryzen\s*5\s*5500gt\b',
+        r'ryzen\s*5\s*5600gt\b',
+        r'ryzen\s*5\s*7500f\b',
+        r'ryzen\s*5\s*8500g\b',
+        r'ryzen\s*5\s*8600g\b',
+        r'ryzen\s*5\s*9500f\b',
+        r'ryzen\s*7\s*5700x\b',
+        r'core\s*ultra\s*5[^\d]{0,40}225f?\b',
+        r'core\s*ultra\s*5[^\d]{0,40}235\b',
+        r'core\s*ultra\s*5[^\d]{0,40}245k[f]?\b',
+    ),
+    'mainstream': (
+        r'ryzen\s*5\s*7600x?\b',
+        r'ryzen\s*5\s*9600x?\b',
+        r'ryzen\s*7\s*7700\b',
+        r'core\s*ultra\s*5[^\d]{0,40}250k[f]?\b',
+    ),
+    'performance': (
+        r'core\s*ultra\s*7[^\d]{0,40}270k\b',
+        r'core\s*ultra\s*9[^\d]{0,40}285k\b',
+        r'ryzen\s*7\s*8700g\b',
+        r'ryzen\s*7\s*7800x3d\b',
+        r'ryzen\s*7\s*9700x\b',
+        r'ryzen\s*7\s*7700x\b',
+        r'ryzen\s*9\s*9900x\b',
+    ),
+    'enthusiast': (
+        r'ryzen\s*7\s*9800x3d\b',
+        r'ryzen\s*7\s*9850x3d\b',
+        r'ryzen\s*9\s*9950x\b',
+        r'ryzen\s*9\s*9900x3d\b',
+        r'ryzen\s*9\s*9950x3d\b',
+        r'ryzen\s*9\s*9950x3d2\b',
+        r'threadripper\s*9960x\b',
+    ),
+}
+
+GENERAL_HOME_CPU_EXACT_EXCLUDED_NAME_PATTERNS = (
+    r'core\s*ultra\s*7[^\d]{0,40}265[kf]?\b',
+)
+
 GAMING_SPEC_GPU_KEYWORDS = (
     'rtx',
     'radeon rx',
@@ -565,7 +652,7 @@ def _is_part_suitable(part_type, part):
     if not _is_part_in_stock(part):
         return False
 
-    text = f"{part.name} {part.url}".lower()
+    text = f"{part.name} {part.url} {_get_spec(part, 'comment', '')} {_get_spec(part, 'spec_text', '')}".lower()
     for keyword in UNSUITABLE_KEYWORDS.get(part_type, []):
         if keyword in text:
             return False
@@ -1160,11 +1247,71 @@ def _is_cpu_vendor_match(part, cpu_vendor):
 
 
 def _cpu_socket_code(part):
-    return str(_get_spec(part, 'socket', '') or '').strip().upper()
+    socket = str(_get_spec(part, 'socket', '') or '').strip().upper().replace(' ', '')
+    if socket in {'AM4', 'AM5', 'LGA1700', 'LGA1851'}:
+        return socket
+
+    if isinstance(part, dict):
+        name = str(part.get('name', '') or '')
+        url = str(part.get('url', '') or '')
+    else:
+        name = str(getattr(part, 'name', '') or '')
+        url = str(getattr(part, 'url', '') or '')
+    spec_text = str(_get_spec(part, 'spec_text', '') or '')
+    comment = str(_get_spec(part, 'comment', '') or '')
+    text = f"{name} {url} {spec_text} {comment}".upper().replace(' ', '')
+    if 'LGA1851' in text or re.search(r'COREULTRA[3579].{0,20}2\d{2}[A-Z]*', text):
+        return 'LGA1851'
+    if 'LGA1700' in text or re.search(r'COREI[3579].{0,20}12\d{3}[A-Z]*', text):
+        return 'LGA1700'
+
+    amd_match = re.search(r'RYZEN[3579](\d{4})', text)
+    if amd_match:
+        series = int(amd_match.group(1))
+        if series >= 7000:
+            return 'AM5'
+        if 1000 <= series < 7000:
+            return 'AM4'
+
+    return socket
 
 
 def _is_am5_cpu(part):
     return _cpu_socket_code(part) == 'AM5'
+
+
+def _cpu_supports_integrated_graphics(part):
+    if not part:
+        return True
+
+    if isinstance(part, dict):
+        name = str(part.get('name', '') or '')
+        url = str(part.get('url', '') or '')
+    else:
+        name = str(getattr(part, 'name', '') or '')
+        url = str(getattr(part, 'url', '') or '')
+
+    spec_text = str(_get_spec(part, 'spec_text', '') or '')
+    comment = str(_get_spec(part, 'comment', '') or '')
+    text = f"{name} {url} {spec_text} {comment}".lower()
+    socket = _cpu_socket_code(part)
+
+    if _is_cpu_vendor_match(part, 'intel'):
+        if re.search(r'\b\d{3,5}kf\b', text) or re.search(r'\b\d{3,5}f\b', text):
+            return False
+        return True
+
+    if _is_cpu_vendor_match(part, 'amd'):
+        if re.search(r'ryzen\s*[3579]\s*\d{4}f\b', text):
+            return False
+        if socket == 'AM4':
+            return bool(
+                re.search(r'ryzen\s*[3579]\s*\d{4}(?:g|ge|gt)\b', text)
+                or 'athlon' in text
+            )
+        return True
+
+    return True
 
 
 def _is_general_cost_low_tier(usage, build_priority, budget):
@@ -1214,9 +1361,17 @@ def _pick_general_low_tier_cpu_candidate(candidates):
     return sorted(candidates, key=lambda p: p.price)[0]
 
 
-def _pick_general_cost_cpu_candidate(candidates):
+def _pick_general_cost_cpu_candidate(candidates, options=None):
     if not candidates:
         return None
+
+    options = options or {}
+    if options.get('use_igpu_cpu_only'):
+        igpu_candidates = [p for p in candidates if _cpu_supports_integrated_graphics(p)]
+        if igpu_candidates:
+            candidates = igpu_candidates
+        else:
+            return None
 
     return sorted(
         candidates,
@@ -1240,22 +1395,280 @@ def _prefer_general_cost_cpu_budget_band(candidates, target_price, usage, build_
 
 
 def _is_general_spec_entry_cpu(part):
+    return _classify_general_home_cpu_tier(part) == 'entry'
+
+
+def _classify_general_home_cpu_tier(part):
     text = f"{getattr(part, 'name', '')} {getattr(part, 'url', '')}".lower()
-    entry_pattern = r'athlon|sempron|processor\s*300|celeron|pentium|\bn\d{3}\b|core\s*i3\b|ryzen\s*3\b'
-    return re.search(entry_pattern, text) is not None
+    normalized_text = ' '.join(
+        text
+        .replace('™', ' ')
+        .replace('®', ' ')
+        .replace('プロセッサー', ' ')
+        .split()
+    )
+
+    for tier in ('entry', 'mainstream', 'performance', 'enthusiast'):
+        exact_patterns = GENERAL_HOME_CPU_EXACT_NAME_PATTERNS_BY_TIER.get(tier, ())
+        if any(re.search(pattern, normalized_text) is not None for pattern in exact_patterns):
+            return tier
+
+    for tier in ('entry', 'mainstream', 'performance', 'enthusiast'):
+        patterns = GENERAL_HOME_CPU_NAME_PATTERNS_BY_TIER.get(tier, ())
+        if any(re.search(pattern, normalized_text) is not None for pattern in patterns):
+            return tier
+
+    cores = _extract_cpu_core_count(part)
+    if cores <= 4:
+        return 'entry'
+    if cores <= 6:
+        return 'mainstream'
+    if cores <= 8:
+        return 'performance'
+    return 'enthusiast'
+
+
+def _is_excluded_general_home_cpu_exact_table(part):
+    text = f"{getattr(part, 'name', '')} {getattr(part, 'url', '')}".lower()
+    normalized_text = ' '.join(text.replace('™', ' ').replace('®', ' ').split())
+    return any(re.search(pattern, normalized_text) is not None for pattern in GENERAL_HOME_CPU_EXACT_EXCLUDED_NAME_PATTERNS)
+
+
+def _general_home_cpu_min_core_floor(budget_tier):
+    return {
+        'low': 4,
+        'middle': 6,
+        'high': 8,
+        'premium': 8,
+    }.get(str(budget_tier or '').lower(), 4)
+
+
+def _general_home_cpu_tier_rank(part):
+    tier = _classify_general_home_cpu_tier(part)
+    return {
+        'entry': 0,
+        'mainstream': 1,
+        'performance': 2,
+        'enthusiast': 3,
+    }.get(tier, 0)
+
+
+def _general_spec_cpu_fallback_key(part, budget_tier):
+    socket = _cpu_socket_code(part)
+    latest_platform = 1 if socket in {'AM5', 'LGA1851'} else 0
+    non_x3d = 1 if not _is_gaming_cpu_x3d_preferred(part) else 0
+    cores = _extract_cpu_core_count(part)
+    threads = int(_get_spec(part, 'thread_count', 0) or _get_spec(part, 'threads', 0) or 0)
+
+    if str(budget_tier or '').lower() == 'premium':
+        return (
+            _general_home_cpu_tier_rank(part),
+            latest_platform,
+            non_x3d,
+            cores,
+            threads,
+            int(getattr(part, 'price', 0) or 0),
+        )
+
+    return (
+        _general_home_cpu_tier_rank(part),
+        latest_platform,
+        non_x3d,
+        cores,
+        threads,
+        -int(getattr(part, 'price', 0) or 0),
+    )
+
+
+def _is_excluded_intel_generation_cpu(part):
+    text = f"{getattr(part, 'name', '')} {getattr(part, 'url', '')}".lower()
+    normalized_text = ' '.join(text.replace('™', ' ').replace('®', ' ').split())
+    excluded_patterns = (
+        r'13th',
+        r'14th',
+        r'第\s*13\s*世代',
+        r'第\s*14\s*世代',
+        r'core\s*i[3579]\s*[-]?\s*1[34]\d{3}\s*[a-z]{0,3}\b',
+        r'\bi[3579]\s*[-]?\s*1[34]\d{3}\s*[a-z]{0,3}\b',
+    )
+    return any(re.search(pattern, normalized_text) is not None for pattern in excluded_patterns)
+
+
+def _is_premium_only_cpu(part):
+    text = f"{getattr(part, 'name', '')} {getattr(part, 'url', '')}".lower()
+    normalized_text = ' '.join(text.replace('™', ' ').replace('®', ' ').split())
+    premium_patterns = (
+        r'ryzen\s*9\s*9950x3d2\b',
+        r'ryzen\s*9\s*9950x3d\b',
+        r'ryzen\s*9\s*9950x\b',
+        # 285 系は high(performance) へ寄せるため、premium 専用除外から外す。
+        r'core\s*ultra\s*9\s*(?!285\b)2\d{2}[a-z]{0,3}\b',
+    )
+    return any(re.search(pattern, normalized_text) is not None for pattern in premium_patterns)
+
+
+def _is_intel_core_ultra_250_series(part):
+    text = f"{getattr(part, 'name', '')} {getattr(part, 'url', '')}".lower()
+    normalized_text = ' '.join(text.replace('™', ' ').replace('®', ' ').split())
+    return re.search(r'core\s*ultra\s*[3579][^\d]{0,40}250[a-z]{0,3}\b', normalized_text) is not None
+
+
+def _is_intel_core_ultra_235_series(part):
+    text = f"{getattr(part, 'name', '')} {getattr(part, 'url', '')}".lower()
+    normalized_text = ' '.join(text.replace('™', ' ').replace('®', ' ').split())
+    return re.search(r'core\s*ultra\s*[3579][^\d]{0,40}235[a-z]{0,3}\b', normalized_text) is not None
+
+
+def _is_intel_core_ultra_265_series(part):
+    text = f"{getattr(part, 'name', '')} {getattr(part, 'url', '')}".lower()
+    normalized_text = ' '.join(text.replace('™', ' ').replace('®', ' ').split())
+    return re.search(r'core\s*ultra\s*[3579][^\d]{0,40}265[a-z]{0,3}\b', normalized_text) is not None
+
+
+def _is_intel_core_ultra_270_series(part):
+    text = f"{getattr(part, 'name', '')} {getattr(part, 'url', '')}".lower()
+    normalized_text = ' '.join(text.replace('™', ' ').replace('®', ' ').split())
+    return re.search(r'core\s*ultra\s*[3579][^\d]{0,40}270[a-z]{0,3}\b', normalized_text) is not None
+
+
+def _is_intel_core_ultra_285_series(part):
+    text = f"{getattr(part, 'name', '')} {getattr(part, 'url', '')}".lower()
+    normalized_text = ' '.join(text.replace('™', ' ').replace('®', ' ').split())
+    return re.search(r'core\s*ultra\s*[3579][^\d]{0,40}285[a-z]{0,3}\b', normalized_text) is not None
+
+
+def _is_intel_core_ultra_265_series_forced_target(part):
+    text = f"{getattr(part, 'name', '')} {getattr(part, 'url', '')}".lower()
+    normalized_text = ' '.join(text.replace('™', ' ').replace('®', ' ').split())
+    return re.search(r'core\s*ultra\s*7[^\d]{0,40}265[a-z]{0,3}\b', normalized_text) is not None
+
+
+def _is_intel_core_ultra_285k_forced_target(part):
+    text = f"{getattr(part, 'name', '')} {getattr(part, 'url', '')}".lower()
+    normalized_text = ' '.join(text.replace('™', ' ').replace('®', ' ').split())
+    return re.search(r'core\s*ultra\s*9[^\d]{0,40}285k[a-z]{0,3}\b', normalized_text) is not None
+
+
+def _pick_general_forced_cpu_replacement(patterns):
+    compiled_patterns = [re.compile(pattern, re.IGNORECASE) for pattern in patterns]
+    candidates = [
+        p for p in PCPart.objects.filter(part_type='cpu').order_by('price', 'id')
+        if _is_part_suitable('cpu', p)
+    ]
+    matched = []
+    for part in candidates:
+        text = f"{getattr(part, 'name', '')} {getattr(part, 'url', '')}".lower()
+        normalized_text = ' '.join(text.replace('™', ' ').replace('®', ' ').split())
+        if any(pattern.search(normalized_text) is not None for pattern in compiled_patterns):
+            matched.append(part)
+    return matched[0] if matched else None
+
+
+def _enforce_general_cpu_forced_replacements(selected_parts, usage):
+    if usage not in {'general', 'standard'}:
+        return selected_parts, []
+
+    cpu_part = selected_parts.get('cpu')
+    if not cpu_part:
+        return selected_parts, []
+
+    notes = []
+    updated_parts = dict(selected_parts)
+
+    if _is_intel_core_ultra_265_series_forced_target(cpu_part):
+        replacement = _pick_general_forced_cpu_replacement(
+            patterns=(
+                r'core\s*ultra\s*5[^\d]{0,40}250kf\s*plus\b',
+                r'core\s*ultra\s*5[^\d]{0,40}250k\s*plus\b',
+            )
+        )
+        if replacement and int(getattr(replacement, 'id', 0) or 0) != int(getattr(cpu_part, 'id', 0) or 0):
+            updated_parts['cpu'] = replacement
+            notes.append('Intel Core Ultra 7 265シリーズはIntel Core Ultra 5 250K PlusまたはIntel Core Ultra 5 250KF Plusへ変更しています')
+            cpu_part = replacement
+
+    if _is_intel_core_ultra_285k_forced_target(cpu_part):
+        replacement = _pick_general_forced_cpu_replacement(
+            patterns=(
+                r'core\s*ultra\s*7[^\d]{0,40}270k\s*plus\b',
+            )
+        )
+        if replacement and int(getattr(replacement, 'id', 0) or 0) != int(getattr(cpu_part, 'id', 0) or 0):
+            updated_parts['cpu'] = replacement
+            notes.append('Intel Core Ultra 9 285KはIntel Core Ultra 7 270K Plusへ変更しています')
+
+    return updated_parts, notes
+
+
+def _filter_general_home_cpu_by_tier_table(candidates, budget_tier):
+    if not candidates:
+        return candidates
+    non_excluded_candidates = [p for p in candidates if not _is_excluded_intel_generation_cpu(p)]
+    non_excluded_candidates = [p for p in non_excluded_candidates if not _is_excluded_general_home_cpu_exact_table(p)]
+    if not non_excluded_candidates:
+        return non_excluded_candidates
+    
+    budget_tier_lower = str(budget_tier or '').lower()
+    
+    allowed_tiers = GENERAL_HOME_CPU_ALLOWED_TIERS_BY_BUDGET.get(
+        budget_tier_lower,
+        GENERAL_HOME_CPU_ALLOWED_TIERS_BY_BUDGET['low'],
+    )
+    filtered = [p for p in non_excluded_candidates if _classify_general_home_cpu_tier(p) in allowed_tiers]
+    
+    # 汎用向けの enthusiast ティアから 9950X系（プレミアムのみ）を除外する
+    if budget_tier_lower != 'premium':
+        premium_excluded = [p for p in filtered if not _is_premium_only_cpu(p)]
+        if premium_excluded:
+            filtered = premium_excluded
+
+    # 250系と265系の「競合時のみ」優先を適用する。
+    # ティア/除外適用後に同時に残っている場合だけ、250系を優先する。
+    if budget_tier_lower != 'premium':
+        ultra_250_candidates = [p for p in filtered if _is_intel_core_ultra_250_series(p)]
+        ultra_265_candidates = [p for p in filtered if _is_intel_core_ultra_265_series(p)]
+        if ultra_250_candidates and ultra_265_candidates:
+            filtered = ultra_250_candidates
+
+    # 270系と285系の「競合時のみ」優先を適用する。
+    # ティア/除外適用後に同時に残っている場合だけ、270系を優先する。
+    if budget_tier_lower != 'premium':
+        ultra_270_candidates = [p for p in filtered if _is_intel_core_ultra_270_series(p)]
+        ultra_285_candidates = [p for p in filtered if _is_intel_core_ultra_285_series(p)]
+        if ultra_270_candidates and ultra_285_candidates:
+            filtered = ultra_270_candidates
+    
+    if filtered:
+        return filtered
+
+    if budget_tier_lower == 'low':
+        return non_excluded_candidates
+
+    # middle/high/premium で許可ティア候補が空のときは、
+    # エントリーCPUへの後退を避けるため non-entry を優先する。
+    non_entry_candidates = [p for p in non_excluded_candidates if _classify_general_home_cpu_tier(p) != 'entry']
+    if non_entry_candidates:
+        return non_entry_candidates
+
+    return non_excluded_candidates
 
 
 def _prefer_general_spec_cpu_quality_pool(candidates, usage, budget):
     if not candidates:
         return candidates
 
-    # spec重視ではエントリーCPUを優先対象から外す。
-    non_entry = [p for p in candidates if not _is_general_spec_entry_cpu(p)]
-    filtered = non_entry or candidates
-
     tier = _classify_budget_tier(int(budget or 0), usage=usage)
-    min_cores = 6 if tier in {'middle', 'high', 'premium'} else 4
+    tier_lower = str(tier or '').lower()
+
+    filtered = _filter_general_home_cpu_by_tier_table(candidates, tier)
+
+    # ティア表適用後にコア下限で最終ガードする。
+    min_cores = _general_home_cpu_min_core_floor(tier)
     core_filtered = [p for p in filtered if _extract_cpu_core_count(p) >= min_cores]
+    if tier_lower == 'premium':
+        latest_platform = [p for p in core_filtered if _cpu_socket_code(p) in {'AM5', 'LGA1851'}]
+        if latest_platform:
+            core_filtered = latest_platform
     if core_filtered:
         return core_filtered
 
@@ -3923,7 +4336,15 @@ def _infer_motherboard_socket(part):
     if socket_raw in {'AM4', 'AM5', 'LGA1700', 'LGA1851'}:
         return socket_raw
 
-    text = f"{getattr(part, 'name', '')} {getattr(part, 'url', '')}".upper().replace(' ', '')
+    if isinstance(part, dict):
+        name = str(part.get('name', '') or '')
+        url = str(part.get('url', '') or '')
+    else:
+        name = str(getattr(part, 'name', '') or '')
+        url = str(getattr(part, 'url', '') or '')
+    spec_text = str(_get_spec(part, 'spec_text', '') or '')
+    comment = str(_get_spec(part, 'comment', '') or '')
+    text = f"{name} {url} {spec_text} {comment}".upper().replace(' ', '')
     if 'AM5' in text:
         return 'AM5'
     if 'AM4' in text:
@@ -4326,6 +4747,11 @@ def _pick_part_by_target(part_type, budget, usage, weights_override=None, option
             ]
             if creator_cpu_filtered:
                 candidates = creator_cpu_filtered
+        if usage in {'general', 'business', 'standard'}:
+            budget_tier = _classify_budget_tier(int(budget or 0), usage=usage)
+            candidates = _filter_general_home_cpu_by_tier_table(candidates, budget_tier)
+            if options.get('use_igpu_cpu_only'):
+                candidates = [p for p in candidates if _cpu_supports_integrated_graphics(p)]
         if _is_general_cost_low_tier(usage, build_priority, budget):
             legacy_pool = [p for p in candidates if _is_general_cost_legacy_cpu(p)]
             if legacy_pool:
@@ -4608,6 +5034,13 @@ def _pick_part_by_target(part_type, budget, usage, weights_override=None, option
             if budget_tier in {'middle', 'high', 'premium'} and all(_is_general_spec_entry_cpu(p) for p in within_target):
                 # 目標価格帯が狭くてエントリーCPUしか残らない場合、候補全体から再評価する。
                 within_target = _prefer_general_spec_cpu_quality_pool(candidates, usage, budget)
+            ultra_250_candidates = [p for p in within_target if _is_intel_core_ultra_250_series(p)]
+            ultra_265_candidates = [p for p in within_target if _is_intel_core_ultra_265_series(p)]
+            if str(budget_tier or '').lower() != 'premium' and ultra_250_candidates and ultra_265_candidates:
+                # Core Ultra 250系と265系が同時候補のときは、250系を優先する。
+                within_target = ultra_250_candidates
+            if within_target and all((_get_cpu_perf_score(p) or 0) == 0 for p in within_target):
+                return max(within_target, key=lambda p: _general_spec_cpu_fallback_key(p, budget_tier))
             # 性能スコア同点（または未取得）時は、上位価格固定を避けて安価側を優先する。
             return max(within_target, key=lambda p: ((_get_cpu_perf_score(p) or 0), -int(getattr(p, 'price', 0) or 0)))
         if part_type == 'cpu' and usage in {'general', 'business', 'standard'} and build_priority == 'cost':
@@ -4618,7 +5051,7 @@ def _pick_part_by_target(part_type, budget, usage, weights_override=None, option
                 build_priority,
                 budget,
             )
-            picked_general_cost_cpu = _pick_general_cost_cpu_candidate(general_cost_pool)
+            picked_general_cost_cpu = _pick_general_cost_cpu_candidate(general_cost_pool, options=options)
             if picked_general_cost_cpu:
                 return picked_general_cost_cpu
         if part_type == 'psu':
@@ -4751,7 +5184,7 @@ def _pick_part_by_target(part_type, budget, usage, weights_override=None, option
             if picked_general_low_tier_cpu:
                 return picked_general_low_tier_cpu
         if part_type == 'cpu' and usage in {'general', 'business', 'standard'} and build_priority == 'cost':
-            picked_general_cost_cpu = _pick_general_cost_cpu_candidate(candidates)
+            picked_general_cost_cpu = _pick_general_cost_cpu_candidate(candidates, options=options)
             if picked_general_cost_cpu:
                 return picked_general_cost_cpu
         if part_type == 'cpu' and usage == 'creator':
@@ -5097,7 +5530,10 @@ def _pick_part_by_target(part_type, budget, usage, weights_override=None, option
 def _get_spec(part, key, default=None):
     if not part:
         return default
-    specs = getattr(part, 'specs', {}) or {}
+    if isinstance(part, dict):
+        specs = part.get('specs', {}) or {}
+    else:
+        specs = getattr(part, 'specs', {}) or {}
     return specs.get(key, default)
 
 
@@ -5106,7 +5542,16 @@ def _infer_memory_type(part):
     if memory_type in {'DDR4', 'DDR5'}:
         return memory_type
 
-    text = f"{getattr(part, 'name', '')} {getattr(part, 'url', '')}".upper()
+    if isinstance(part, dict):
+        name = str(part.get('name', '') or '')
+        url = str(part.get('url', '') or '')
+    else:
+        name = str(getattr(part, 'name', '') or '')
+        url = str(getattr(part, 'url', '') or '')
+
+    spec_text = str(_get_spec(part, 'spec_text', '') or '')
+    comment = str(_get_spec(part, 'comment', '') or '')
+    text = f"{name} {url} {spec_text} {comment}".upper()
     if 'DDR5' in text:
         return 'DDR5'
     if 'DDR4' in text:
@@ -5616,7 +6061,7 @@ def _compatibility_issues(selected_parts, usage, options=None):
     cooler_type = options.get('cooler_type', 'any')
     radiator_size = options.get('radiator_size', 'any')
 
-    cpu_socket = _get_spec(cpu, 'socket')
+    cpu_socket = _cpu_socket_code(cpu)
     mb_socket = _infer_motherboard_socket(motherboard)
     if cpu and motherboard and cpu_socket and mb_socket and cpu_socket != mb_socket:
         issues.append('socket_mismatch')
@@ -5674,6 +6119,8 @@ def _pick_candidate(part_type, predicate, usage=None, options=None):
                 candidates = []
     
     for candidate in candidates:
+        if not _matches_selection_options(part_type, candidate, options=options):
+            continue
         if _is_part_suitable(part_type, candidate) and predicate(candidate):
             return candidate
     return None
@@ -5754,6 +6201,22 @@ def _matches_selection_options(part_type, part, options=None):
             return False
         if usage in {'workstation', 'ai'} and not _is_ai_latest_generation_cpu(part):
             return False
+        if usage in {'general', 'business', 'standard'}:
+            budget_tier = _classify_budget_tier(int(options.get('budget') or 0), usage=usage)
+            allowed_tiers = GENERAL_HOME_CPU_ALLOWED_TIERS_BY_BUDGET.get(
+                str(budget_tier or '').lower(),
+                GENERAL_HOME_CPU_ALLOWED_TIERS_BY_BUDGET['low'],
+            )
+            if _classify_general_home_cpu_tier(part) not in allowed_tiers:
+                return False
+            if options.get('use_igpu_cpu_only') and not _cpu_supports_integrated_graphics(part):
+                return False
+            if str(budget_tier or '').lower() == 'premium' and _cpu_socket_code(part) not in {'AM5', 'LGA1851'}:
+                return False
+            if str(budget_tier or '').lower() != 'premium' and _is_premium_only_cpu(part):
+                return False
+            if _is_excluded_intel_generation_cpu(part):
+                return False
         return _is_cpu_vendor_match(part, cpu_vendor)
 
     if part_type == 'gpu':
@@ -5871,7 +6334,7 @@ def _resolve_compatibility(selected_parts, usage, options=None):
         memory = selected_parts.get('memory')
 
         if issue == 'socket_mismatch':
-            cpu_socket = _get_spec(cpu, 'socket')
+            cpu_socket = _cpu_socket_code(cpu)
             mb_socket = _infer_motherboard_socket(motherboard)
             replaced = False
             if cpu_socket:
@@ -5885,7 +6348,7 @@ def _resolve_compatibility(selected_parts, usage, options=None):
                     selected_parts['motherboard'] = new_mb
                     replaced = True
             if not replaced and mb_socket:
-                new_cpu = _pick_candidate('cpu', lambda p: _get_spec(p, 'socket') == mb_socket, usage=usage, options=options)
+                new_cpu = _pick_candidate('cpu', lambda p: _cpu_socket_code(p) == mb_socket, usage=usage, options=options)
                 if new_cpu:
                     selected_parts['cpu'] = new_cpu
                     replaced = True
@@ -5903,7 +6366,7 @@ def _resolve_compatibility(selected_parts, usage, options=None):
                     continue
             # マザーボードに対応するメモリが存在しなければ、マザーボードをメモリ規格に合わせて変更
             if mem_type:
-                cpu_socket = _get_spec(cpu, 'socket') if cpu else None
+                cpu_socket = _cpu_socket_code(cpu) if cpu else None
                 def _mb_fits_mem(p, _mem_type=mem_type, _cpu_socket=cpu_socket):
                     if _infer_motherboard_memory_type(p) != _mem_type:
                         return False
@@ -6714,7 +7177,7 @@ def _upgrade_parts_with_surplus(selected_parts, total_price, budget, usage, opti
                     better = gpu_pool[0]
                 elif part_type == 'cpu' and build_priority == 'cost' and usage in {'general', 'business', 'standard'}:
                     # コスト重視の汎用系では最安・コスパ優先（Intel優先→価格昇順）で選ぶ
-                    better = _pick_general_cost_cpu_candidate(better_candidates)
+                    better = _pick_general_cost_cpu_candidate(better_candidates, options=options)
                 else:
                     better = better_candidates[0]
 
@@ -7948,7 +8411,7 @@ def _refresh_selection_options_with_selected_parts(selection_options, selected_p
 
     cpu_part = selected_parts.get('cpu')
     if cpu_part:
-        cpu_socket = _get_spec(cpu_part, 'socket')
+        cpu_socket = _cpu_socket_code(cpu_part)
         if cpu_socket:
             updated['cpu_socket'] = cpu_socket
         else:
@@ -8702,6 +9165,8 @@ def build_configuration_response(
             and selection_options.get('build_priority') == 'spec' \
             and budget >= SPEC_GPU_UNLOCK_BUDGET_THRESHOLD:
         use_igpu = False
+    selection_options = dict(selection_options)
+    selection_options['use_igpu_cpu_only'] = use_igpu
     priority_weights = _apply_build_priority_weights(
         usage,
         selection_options['build_priority'],
@@ -8722,14 +9187,14 @@ def build_configuration_response(
         if part_type == 'motherboard':
             cpu_part = selected_parts.get('cpu')
             if cpu_part:
-                cpu_socket = _get_spec(cpu_part, 'socket')
+                cpu_socket = _cpu_socket_code(cpu_part)
                 if cpu_socket:
                     effective_options = dict(selection_options)
                     effective_options['cpu_socket'] = cpu_socket
         if part_type == 'cpu_cooler':
             cpu_part = selected_parts.get('cpu')
             if cpu_part:
-                cpu_socket = _get_spec(cpu_part, 'socket')
+                cpu_socket = _cpu_socket_code(cpu_part)
                 if cpu_socket:
                     effective_options = dict(effective_options)
                     effective_options['cpu_socket'] = cpu_socket
@@ -8776,7 +9241,7 @@ def build_configuration_response(
     # CPUソケット情報をoptions に付与して、互換チェック・ダウングレード時に引き継ぐ
     cpu_part = selected_parts.get('cpu')
     if cpu_part:
-        cpu_socket = _get_spec(cpu_part, 'socket')
+        cpu_socket = _cpu_socket_code(cpu_part)
         if cpu_socket:
             selection_options = dict(selection_options)
             selection_options['cpu_socket'] = cpu_socket
@@ -9438,6 +9903,12 @@ def build_configuration_response(
     if os_policy_budget > budget:
         budget = os_policy_budget
         budget_auto_adjusted = True
+
+    selected_parts, general_cpu_forced_replacement_notes = _enforce_general_cpu_forced_replacements(
+        selected_parts,
+        usage,
+    )
+
     total_price = _sum_selected_price({**selected_parts, **extra_storage_parts})
     selected = _serialize_selected_parts(
         selected_parts,
@@ -9665,6 +10136,7 @@ def build_configuration_response(
         'total_price': total_price,
         'estimated_power_w': estimated_power,
         'part_adjustments': part_adjustments,
+        'general_cpu_forced_replacement_notes': general_cpu_forced_replacement_notes,
         'parts': selected,
     }
     if x3d_enforcement_failed:
@@ -9674,6 +10146,12 @@ def build_configuration_response(
             response_data['message'] = f"{response_data['message']} {os_policy_message}"
         else:
             response_data['message'] = os_policy_message
+    if general_cpu_forced_replacement_notes:
+        forced_message = ' / '.join(general_cpu_forced_replacement_notes)
+        if response_data.get('message'):
+            response_data['message'] = f"{response_data['message']} {forced_message}"
+        else:
+            response_data['message'] = forced_message
     return response_data, None
 
 

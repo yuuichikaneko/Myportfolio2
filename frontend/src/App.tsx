@@ -20,6 +20,10 @@ interface OsBudgetToast {
   recommendedBudgetText: string;
 }
 
+interface GeneralCpuForcedToast {
+  notes: string[];
+}
+
 const USAGE_LABELS_JA: Record<UsageCode, string> = {
   gaming: "ゲーム",
   general: "汎用",
@@ -51,6 +55,7 @@ function App() {
   const [historyDeleteScope, setHistoryDeleteScope] = useState<"filtered" | "all">("filtered");
   const [historyToastMessage, setHistoryToastMessage] = useState<string | null>(null);
   const [osBudgetErrorToast, setOsBudgetErrorToast] = useState<OsBudgetToast | null>(null);
+  const [generalCpuForcedToast, setGeneralCpuForcedToast] = useState<GeneralCpuForcedToast | null>(null);
 
   useEffect(() => {
     if (!historyToastMessage) {
@@ -75,6 +80,18 @@ function App() {
 
     return () => window.clearTimeout(timer);
   }, [osBudgetErrorToast]);
+
+  useEffect(() => {
+    if (!generalCpuForcedToast) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setGeneralCpuForcedToast(null);
+    }, 6500);
+
+    return () => window.clearTimeout(timer);
+  }, [generalCpuForcedToast]);
 
   const fetchSavedConfigurations = async () => {
     try {
@@ -188,6 +205,7 @@ function App() {
     setIsLoading(true);
     setError(null);
     setOsBudgetErrorToast(null);
+    setGeneralCpuForcedToast(null);
     setResult(null);
     setSelectedSavedConfig(null);
 
@@ -213,6 +231,9 @@ function App() {
         cpu_part_id: options.cpuPartId ?? undefined,
       });
       setResult(response);
+      if (response.general_cpu_forced_replacement_notes && response.general_cpu_forced_replacement_notes.length > 0) {
+        setGeneralCpuForcedToast({ notes: response.general_cpu_forced_replacement_notes });
+      }
       setSelectedSavedConfig(null);
       setHistoryLoading(true);
       await fetchSavedConfigurations();
@@ -671,6 +692,15 @@ function App() {
           <div className="text-sm font-bold">OS必須予算不足</div>
           <div className="mt-1 text-xs leading-relaxed">要点: {osBudgetErrorToast.point}</div>
           <div className="mt-1 text-xs font-semibold">推奨予算: {osBudgetErrorToast.recommendedBudgetText}</div>
+        </div>
+      )}
+
+      {generalCpuForcedToast && (
+        <div className="fixed top-20 right-4 max-w-lg rounded-xl border-2 border-amber-300 bg-amber-50 px-4 py-3 text-amber-900 shadow-xl z-[91]">
+          <div className="text-sm font-bold">CPU自動置換のお知らせ</div>
+          {generalCpuForcedToast.notes.map((note) => (
+            <div key={note} className="mt-1 text-xs leading-relaxed">{note}</div>
+          ))}
         </div>
       )}
 

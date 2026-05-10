@@ -116,6 +116,7 @@ export interface GenerateConfigResponse {
   selected_gpu_perf_score?: number;
   selected_gpu_gaming_tier_label?: string;
   message?: string;
+  general_cpu_forced_replacement_notes?: string[];
   part_adjustments?: PartAdjustmentResponse[];
   cooler_type?: "air" | "liquid" | "any";
   radiator_size?: "120" | "240" | "360" | "any";

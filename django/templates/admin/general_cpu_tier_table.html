@@ -1,0 +1,63 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<div style="max-width: 1100px;">
+  <h1 style="margin-bottom: 8px;">汎用・家庭用 CPU ティア表</h1>
+  <p style="margin-top: 0; color: #555;">
+    実装定数をそのまま表示しています。運用確認時はこの画面を参照してください。
+  </p>
+
+  <h2 style="margin-top: 24px;">予算帯別 許可ティア一覧</h2>
+  <table class="adminlist" style="width: 100%; margin-top: 8px;">
+    <thead>
+      <tr>
+        <th>予算帯</th>
+        <th>許可ティア</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in budget_rows %}
+      <tr>
+        <td><strong>{{ row.budget_tier }}</strong></td>
+        <td>{{ row.allowed_tiers|join:", " }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2 style="margin-top: 28px;">名称パターン一覧</h2>
+  <table class="adminlist" style="width: 100%; margin-top: 8px;">
+    <thead>
+      <tr>
+        <th>ティア</th>
+        <th>パターン</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in pattern_rows %}
+      <tr>
+        <td><strong>{{ row.tier }}</strong></td>
+        <td>
+          {% if row.patterns %}
+            {{ row.patterns|join:", " }}
+          {% else %}
+            -
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2 style="margin-top: 28px;">運用ルール（実装反映済み）</h2>
+  <ul style="margin-top: 8px;">
+    {% for note in rule_notes %}
+    <li>{{ note }}</li>
+    {% endfor %}
+  </ul>
+
+  <p style="margin-top: 24px;">
+    URL: <a href="/admin/general-cpu-tier-table/">/admin/general-cpu-tier-table/</a>
+  </p>
+</div>
+{% endblock %}
