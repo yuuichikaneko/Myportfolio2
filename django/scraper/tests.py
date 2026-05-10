@@ -509,6 +509,195 @@ class ScraperApiTests(APITestCase):
 		]
 		self.assertFalse(cpu_adjustments, response.data.get('part_adjustments'))
 
+	def test_generate_config_general_spec_middle_budget_prefers_cheaper_cpu_when_perf_score_missing(self):
+		PCPart.objects.create(
+			part_type='cpu',
+			name='AMD Athlon 3000G BOX',
+			price=3580,
+			specs={'socket': 'AM4', 'core_count': 2, 'thread_count': 4},
+			url='https://www.dospara.co.jp/SBR999/IC999athlon3000g-spec.html',
+		)
+		PCPart.objects.create(
+			part_type='cpu',
+			name='Intel インテル® Core™ Ultra 5 プロセッサー 250K Plus',
+			price=43800,
+			specs={'socket': 'LGA1851'},
+			url='https://www.dospara.co.jp/SBR999/IC999250kplus-spec.html',
+		)
+		PCPart.objects.create(
+			part_type='cpu',
+			name='Intel インテル® Core™ Ultra 7 プロセッサー 265KF',
+			price=45980,
+			specs={'socket': 'LGA1851'},
+			url='https://www.dospara.co.jp/SBR999/IC999265kf-spec.html',
+		)
+		PCPart.objects.create(
+			part_type='motherboard',
+			name='GIGABYTE Z890M FORCE DUO X WIFI7',
+			price=34800,
+			specs={'socket': 'LGA1851', 'memory_type': 'DDR5', 'form_factor': 'MicroATX'},
+			url='https://www.dospara.co.jp/SBR999/IC999z890m-spec.html',
+		)
+		PCPart.objects.create(
+			part_type='memory',
+			name='DDR5 16GB General Spec Mid',
+			price=15980,
+			specs={'memory_type': 'DDR5', 'capacity_gb': 16, 'speed_mhz': 5600},
+			url='https://www.dospara.co.jp/SBR999/IC999mem-spec-mid.html',
+		)
+		PCPart.objects.create(
+			part_type='storage',
+			name='NVMe 1TB General Spec Mid',
+			price=12580,
+			specs={'interface': 'NVMe', 'capacity_gb': 1000},
+			url='https://www.dospara.co.jp/SBR999/IC999sto-spec-mid.html',
+		)
+		PCPart.objects.create(
+			part_type='cpu_cooler',
+			name='LGA1851 Air Cooler General Spec Mid',
+			price=3780,
+			specs={'supported_sockets': ['LGA1851']},
+			url='https://www.dospara.co.jp/SBR999/IC999cool-spec-mid.html',
+		)
+		PCPart.objects.create(
+			part_type='gpu',
+			name='Inno3D GeForce RTX 5060 TWIN X2 OC',
+			price=67980,
+			specs={'memory_gb': 8},
+			url='https://www.dospara.co.jp/SBR999/IC999gpu5060-spec-mid.html',
+		)
+		PCPart.objects.create(
+			part_type='psu',
+			name='650W PSU General Spec Mid',
+			price=6980,
+			specs={'wattage': 650},
+			url='https://www.dospara.co.jp/SBR999/IC999psu-spec-mid.html',
+		)
+		PCPart.objects.create(
+			part_type='case',
+			name='Mid Tower General Spec Mid',
+			price=12800,
+			specs={'supported_form_factors': ['MicroATX', 'ATX']},
+			url='https://www.dospara.co.jp/SBR999/IC999case-spec-mid.html',
+		)
+		PCPart.objects.create(
+			part_type='os',
+			name='Microsoft Windows 11 Home 日本語パッケージ版',
+			price=16480,
+			specs={},
+			url='https://www.dospara.co.jp/SBR170/IC479478.html',
+		)
+
+		with patch('scraper.views._get_cpu_perf_score', return_value=None):
+			response = self.client.post(
+				'/api/generate-config/',
+				{
+					'budget': 247478,
+					'usage': 'general',
+					'build_priority': 'spec',
+					'cpu_vendor': 'intel',
+					'os_edition': 'home',
+				},
+				format='json',
+			)
+
+		self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+		parts = {p['category']: p for p in response.data['parts']}
+		self.assertIn('cpu', parts)
+		self.assertNotIn('athlon', str(parts['cpu']['name']).lower())
+		self.assertIn('250k plus', str(parts['cpu']['name']).lower())
+		self.assertNotIn('265kf', str(parts['cpu']['name']).lower())
+
+	def test_generate_config_general_spec_middle_budget_avoids_processor_300_entry_cpu(self):
+		PCPart.objects.create(
+			part_type='cpu',
+			name='Intel Intel Processor 300 BOX',
+			price=16480,
+			specs={'socket': 'AM4', 'core_count': 2, 'thread_count': 4},
+			url='https://www.dospara.co.jp/SBR999/IC999processor300-spec.html',
+		)
+		PCPart.objects.create(
+			part_type='cpu',
+			name='AMD Ryzen 5 5500 BOX',
+			price=19800,
+			specs={'socket': 'AM4', 'core_count': 6, 'thread_count': 12},
+			url='https://www.dospara.co.jp/SBR999/IC999ryzen5500-spec.html',
+		)
+		PCPart.objects.create(
+			part_type='motherboard',
+			name='MSI B550M PRO-VDH WIFI',
+			price=15980,
+			specs={'socket': 'AM4', 'memory_type': 'DDR4', 'form_factor': 'MicroATX'},
+			url='https://www.dospara.co.jp/SBR999/IC999b550m-spec.html',
+		)
+		PCPart.objects.create(
+			part_type='memory',
+			name='DDR4 16GB General Spec Mid',
+			price=9980,
+			specs={'memory_type': 'DDR4', 'capacity_gb': 16, 'speed_mhz': 3200},
+			url='https://www.dospara.co.jp/SBR999/IC999ddr4-spec-mid.html',
+		)
+		PCPart.objects.create(
+			part_type='storage',
+			name='NVMe 1TB General Spec Mid',
+			price=12580,
+			specs={'interface': 'NVMe', 'capacity_gb': 1000},
+			url='https://www.dospara.co.jp/SBR999/IC999sto-spec-mid-2.html',
+		)
+		PCPart.objects.create(
+			part_type='cpu_cooler',
+			name='AM4 Air Cooler General Spec Mid',
+			price=3780,
+			specs={'supported_sockets': ['AM4']},
+			url='https://www.dospara.co.jp/SBR999/IC999cool-spec-mid-2.html',
+		)
+		PCPart.objects.create(
+			part_type='gpu',
+			name='Inno3D GeForce RTX 5060 Ti 8GB TWIN X2 OC',
+			price=85980,
+			specs={'memory_gb': 8},
+			url='https://www.dospara.co.jp/SBR999/IC999gpu5060ti-spec-mid.html',
+		)
+		PCPart.objects.create(
+			part_type='psu',
+			name='650W PSU General Spec Mid',
+			price=6980,
+			specs={'wattage': 650},
+			url='https://www.dospara.co.jp/SBR999/IC999psu-spec-mid-2.html',
+		)
+		PCPart.objects.create(
+			part_type='case',
+			name='Mid Tower General Spec Mid',
+			price=12800,
+			specs={'supported_form_factors': ['MicroATX', 'ATX']},
+			url='https://www.dospara.co.jp/SBR999/IC999case-spec-mid-2.html',
+		)
+		PCPart.objects.create(
+			part_type='os',
+			name='Microsoft Windows 11 Home 日本語パッケージ版',
+			price=16480,
+			specs={},
+			url='https://www.dospara.co.jp/SBR170/IC479478.html',
+		)
+
+		with patch('scraper.views._get_cpu_perf_score', return_value=None):
+			response = self.client.post(
+				'/api/generate-config/',
+				{
+					'budget': 247478,
+					'usage': 'general',
+					'build_priority': 'spec',
+					'os_edition': 'home',
+				},
+				format='json',
+			)
+
+		self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+		parts = {p['category']: p for p in response.data['parts']}
+		self.assertIn('cpu', parts)
+		self.assertIn('ryzen 5 5500', str(parts['cpu']['name']).lower())
+		self.assertNotIn('processor 300', str(parts['cpu']['name']).lower())
+
 	def test_generate_config_general_spec_excludes_x3d_cpu(self):
 		PCPart.objects.create(
 			part_type='cpu',

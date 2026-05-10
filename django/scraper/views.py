@@ -1239,6 +1239,37 @@ def _prefer_general_cost_cpu_budget_band(candidates, target_price, usage, build_
     return banded_candidates or candidates
 
 
+def _is_general_spec_entry_cpu(part):
+    text = f"{getattr(part, 'name', '')} {getattr(part, 'url', '')}".lower()
+    entry_pattern = r'athlon|sempron|processor\s*300|celeron|pentium|\bn\d{3}\b|core\s*i3\b|ryzen\s*3\b'
+    return re.search(entry_pattern, text) is not None
+
+
+def _prefer_general_spec_cpu_quality_pool(candidates, usage, budget):
+    if not candidates:
+        return candidates
+
+    # spec重視ではエントリーCPUを優先対象から外す。
+    non_entry = [p for p in candidates if not _is_general_spec_entry_cpu(p)]
+    filtered = non_entry or candidates
+
+    tier = _classify_budget_tier(int(budget or 0), usage=usage)
+    min_cores = 6 if tier in {'middle', 'high', 'premium'} else 4
+    core_filtered = [p for p in filtered if _extract_cpu_core_count(p) >= min_cores]
+    if core_filtered:
+        return core_filtered
+
+    if tier in {'middle', 'high', 'premium'}:
+        performance_named = [
+            p for p in filtered
+            if re.search(r'ryzen\s*[5-9]\b|core\s*i[5-9]\b|core\s*ultra\s*[579]\b', f"{getattr(p, 'name', '')} {getattr(p, 'url', '')}".lower())
+        ]
+        if performance_named:
+            return performance_named
+
+    return filtered
+
+
 def _is_ai_latest_generation_cpu(part):
     text = f"{getattr(part, 'name', '')} {getattr(part, 'url', '')}".lower()
     intel_latest = re.search(r'core\s*ultra\s*[3579]\s*2\d{2}[a-z]*', text) is not None
@@ -4572,7 +4603,13 @@ def _pick_part_by_target(part_type, budget, usage, weights_override=None, option
             if picked_general_low_tier_cpu:
                 return picked_general_low_tier_cpu
         if part_type == 'cpu' and usage in {'general', 'business', 'standard'} and build_priority == 'spec':
-            return max(within_target, key=lambda p: (_get_cpu_perf_score(p) or 0, p.price))
+            budget_tier = _classify_budget_tier(int(budget or 0), usage=usage)
+            within_target = _prefer_general_spec_cpu_quality_pool(within_target, usage, budget)
+            if budget_tier in {'middle', 'high', 'premium'} and all(_is_general_spec_entry_cpu(p) for p in within_target):
+                # 目標価格帯が狭くてエントリーCPUしか残らない場合、候補全体から再評価する。
+                within_target = _prefer_general_spec_cpu_quality_pool(candidates, usage, budget)
+            # 性能スコア同点（または未取得）時は、上位価格固定を避けて安価側を優先する。
+            return max(within_target, key=lambda p: ((_get_cpu_perf_score(p) or 0), -int(getattr(p, 'price', 0) or 0)))
         if part_type == 'cpu' and usage in {'general', 'business', 'standard'} and build_priority == 'cost':
             general_cost_pool = _prefer_general_cost_cpu_budget_band(
                 within_target,
