@@ -859,3 +859,85 @@ DETAIL:  キー (shop_code)=(1194484) はすでに存在します。
 2026-05-03 16:31:25,030 [INFO] scraper_task_completed source=pckoubou_parts fetched=343 created=44 updated=299 normalized=1 merged=1 gpu_perf={'status': 'success', 'source': 'pckoubou_gpu_benchmark_page', 'entries': 172, 'snapshot_id': 9, 'saved_entries': 45, 'legacy_specs_sync_enabled': False, 'matched': 0, 'updated': 0, 'skipped': 0} market_range={'status': 'success', 'snapshot_id': 8, 'min': 198980, 'max': 1299980, 'default': 734480} cpu_selection={'status': 'success', 'snapshot_id': 9, 'entry_count': 187, 'excluded_count': 0}
 2026-05-03 16:31:25,031 [INFO] run_completed run_no=1 elapsed_sec=338.34 result={"status": "success", "source": "pckoubou_parts", "fetched": 343, "created": 44, "updated": 299, "normalized": 1, "merged": 1, "gpu_perf": {"status": "success", "source": "pckoubou_gpu_benchmark_page", "entries": 172, "snapshot_id": 9, "saved_entries": 45, "legacy_specs_sync_enabled": false, "matched": 0, "updated": 0, "skipped": 0}, "market_range": {"status": "success", "snapshot_id": 8, "min": 198980, "max": 1299980, "default": 734480}, "cpu_selection": {"status": "success", "snapshot_id": 9, "entry_count": 187, "excluded_count": 0}}
 2026-05-03 16:31:25,031 [INFO] auto_runner_stopped total_runs=1 success=1 failed=0 stop_requested=False
+2026-05-09 16:32:55,086 [INFO] auto_runner_started at=2026-05-09T16:32:55 interval_minutes=0 max_runs=0 continue_on_error=False
+2026-05-09 16:32:55,092 [INFO] run_started run_no=1
+2026-05-09 16:32:55,163 [INFO] scraper_task_started source=pckoubou_parts
+2026-05-09 16:32:59,554 [INFO] カテゴリ=cpu, category_id=1899 のスクレイピング開始
+2026-05-09 16:32:59,555 [INFO] スクレイピング中: https://www.pc-koubou.jp/products/list.php?category_id=1899&disp_number=30&pageno=1
+2026-05-09 16:33:07,919 [INFO] category_id=1899 pageno=1: 12件取得（累計: 12件）
+2026-05-09 16:33:07,919 [INFO] スクレイピング中: https://www.pc-koubou.jp/products/list.php?category_id=1899&disp_number=30&pageno=2
+2026-05-09 16:33:11,469 [INFO] category_id=1899 pageno=2 で重複ID検出。最終ページ到達。
+2026-05-09 16:33:11,469 [INFO] カテゴリ=cpu, category_id=1900 のスクレイピング開始
+2026-05-09 16:33:11,469 [INFO] スクレイピング中: https://www.pc-koubou.jp/products/list.php?category_id=1900&disp_number=30&pageno=1
+2026-05-09 16:33:12,955 [INFO] category_id=1900 pageno=1: 27件取得（累計: 39件）
+2026-05-09 16:33:12,955 [INFO] スクレイピング中: https://www.pc-koubou.jp/products/list.php?category_id=1900&disp_number=30&pageno=2
+2026-05-09 16:33:16,375 [INFO] category_id=1900 pageno=2 で重複ID検出。最終ページ到達。
+2026-05-09 16:33:16,535 [INFO] カテゴリ=cpu 取得件数=39
+2026-05-09 16:33:17,417 [INFO] カテゴリ=motherboard, category_id=1902 のスクレイピング開始
+2026-05-09 16:33:17,417 [INFO] スクレイピング中: https://www.pc-koubou.jp/products/list.php?category_id=1902&disp_number=30&pageno=1
+2026-05-09 16:33:23,164 [INFO] category_id=1902 pageno=1: 30件取得（累計: 30件）
+2026-05-09 16:33:23,165 [INFO] スクレイピング中: https://www.pc-koubou.jp/products/list.php?category_id=1902&disp_number=30&pageno=2
+2026-05-09 16:33:27,242 [INFO] category_id=1902 pageno=2 で重複ID検出。最終ページ到達。
+2026-05-09 16:33:27,242 [INFO] カテゴリ=motherboard, category_id=1903 のスクレイピング開始
+2026-05-09 16:33:27,242 [INFO] スクレイピング中: https://www.pc-koubou.jp/products/list.php?category_id=1903&disp_number=30&pageno=1
+2026-05-09 16:33:31,129 [INFO] category_id=1903 pageno=1: 30件取得（累計: 60件）
+2026-05-09 16:33:31,129 [INFO] スクレイピング中: https://www.pc-koubou.jp/products/list.php?category_id=1903&disp_number=30&pageno=2
+2026-05-09 16:33:34,725 [INFO] category_id=1903 pageno=2 で重複ID検出。最終ページ到達。
+2026-05-09 16:33:34,839 [INFO] カテゴリ=motherboard 取得件数=60
+2026-05-09 16:33:35,640 [INFO] カテゴリ=memory, category_id=1895 のスクレイピング開始
+2026-05-09 16:33:35,640 [INFO] スクレイピング中: https://www.pc-koubou.jp/products/list.php?category_id=1895&disp_number=30&pageno=1
+2026-05-09 16:33:40,876 [INFO] category_id=1895 pageno=1: 30件取得（累計: 30件）
+2026-05-09 16:33:40,876 [INFO] スクレイピング中: https://www.pc-koubou.jp/products/list.php?category_id=1895&disp_number=30&pageno=2
+2026-05-09 16:33:44,413 [INFO] category_id=1895 pageno=2 で重複ID検出。最終ページ到達。
+2026-05-09 16:33:44,534 [INFO] カテゴリ=memory 取得件数=30
+2026-05-09 16:33:45,347 [INFO] カテゴリ=ssd, category_id=2001 のスクレイピング開始
+2026-05-09 16:33:45,347 [INFO] スクレイピング中: https://www.pc-koubou.jp/products/list.php?category_id=2001&disp_number=30&pageno=1
+2026-05-09 16:33:51,057 [INFO] category_id=2001 pageno=1: 30件取得（累計: 30件）
+2026-05-09 16:33:51,057 [INFO] スクレイピング中: https://www.pc-koubou.jp/products/list.php?category_id=2001&disp_number=30&pageno=2
+2026-05-09 16:33:54,918 [INFO] category_id=2001 pageno=2 で重複ID検出。最終ページ到達。
+2026-05-09 16:33:55,032 [INFO] カテゴリ=ssd 取得件数=30
+2026-05-09 16:33:55,847 [INFO] カテゴリ=hdd, category_id=1911 のスクレイピング開始
+2026-05-09 16:33:55,847 [INFO] スクレイピング中: https://www.pc-koubou.jp/products/list.php?category_id=1911&disp_number=30&pageno=1
+2026-05-09 16:34:01,090 [INFO] category_id=1911 pageno=1: 30件取得（累計: 30件）
+2026-05-09 16:34:01,090 [INFO] スクレイピング中: https://www.pc-koubou.jp/products/list.php?category_id=1911&disp_number=30&pageno=2
+2026-05-09 16:34:04,809 [INFO] category_id=1911 pageno=2 で重複ID検出。最終ページ到達。
+2026-05-09 16:34:04,923 [INFO] カテゴリ=hdd 取得件数=30
+2026-05-09 16:34:05,836 [INFO] カテゴリ=hdd25, category_id=1912 のスクレイピング開始
+2026-05-09 16:34:05,836 [INFO] スクレイピング中: https://www.pc-koubou.jp/products/list.php?category_id=1912&disp_number=30&pageno=1
+2026-05-09 16:34:10,720 [INFO] category_id=1912 pageno=1: 商品なし（在庫ゼロ）。終了。
+2026-05-09 16:34:10,831 [INFO] カテゴリ=hdd25 取得件数=0
+2026-05-09 16:34:11,699 [INFO] カテゴリ=gpu, category_id=1904 のスクレイピング開始
+2026-05-09 16:34:11,699 [INFO] スクレイピング中: https://www.pc-koubou.jp/products/list.php?category_id=1904&disp_number=30&pageno=1
+2026-05-09 16:34:14,708 [INFO] category_id=1904 pageno=1: 30件取得（累計: 30件）
+2026-05-09 16:34:14,708 [INFO] スクレイピング中: https://www.pc-koubou.jp/products/list.php?category_id=1904&disp_number=30&pageno=2
+2026-05-09 16:34:18,688 [INFO] category_id=1904 pageno=2 で重複ID検出。最終ページ到達。
+2026-05-09 16:34:18,800 [INFO] カテゴリ=gpu 取得件数=30
+2026-05-09 16:34:19,604 [INFO] カテゴリ=psu, category_id=1943 のスクレイピング開始
+2026-05-09 16:34:19,604 [INFO] スクレイピング中: https://www.pc-koubou.jp/products/list.php?category_id=1943&disp_number=30&pageno=1
+2026-05-09 16:34:24,832 [INFO] category_id=1943 pageno=1: 30件取得（累計: 30件）
+2026-05-09 16:34:24,832 [INFO] スクレイピング中: https://www.pc-koubou.jp/products/list.php?category_id=1943&disp_number=30&pageno=2
+2026-05-09 16:34:28,512 [INFO] category_id=1943 pageno=2 で重複ID検出。最終ページ到達。
+2026-05-09 16:34:28,615 [INFO] カテゴリ=psu 取得件数=30
+2026-05-09 16:34:29,428 [INFO] カテゴリ=case, category_id=1921 のスクレイピング開始
+2026-05-09 16:34:29,429 [INFO] スクレイピング中: https://www.pc-koubou.jp/products/list.php?category_id=1921&disp_number=30&pageno=1
+2026-05-09 16:34:34,647 [INFO] category_id=1921 pageno=1: 30件取得（累計: 30件）
+2026-05-09 16:34:34,647 [INFO] スクレイピング中: https://www.pc-koubou.jp/products/list.php?category_id=1921&disp_number=30&pageno=2
+2026-05-09 16:34:38,652 [INFO] category_id=1921 pageno=2 で重複ID検出。最終ページ到達。
+2026-05-09 16:34:38,773 [INFO] カテゴリ=case 取得件数=30
+2026-05-09 16:34:39,643 [INFO] カテゴリ=cpu_cooler, category_id=1931 のスクレイピング開始
+2026-05-09 16:34:39,644 [INFO] スクレイピング中: https://www.pc-koubou.jp/products/list.php?category_id=1931&disp_number=30&pageno=1
+2026-05-09 16:34:45,160 [INFO] category_id=1931 pageno=1: 30件取得（累計: 30件）
+2026-05-09 16:34:45,160 [INFO] スクレイピング中: https://www.pc-koubou.jp/products/list.php?category_id=1931&disp_number=30&pageno=2
+2026-05-09 16:34:49,095 [INFO] category_id=1931 pageno=2 で重複ID検出。最終ページ到達。
+2026-05-09 16:34:49,189 [INFO] カテゴリ=cpu_cooler 取得件数=30
+2026-05-09 16:34:50,007 [INFO] カテゴリ=case_fan, category_id=1932 のスクレイピング開始
+2026-05-09 16:34:50,007 [INFO] スクレイピング中: https://www.pc-koubou.jp/products/list.php?category_id=1932&disp_number=30&pageno=1
+2026-05-09 16:34:55,374 [INFO] category_id=1932 pageno=1: 30件取得（累計: 30件）
+2026-05-09 16:34:55,375 [INFO] スクレイピング中: https://www.pc-koubou.jp/products/list.php?category_id=1932&disp_number=30&pageno=2
+2026-05-09 16:34:59,274 [INFO] category_id=1932 pageno=2 で重複ID検出。最終ページ到達。
+2026-05-09 16:34:59,388 [INFO] カテゴリ=case_fan 取得件数=30
+2026-05-09 16:35:00,269 [INFO] カテゴリ=os, 固定URL=https://www.pc-koubou.jp/goods/windows11_package.php のスクレイピング開始
+2026-05-09 16:35:02,947 [INFO] カテゴリ=os 取得件数=2
+2026-05-09 16:38:33,180 [INFO] scraper_task_completed source=pckoubou_parts fetched=341 created=22 updated=319 normalized=2 merged=1 gpu_perf={'status': 'success', 'source': 'pckoubou_gpu_benchmark_page', 'entries': 172, 'snapshot_id': 10, 'saved_entries': 45, 'legacy_specs_sync_enabled': False, 'matched': 0, 'updated': 0, 'skipped': 0} market_range={'status': 'success', 'snapshot_id': 9, 'min': 199980, 'max': 1299980, 'default': 734980} cpu_selection={'status': 'success', 'snapshot_id': 10, 'entry_count': 187, 'excluded_count': 0}
+2026-05-09 16:38:33,181 [INFO] run_completed run_no=1 elapsed_sec=338.09 result={"status": "success", "source": "pckoubou_parts", "fetched": 341, "created": 22, "updated": 319, "normalized": 2, "merged": 1, "gpu_perf": {"status": "success", "source": "pckoubou_gpu_benchmark_page", "entries": 172, "snapshot_id": 10, "saved_entries": 45, "legacy_specs_sync_enabled": false, "matched": 0, "updated": 0, "skipped": 0}, "market_range": {"status": "success", "snapshot_id": 9, "min": 199980, "max": 1299980, "default": 734980}, "cpu_selection": {"status": "success", "snapshot_id": 10, "entry_count": 187, "excluded_count": 0}}
+2026-05-09 16:38:33,181 [INFO] auto_runner_stopped total_runs=1 success=1 failed=0 stop_requested=False
