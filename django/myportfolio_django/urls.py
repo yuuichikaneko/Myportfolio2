@@ -18,6 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from config.views import home
+from scraper.admin import general_cpu_tier_table_admin_view
 from scraper.views import (
     PCPartViewSet,
     ConfigurationViewSet,
@@ -41,6 +42,7 @@ router.register(r'scraper-status', ScraperStatusViewSet, basename='scraper-statu
 
 urlpatterns = [
     path('', home, name='home'),
+    path('admin/general-cpu-tier-table/', admin.site.admin_view(general_cpu_tier_table_admin_view), name='admin-general-cpu-tier-table'),
     path('admin/', admin.site.urls),
     path('api/generate-config/', GenerateConfigAPIView.as_view()),
     path('api/scraper-status/summary/', ScraperStatusCompatAPIView.as_view()),

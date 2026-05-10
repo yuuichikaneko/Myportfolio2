@@ -13,7 +13,7 @@ from .dospara_scraper import (
 	fetch_dospara_cpu_selection_material,
 )
 from .tasks import run_scraper_task
-from .views import ConfigurationViewSet, _creator_motherboard_expandability_score, _cpu_meets_creator_minimum, _enforce_gaming_spec_best_value_gpu, _enforce_memory_speed_floor, _get_cpu_perf_score, _get_gpu_perf_score_from_snapshot, _infer_gaming_gpu_tier_label, _infer_memory_speed_mhz, _infer_storage_capacity_gb, _is_gaming_gpu_within_priority_cap, _is_part_suitable, _matches_selection_options, _pick_amd_gaming_cpu, _pick_creator_cpu_with_budget, _pick_gaming_cost_gpu_for_auto_adjust, _pick_part_by_target, _prefer_creator_premium_cpu, _prefer_creator_premium_gpu, _prefer_higher_gaming_cost_x3d_cpu, _rebalance_gaming_cost_cpu_to_storage, _recommend_min_budget_for_gaming_x3d_from_low_end_config, _required_psu_wattage, build_configuration_response
+from .views import ConfigurationViewSet, _classify_general_home_cpu_tier, _compatibility_issues, _creator_motherboard_expandability_score, _cpu_meets_creator_minimum, _enforce_gaming_spec_best_value_gpu, _enforce_general_cpu_forced_replacements, _enforce_memory_speed_floor, _filter_general_home_cpu_by_tier_table, _get_cpu_perf_score, _get_gpu_perf_score_from_snapshot, _infer_gaming_gpu_tier_label, _infer_memory_speed_mhz, _infer_storage_capacity_gb, _is_gaming_gpu_within_priority_cap, _is_part_suitable, _matches_selection_options, _pick_amd_gaming_cpu, _pick_candidate, _pick_creator_cpu_with_budget, _pick_gaming_cost_gpu_for_auto_adjust, _pick_part_by_target, _prefer_creator_premium_cpu, _prefer_creator_premium_gpu, _prefer_higher_gaming_cost_x3d_cpu, _rebalance_gaming_cost_cpu_to_storage, _recommend_min_budget_for_gaming_x3d_from_low_end_config, _required_psu_wattage, _resolve_compatibility, build_configuration_response
 
 
 class ScraperApiTests(APITestCase):
@@ -500,8 +500,10 @@ class ScraperApiTests(APITestCase):
 		self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
 		parts = {p['category']: p for p in response.data['parts']}
 		self.assertIn('cpu', parts)
-		self.assertIn('ultra 5', str(parts['cpu']['name']).lower())
-		self.assertNotIn('265kf', str(parts['cpu']['name']).lower())
+		selected_cpu_name = str(parts['cpu']['name']).lower()
+		self.assertNotIn('265kf', selected_cpu_name)
+		self.assertNotIn('core™ ultra 5 プロセッサー 235'.lower(), selected_cpu_name)
+		self.assertNotIn('core™ ultra 5 プロセッサー 225'.lower(), selected_cpu_name)
 		self.assertLess(int(parts['cpu']['price']), 45980)
 		cpu_adjustments = [
 			adj for adj in response.data.get('part_adjustments', [])
@@ -608,6 +610,105 @@ class ScraperApiTests(APITestCase):
 		self.assertIn('250k plus', str(parts['cpu']['name']).lower())
 		self.assertNotIn('265kf', str(parts['cpu']['name']).lower())
 
+	def test_generate_config_general_spec_middle_budget_prioritizes_ultra_250_over_265(self):
+		PCPart.objects.create(
+			part_type='cpu',
+			name='Intel インテル® Core™ Ultra 5 プロセッサー 250K Plus',
+			price=43800,
+			specs={'socket': 'LGA1851'},
+			url='https://www.dospara.co.jp/SBR999/IC999250kplus-priority.html',
+		)
+		PCPart.objects.create(
+			part_type='cpu',
+			name='Intel インテル® Core™ Ultra 7 プロセッサー 265KF',
+			price=45980,
+			specs={'socket': 'LGA1851'},
+			url='https://www.dospara.co.jp/SBR999/IC999265kf-priority.html',
+		)
+		PCPart.objects.create(
+			part_type='motherboard',
+			name='GIGABYTE Z890M FORCE DUO X WIFI7',
+			price=34800,
+			specs={'socket': 'LGA1851', 'memory_type': 'DDR5', 'form_factor': 'MicroATX'},
+			url='https://www.dospara.co.jp/SBR999/IC999z890m-priority.html',
+		)
+		PCPart.objects.create(
+			part_type='memory',
+			name='DDR5 16GB General Spec Mid Priority',
+			price=15980,
+			specs={'memory_type': 'DDR5', 'capacity_gb': 16, 'speed_mhz': 5600},
+			url='https://www.dospara.co.jp/SBR999/IC999mem-priority.html',
+		)
+		PCPart.objects.create(
+			part_type='storage',
+			name='NVMe 1TB General Spec Mid Priority',
+			price=12580,
+			specs={'interface': 'NVMe', 'capacity_gb': 1000},
+			url='https://www.dospara.co.jp/SBR999/IC999sto-priority.html',
+		)
+		PCPart.objects.create(
+			part_type='cpu_cooler',
+			name='LGA1851 Air Cooler General Spec Mid Priority',
+			price=3780,
+			specs={'supported_sockets': ['LGA1851']},
+			url='https://www.dospara.co.jp/SBR999/IC999cool-priority.html',
+		)
+		PCPart.objects.create(
+			part_type='gpu',
+			name='Inno3D GeForce RTX 5060 TWIN X2 OC Priority',
+			price=67980,
+			specs={'memory_gb': 8},
+			url='https://www.dospara.co.jp/SBR999/IC999gpu5060-priority.html',
+		)
+		PCPart.objects.create(
+			part_type='psu',
+			name='650W PSU General Spec Mid Priority',
+			price=6980,
+			specs={'wattage': 650},
+			url='https://www.dospara.co.jp/SBR999/IC999psu-priority.html',
+		)
+		PCPart.objects.create(
+			part_type='case',
+			name='Mid Tower General Spec Mid Priority',
+			price=12800,
+			specs={'supported_form_factors': ['MicroATX', 'ATX']},
+			url='https://www.dospara.co.jp/SBR999/IC999case-priority.html',
+		)
+		PCPart.objects.create(
+			part_type='os',
+			name='Microsoft Windows 11 Home 日本語パッケージ版 Priority',
+			price=16480,
+			specs={},
+			url='https://www.dospara.co.jp/SBR170/IC479478-priority.html',
+		)
+
+		def _mock_perf_score(part):
+			text = str(getattr(part, 'name', '')).lower()
+			if '265kf' in text:
+				return 9000
+			if '250k plus' in text:
+				return 7000
+			return 0
+
+		with patch('scraper.views._get_cpu_perf_score', side_effect=_mock_perf_score):
+			response = self.client.post(
+				'/api/generate-config/',
+				{
+					'budget': 247478,
+					'usage': 'general',
+					'build_priority': 'spec',
+					'cpu_vendor': 'intel',
+					'os_edition': 'home',
+				},
+				format='json',
+			)
+
+		self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+		parts = {p['category']: p for p in response.data['parts']}
+		self.assertIn('cpu', parts)
+		self.assertIn('250k plus', str(parts['cpu']['name']).lower())
+		self.assertNotIn('265kf', str(parts['cpu']['name']).lower())
+
 	def test_generate_config_general_spec_middle_budget_avoids_processor_300_entry_cpu(self):
 		PCPart.objects.create(
 			part_type='cpu',
@@ -697,6 +798,687 @@ class ScraperApiTests(APITestCase):
 		self.assertIn('cpu', parts)
 		self.assertIn('ryzen 5 5500', str(parts['cpu']['name']).lower())
 		self.assertNotIn('processor 300', str(parts['cpu']['name']).lower())
+
+	def test_general_home_cpu_tier_table_classifies_models(self):
+		entry = PCPart.objects.create(
+			part_type='cpu',
+			name='Intel Intel Processor 300 BOX',
+			price=16480,
+			specs={'socket': 'LGA1700', 'core_count': 2, 'thread_count': 4},
+			url='https://example.com/cpu-processor-300',
+		)
+		mainstream = PCPart.objects.create(
+			part_type='cpu',
+			name='AMD Ryzen 5 7600 BOX',
+			price=35979,
+			specs={'socket': 'AM4', 'core_count': 6, 'thread_count': 12},
+			url='https://example.com/cpu-ryzen-7600',
+		)
+		performance = PCPart.objects.create(
+			part_type='cpu',
+			name='AMD Ryzen 7 7800X3D BOX',
+			price=49800,
+			specs={'socket': 'LGA1851', 'core_count': 8, 'thread_count': 16},
+			url='https://example.com/cpu-ryzen-7800x3d',
+		)
+		entry_ultra_235 = PCPart.objects.create(
+			part_type='cpu',
+			name='Intel Core Ultra 5 235 BOX',
+			price=43980,
+			specs={'socket': 'LGA1851', 'core_count': 6, 'thread_count': 12},
+			url='https://example.com/cpu-ultra-5-235',
+		)
+		high_end_285 = PCPart.objects.create(
+			part_type='cpu',
+			name='Intel Core Ultra 9 285K BOX',
+			price=95599,
+			specs={'socket': 'LGA1851', 'core_count': 8, 'thread_count': 16},
+			url='https://example.com/cpu-ultra-9-285k',
+		)
+		enthusiast = PCPart.objects.create(
+			part_type='cpu',
+			name='AMD Ryzen 9 9950X BOX',
+			price=104800,
+			specs={'socket': 'AM5', 'core_count': 16, 'thread_count': 32},
+			url='https://example.com/cpu-ryzen-9950x',
+		)
+
+		self.assertEqual(_classify_general_home_cpu_tier(entry), 'entry')
+		self.assertEqual(_classify_general_home_cpu_tier(entry_ultra_235), 'entry')
+		self.assertEqual(_classify_general_home_cpu_tier(mainstream), 'mainstream')
+		self.assertEqual(_classify_general_home_cpu_tier(performance), 'performance')
+		self.assertEqual(_classify_general_home_cpu_tier(high_end_285), 'performance')
+		self.assertEqual(_classify_general_home_cpu_tier(enthusiast), 'enthusiast')
+
+	def test_general_home_cpu_excludes_ultra_265_from_exact_table(self):
+		cpu_250 = PCPart(
+			part_type='cpu',
+			name='Intel Core Ultra 5 250K Plus BOX',
+			price=41800,
+			specs={'socket': 'LGA1851', 'core_count': 6, 'thread_count': 12},
+			url='https://example.com/cpu-ultra-250k',
+		)
+		cpu_265 = PCPart(
+			part_type='cpu',
+			name='Intel Core Ultra 7 265K BOX',
+			price=47780,
+			specs={'socket': 'LGA1851', 'core_count': 8, 'thread_count': 16},
+			url='https://example.com/cpu-ultra-265k',
+		)
+
+		filtered = _filter_general_home_cpu_by_tier_table([cpu_250, cpu_265], 'middle')
+		filtered_names = {str(p.name).lower() for p in filtered}
+
+		self.assertIn('intel core ultra 5 250k plus box', filtered_names)
+		self.assertNotIn('intel core ultra 7 265k box', filtered_names)
+
+	def test_general_high_budget_allows_ultra9_285_and_excludes_premium_only(self):
+		cpu_285 = PCPart(
+			part_type='cpu',
+			name='Intel Core Ultra 9 285K BOX',
+			price=95599,
+			specs={'socket': 'LGA1851', 'core_count': 8, 'thread_count': 16},
+			url='https://example.com/cpu-ultra-9-285k',
+		)
+		cpu_9950x = PCPart(
+			part_type='cpu',
+			name='AMD Ryzen 9 9950X BOX',
+			price=104800,
+			specs={'socket': 'AM5', 'core_count': 16, 'thread_count': 32},
+			url='https://example.com/cpu-ryzen-9950x',
+		)
+
+		filtered = _filter_general_home_cpu_by_tier_table([cpu_285, cpu_9950x], 'high')
+		filtered_names = {str(p.name).lower() for p in filtered}
+
+		self.assertIn('intel core ultra 9 285k box', filtered_names)
+		self.assertNotIn('amd ryzen 9 9950x box', filtered_names)
+
+	def test_general_spec_high_budget_excludes_ryzen_9950x_from_enthusiast(self):
+		"""新ルール適用後: 高予算では performance ティアのみなので premium 専用CPUは除外"""
+		cpu_9900x = PCPart(
+			part_type='cpu',
+			name='AMD Ryzen 9 9900X BOX',
+			price=71800,
+			specs={'socket': 'AM5', 'core_count': 12, 'thread_count': 24},
+			url='https://example.com/cpu-ryzen-9900x',
+		)
+		cpu_9950x = PCPart(
+			part_type='cpu',
+			name='AMD Ryzen 9 9950X BOX',
+			price=104800,
+			specs={'socket': 'AM5', 'core_count': 16, 'thread_count': 32},
+			url='https://example.com/cpu-ryzen-9950x',
+		)
+		cpu_7800x3d = PCPart(
+			part_type='cpu',
+			name='AMD Ryzen 7 7800X3D BOX',
+			price=48980,
+			specs={'socket': 'AM5', 'core_count': 8, 'thread_count': 16},
+			url='https://example.com/cpu-ryzen-7800x3d',
+		)
+
+		# 高予算では performance ティアのみ許可。9950X は premium 専用で除外、9900X は残る。
+		filtered = _filter_general_home_cpu_by_tier_table([cpu_9900x, cpu_9950x, cpu_7800x3d], 'high')
+		filtered_names = {str(p.name).lower() for p in filtered}
+
+		self.assertIn('amd ryzen 9 9900x box', filtered_names)
+		self.assertNotIn('amd ryzen 9 9950x box', filtered_names)
+		self.assertIn('amd ryzen 7 7800x3d box', filtered_names)
+
+	def test_general_spec_premium_budget_allows_ryzen_9950x(self):
+		cpu_9900x = PCPart(
+			part_type='cpu',
+			name='AMD Ryzen 9 9900X BOX',
+			price=71800,
+			specs={'socket': 'AM5', 'core_count': 12, 'thread_count': 24},
+			url='https://example.com/cpu-ryzen-9900x',
+		)
+		cpu_9950x = PCPart(
+			part_type='cpu',
+			name='AMD Ryzen 9 9950X BOX',
+			price=104800,
+			specs={'socket': 'AM5', 'core_count': 16, 'thread_count': 32},
+			url='https://example.com/cpu-ryzen-9950x',
+		)
+
+		filtered = _filter_general_home_cpu_by_tier_table([cpu_9900x, cpu_9950x], 'premium')
+		filtered_names = {str(p.name).lower() for p in filtered}
+
+		self.assertNotIn('amd ryzen 9 9900x box', filtered_names)
+		self.assertIn('amd ryzen 9 9950x box', filtered_names)
+
+	def test_general_cost_high_budget_excludes_ryzen_9950x_from_cpu_pool(self):
+		cpu_9800x3d = PCPart(
+			part_type='cpu',
+			name='AMD Ryzen 7 9800X3D BOX',
+			price=62180,
+			specs={'socket': 'AM5', 'core_count': 8, 'thread_count': 16},
+			url='https://example.com/cpu-ryzen-9800x3d',
+		)
+		cpu_9950x = PCPart(
+			part_type='cpu',
+			name='AMD Ryzen 9 9950X BOX',
+			price=104800,
+			specs={'socket': 'AM5', 'core_count': 16, 'thread_count': 32},
+			url='https://example.com/cpu-ryzen-9950x',
+		)
+
+		filtered = _filter_general_home_cpu_by_tier_table([cpu_9800x3d, cpu_9950x], 'high')
+		filtered_names = {str(p.name).lower() for p in filtered}
+
+		self.assertIn('amd ryzen 7 9800x3d box', filtered_names)
+		self.assertNotIn('amd ryzen 9 9950x box', filtered_names)
+
+	def test_general_premium_cpu_option_filter_rejects_core_ultra5(self):
+		ultra5 = PCPart(
+			part_type='cpu',
+			name='Intel インテル Core Ultra 5 250KF Plus',
+			price=38800,
+			specs={'socket': 'LGA1851', 'core_count': 6, 'thread_count': 12},
+			url='https://example.com/cpu-ultra5-250kf-plus',
+		)
+		ultra7 = PCPart(
+			part_type='cpu',
+			name='Intel インテル Core Ultra 7 265KF',
+			price=45980,
+			specs={'socket': 'LGA1851', 'core_count': 8, 'thread_count': 16},
+			url='https://example.com/cpu-ultra7-265kf',
+		)
+
+		options = {
+			'usage': 'general',
+			'budget': 584980,
+			'build_priority': 'cost',
+			'cpu_vendor': 'any',
+		}
+
+		self.assertFalse(_matches_selection_options('cpu', ultra5, options=options))
+		self.assertTrue(_matches_selection_options('cpu', ultra7, options=options))
+
+	def test_general_premium_tier_filter_does_not_prioritize_ultra250_over_265(self):
+		ultra5 = PCPart(
+			part_type='cpu',
+			name='Intel インテル Core Ultra 5 250KF Plus',
+			price=38800,
+			specs={'socket': 'LGA1851', 'core_count': 6, 'thread_count': 12},
+			url='https://example.com/cpu-ultra5-250kf-plus',
+		)
+		ultra7 = PCPart(
+			part_type='cpu',
+			name='Intel インテル Core Ultra 7 265KF',
+			price=45980,
+			specs={'socket': 'LGA1851', 'core_count': 8, 'thread_count': 16},
+			url='https://example.com/cpu-ultra7-265kf',
+		)
+
+		filtered = _filter_general_home_cpu_by_tier_table([ultra5, ultra7], 'premium')
+		filtered_names = {str(p.name).lower() for p in filtered}
+
+		self.assertNotIn('intel インテル core ultra 5 250kf plus', filtered_names)
+		self.assertIn('intel インテル core ultra 7 265kf', filtered_names)
+
+	def test_cpu_socket_code_infers_am4_from_ryzen_5700x_name(self):
+		cpu = PCPart(
+			part_type='cpu',
+			name='AMD Ryzen 7 5700X BOX',
+			price=32800,
+			specs={},
+			url='https://example.com/cpu-5700x',
+		)
+
+		from .views import _cpu_socket_code
+		self.assertEqual(_cpu_socket_code(cpu), 'AM4')
+
+	def test_cpu_socket_code_infers_lga1851_from_spec_text(self):
+		cpu = PCPart(
+			part_type='cpu',
+			name='Intel Core Ultra 5 250KF Plus',
+			price=38800,
+			specs={'spec_text': 'Intel Core Ultra 5 Processor / LGA1851 / Turbo Boost'},
+			url='https://example.com/cpu-ultra5-250kf-plus',
+		)
+
+		from .views import _cpu_socket_code
+		self.assertEqual(_cpu_socket_code(cpu), 'LGA1851')
+
+	def test_infer_motherboard_socket_reads_spec_text(self):
+		motherboard = PCPart(
+			part_type='motherboard',
+			name='GIGABYTE B760 GAMING X DDR4 GEN5',
+			price=14980,
+			specs={'spec_text': 'LGA1700 / ATX / Intel Core Processor support'},
+			url='https://example.com/mb-b760-gaming-x',
+		)
+
+		from .views import _infer_motherboard_socket
+		self.assertEqual(_infer_motherboard_socket(motherboard), 'LGA1700')
+
+	def test_matches_selection_options_rejects_kf_cpu_for_general_igpu(self):
+		cpu_kf = PCPart(
+			part_type='cpu',
+			name='Intel Core Ultra 5 250KF Plus',
+			price=38800,
+			specs={'spec_text': 'Intel Core Ultra 5 Processor / LGA1851 / GPU非搭載 CPU'},
+			url='https://example.com/cpu-ultra5-250kf-plus',
+		)
+		cpu_box = PCPart(
+			part_type='cpu',
+			name='Intel Core Ultra 5 225 BOX',
+			price=39800,
+			specs={'spec_text': 'Intel Core Ultra 5 Processor / LGA1851'},
+			url='https://example.com/cpu-ultra5-225-box',
+		)
+
+		options = {
+			'usage': 'general',
+			'budget': 174980,
+			'build_priority': 'cost',
+			'cpu_vendor': 'any',
+			'use_igpu_cpu_only': True,
+		}
+
+		self.assertFalse(_matches_selection_options('cpu', cpu_kf, options=options))
+		self.assertTrue(_matches_selection_options('cpu', cpu_box, options=options))
+
+	def test_pick_general_cost_cpu_candidate_respects_igpu_only_mode(self):
+		cpu_kf = PCPart(
+			part_type='cpu',
+			name='Intel Core Ultra 5 250KF Plus',
+			price=38800,
+			specs={'spec_text': 'Intel Core Ultra 5 Processor / LGA1851 / GPU非搭載 CPU'},
+			url='https://example.com/cpu-ultra5-250kf-plus',
+		)
+		cpu_igpu = PCPart(
+			part_type='cpu',
+			name='Intel Core Ultra 5 250K Plus',
+			price=41800,
+			specs={'spec_text': 'Intel Core Ultra 5 Processor / LGA1851'},
+			url='https://example.com/cpu-ultra5-250k-plus',
+		)
+
+		from .views import _pick_general_cost_cpu_candidate
+		picked = _pick_general_cost_cpu_candidate(
+			[cpu_kf, cpu_igpu],
+			options={'use_igpu_cpu_only': True},
+		)
+
+		self.assertEqual(picked.name, cpu_igpu.name)
+
+	def test_is_part_suitable_rejects_sodimm_memory_from_spec_text(self):
+		memory = PCPart(
+			part_type='memory',
+			name='ESSENCORE KD48GS880-32N220A (8GB 1枚)',
+			price=13580,
+			specs={
+				'comment': 'Klevv SO-DIMM DDR4 スタンダード・ノートPC用メモリ DDR4-3200 8GB 1枚',
+				'spec_text': 'ノートPC用-DDR4 / 8GB×1 / 22-22-22-51',
+			},
+			url='https://example.com/memory-sodimm-8gb',
+		)
+
+		self.assertFalse(_is_part_suitable('memory', memory))
+
+	def test_general_premium_spec_avoids_am4_cpu_when_perf_scores_missing(self):
+		cpu_am4 = PCPart.objects.create(
+			part_type='cpu',
+			name='AMD Ryzen 7 5700X BOX',
+			price=32800,
+			specs={},
+			url='https://example.com/cpu-5700x',
+		)
+		cpu_am5 = PCPart.objects.create(
+			part_type='cpu',
+			name='AMD Ryzen 7 9700X BOX',
+			price=54800,
+			specs={},
+			url='https://example.com/cpu-9700x',
+		)
+		PCPart.objects.create(
+			part_type='motherboard',
+			name='MSI MAG X870E TOMAHAWK MAX WIFI',
+			price=57070,
+			specs={'socket': 'AM5', 'memory_type': 'DDR5', 'form_factor': 'ATX'},
+			url='https://example.com/mb-x870e',
+		)
+		PCPart.objects.create(
+			part_type='memory',
+			name='DDR5 32GB Premium Spec',
+			price=53380,
+			specs={'memory_type': 'DDR5', 'capacity_gb': 32, 'speed_mhz': 5600},
+			url='https://example.com/mem-ddr5-32',
+		)
+		PCPart.objects.create(
+			part_type='storage',
+			name='NVMe 1TB Premium Spec',
+			price=26580,
+			specs={'interface': 'NVMe', 'capacity_gb': 1000},
+			url='https://example.com/storage-1tb',
+		)
+		PCPart.objects.create(
+			part_type='gpu',
+			name='RTX 5070 Premium Spec',
+			price=112500,
+			specs={'vram': '12GB'},
+			url='https://example.com/gpu-5070',
+		)
+		PCPart.objects.create(
+			part_type='cpu_cooler',
+			name='Air Cooler Premium Spec',
+			price=21280,
+			specs={'supported_sockets': ['AM5', 'AM4']},
+			url='https://example.com/cooler-premium-spec',
+		)
+		PCPart.objects.create(
+			part_type='psu',
+			name='650W PSU Premium Spec',
+			price=5880,
+			specs={'wattage': 650},
+			url='https://example.com/psu-650',
+		)
+		PCPart.objects.create(
+			part_type='case',
+			name='Premium ATX Case',
+			price=49980,
+			specs={'supported_form_factors': ['ATX']},
+			url='https://example.com/case-atx',
+		)
+		PCPart.objects.create(
+			part_type='os',
+			name='Microsoft Windows 11 Pro (HAV-00213)',
+			price=25542,
+			specs={},
+			url='https://example.com/os-pro',
+		)
+
+		with patch('scraper.views._get_cpu_perf_score', return_value=None):
+			response = self.client.post(
+				'/api/generate-config/',
+				{
+					'budget': 643478,
+					'usage': 'general',
+					'build_priority': 'spec',
+					'os_edition': 'pro',
+				},
+				format='json',
+			)
+
+		self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+		parts = {p['category']: p for p in response.data['parts']}
+		self.assertIn('cpu', parts)
+		self.assertIn('9700x', str(parts['cpu']['name']).lower())
+		self.assertNotIn('5700x', str(parts['cpu']['name']).lower())
+
+	def test_general_premium_spec_prefers_non_x3d_enthusiast_cpu_when_perf_scores_missing(self):
+		PCPart.objects.create(
+			part_type='cpu',
+			name='AMD Ryzen 7 9700X BOX',
+			price=49800,
+			specs={},
+			url='https://example.com/cpu-9700x-premium',
+		)
+		PCPart.objects.create(
+			part_type='cpu',
+			name='AMD Ryzen 9 9950X BOX',
+			price=99800,
+			specs={},
+			url='https://example.com/cpu-9950x-premium',
+		)
+		PCPart.objects.create(
+			part_type='cpu',
+			name='AMD Ryzen 9 9950X3D BOX',
+			price=116499,
+			specs={},
+			url='https://example.com/cpu-9950x3d-premium',
+		)
+		PCPart.objects.create(
+			part_type='motherboard',
+			name='MSI MAG X870E TOMAHAWK MAX WIFI',
+			price=57070,
+			specs={'socket': 'AM5', 'memory_type': 'DDR5', 'form_factor': 'ATX'},
+			url='https://example.com/mb-x870e-premium',
+		)
+		PCPart.objects.create(
+			part_type='memory',
+			name='DDR5 32GB Premium Spec Enthusiast',
+			price=53380,
+			specs={'memory_type': 'DDR5', 'capacity_gb': 32, 'speed_mhz': 5600},
+			url='https://example.com/mem-ddr5-32-premium',
+		)
+		PCPart.objects.create(
+			part_type='storage',
+			name='NVMe 1TB Premium Spec Enthusiast',
+			price=26580,
+			specs={'interface': 'NVMe', 'capacity_gb': 1000},
+			url='https://example.com/storage-1tb-premium',
+		)
+		PCPart.objects.create(
+			part_type='gpu',
+			name='RTX 5070 Premium Spec Enthusiast',
+			price=112500,
+			specs={'vram': '12GB'},
+			url='https://example.com/gpu-5070-premium',
+		)
+		PCPart.objects.create(
+			part_type='cpu_cooler',
+			name='Air Cooler Premium Spec Enthusiast',
+			price=21280,
+			specs={'supported_sockets': ['AM5']},
+			url='https://example.com/cooler-premium-enthusiast',
+		)
+		PCPart.objects.create(
+			part_type='psu',
+			name='650W PSU Premium Spec Enthusiast',
+			price=5880,
+			specs={'wattage': 650},
+			url='https://example.com/psu-650-premium',
+		)
+		PCPart.objects.create(
+			part_type='case',
+			name='Premium ATX Case Enthusiast',
+			price=49980,
+			specs={'supported_form_factors': ['ATX']},
+			url='https://example.com/case-atx-premium',
+		)
+		PCPart.objects.create(
+			part_type='os',
+			name='Microsoft Windows 11 Pro (HAV-00213)',
+			price=25542,
+			specs={},
+			url='https://example.com/os-pro-premium',
+		)
+
+		with patch('scraper.views._get_cpu_perf_score', return_value=None):
+			response = self.client.post(
+				'/api/generate-config/',
+				{
+					'budget': 643478,
+					'usage': 'general',
+					'build_priority': 'spec',
+					'os_edition': 'pro',
+					'selected_budget_tier': 'premium',
+				},
+				format='json',
+			)
+
+		self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+		parts = {p['category']: p for p in response.data['parts']}
+		self.assertIn('cpu', parts)
+		cpu_name = str(parts['cpu']['name']).lower()
+		self.assertIn('9950x', cpu_name)
+		self.assertNotIn('9950x3d', cpu_name)
+		self.assertNotIn('9700x', cpu_name)
+
+	def test_compatibility_issues_detects_socket_mismatch_with_inferred_cpu_socket(self):
+		cpu = PCPart(
+			part_type='cpu',
+			name='AMD Ryzen 7 5700X BOX',
+			price=32800,
+			specs={},
+			url='https://example.com/cpu-5700x',
+		)
+		motherboard = PCPart(
+			part_type='motherboard',
+			name='MSI MAG X870E TOMAHAWK MAX WIFI',
+			price=57070,
+			specs={'socket': 'AM5', 'memory_type': 'DDR5', 'form_factor': 'ATX'},
+			url='https://example.com/mb-x870e',
+		)
+		memory = PCPart(
+			part_type='memory',
+			name='ADATA DDR4 32GB Kit',
+			price=53380,
+			specs={'memory_type': 'DDR4', 'capacity_gb': 32},
+			url='https://example.com/mem-ddr4',
+		)
+
+		issues = _compatibility_issues({'cpu': cpu, 'motherboard': motherboard, 'memory': memory}, 'general', options={})
+
+		self.assertIn('socket_mismatch', issues)
+		self.assertIn('memory_type_mismatch', issues)
+
+	def test_resolve_compatibility_replaces_am4_cpu_with_am5_for_general_premium(self):
+		cpu_am4 = PCPart.objects.create(
+			part_type='cpu',
+			name='AMD Ryzen 7 5700X BOX',
+			price=32800,
+			specs={},
+			url='https://example.com/cpu-5700x',
+		)
+		cpu_am5 = PCPart.objects.create(
+			part_type='cpu',
+			name='AMD Ryzen 7 9700X BOX',
+			price=54800,
+			specs={},
+			url='https://example.com/cpu-9700x',
+		)
+		motherboard = PCPart.objects.create(
+			part_type='motherboard',
+			name='MSI MAG X870E TOMAHAWK MAX WIFI',
+			price=57070,
+			specs={'socket': 'AM5', 'memory_type': 'DDR5', 'form_factor': 'ATX'},
+			url='https://example.com/mb-x870e',
+		)
+		memory = PCPart.objects.create(
+			part_type='memory',
+			name='ADATA DDR5 32GB Kit',
+			price=53380,
+			specs={'memory_type': 'DDR5', 'capacity_gb': 32},
+			url='https://example.com/mem-ddr5',
+		)
+
+		resolved = _resolve_compatibility(
+			{'cpu': cpu_am4, 'motherboard': motherboard, 'memory': memory},
+			'general',
+			options={'budget': 643478, 'usage': 'general', 'build_priority': 'spec', 'cpu_vendor': 'any'},
+		)
+
+		self.assertIn('9700x', str(resolved['cpu'].name).lower())
+		self.assertNotIn('5700x', str(resolved['cpu'].name).lower())
+
+	def test_compatibility_issues_detects_memory_type_mismatch_from_spec_text(self):
+		cpu = PCPart(
+			part_type='cpu',
+			name='AMD Ryzen 7 9700X BOX',
+			price=54800,
+			specs={},
+			url='https://example.com/cpu-9700x',
+		)
+		motherboard = PCPart(
+			part_type='motherboard',
+			name='MSI MAG X870E TOMAHAWK MAX WIFI',
+			price=57070,
+			specs={'socket': 'AM5', 'memory_type': 'DDR5', 'form_factor': 'ATX'},
+			url='https://example.com/mb-x870e',
+		)
+		memory = PCPart(
+			part_type='memory',
+			name='ADATA AD4U320016G22-DTGN-I (16GB 2枚組)',
+			price=53380,
+			specs={
+				'comment': 'プレミア DDR4 3200 U-DIMM メモリモジュール 16GB 2枚',
+				'spec_text': 'デスクトップ用-DDR4 / 16GB×2 / 22',
+			},
+			url='https://example.com/mem-ad4u3200',
+		)
+
+		issues = _compatibility_issues({'cpu': cpu, 'motherboard': motherboard, 'memory': memory}, 'general', options={})
+
+		self.assertIn('memory_type_mismatch', issues)
+
+	def test_resolve_compatibility_replaces_inferred_ddr4_memory_with_ddr5_for_am5(self):
+		cpu = PCPart.objects.create(
+			part_type='cpu',
+			name='AMD Ryzen 7 9700X BOX',
+			price=54800,
+			specs={},
+			url='https://example.com/cpu-9700x',
+		)
+		motherboard = PCPart.objects.create(
+			part_type='motherboard',
+			name='MSI MAG X870E TOMAHAWK MAX WIFI',
+			price=57070,
+			specs={'socket': 'AM5', 'memory_type': 'DDR5', 'form_factor': 'ATX'},
+			url='https://example.com/mb-x870e',
+		)
+		memory_ddr4 = PCPart.objects.create(
+			part_type='memory',
+			name='ADATA AD4U320016G22-DTGN-I (16GB 2枚組)',
+			price=53380,
+			specs={
+				'comment': 'プレミア DDR4 3200 U-DIMM メモリモジュール 16GB 2枚',
+				'spec_text': 'デスクトップ用-DDR4 / 16GB×2 / 22',
+			},
+			url='https://example.com/mem-ad4u3200',
+		)
+		memory_ddr5 = PCPart.objects.create(
+			part_type='memory',
+			name='DDR5 32GB Premium Spec',
+			price=54980,
+			specs={'memory_type': 'DDR5', 'capacity_gb': 32, 'speed_mhz': 5600},
+			url='https://example.com/mem-ddr5-32',
+		)
+
+		resolved = _resolve_compatibility(
+			{'cpu': cpu, 'motherboard': motherboard, 'memory': memory_ddr4},
+			'general',
+			options={'budget': 643478, 'usage': 'general', 'build_priority': 'spec', 'cpu_vendor': 'any'},
+		)
+
+		self.assertEqual(resolved.get('memory').id, memory_ddr5.id)
+
+	def test_pick_candidate_general_premium_socket_repick_skips_core_ultra5(self):
+		PCPart.objects.create(
+			part_type='cpu',
+			name='Intel インテル Core Ultra 5 250KF Plus',
+			price=38800,
+			specs={'socket': 'LGA1851', 'core_count': 6, 'thread_count': 12},
+			url='https://example.com/cpu-ultra5-250kf-plus',
+		)
+		PCPart.objects.create(
+			part_type='cpu',
+			name='Intel インテル Core Ultra 7 265KF',
+			price=45980,
+			specs={'socket': 'LGA1851', 'core_count': 8, 'thread_count': 16},
+			url='https://example.com/cpu-ultra7-265kf',
+		)
+
+		options = {
+			'usage': 'general',
+			'budget': 584980,
+			'build_priority': 'cost',
+			'cpu_vendor': 'any',
+		}
+
+		picked = _pick_candidate(
+			'cpu',
+			lambda p: str((getattr(p, 'specs', {}) or {}).get('socket', '')).upper() == 'LGA1851',
+			usage='general',
+			options=options,
+		)
+
+		self.assertIsNotNone(picked)
+		self.assertIn('core ultra 7', str(picked.name).lower())
 
 	def test_generate_config_general_spec_excludes_x3d_cpu(self):
 		PCPart.objects.create(
@@ -7202,6 +7984,179 @@ class ScraperApiTests(APITestCase):
 		)
 		cost_response = ConfigurationViewSet.as_view({'post': 'generate'})(cost_request)
 		self.assertEqual(cost_response.status_code, status.HTTP_200_OK)
+
+	def test_general_home_cpu_simplified_tier_table_low_budget_entry_only(self):
+		"""新ルール: ローエンド予算では entry ティアのみ許可"""
+		entry = PCPart(
+			part_type='cpu',
+			name='Intel Processor 300 BOX',
+			price=16480,
+			specs={'socket': 'LGA1700', 'core_count': 2, 'thread_count': 4},
+			url='https://example.com/cpu-processor-300',
+		)
+		mainstream = PCPart(
+			part_type='cpu',
+			name='AMD Ryzen 5 7600 BOX',
+			price=35979,
+			specs={'socket': 'AM4', 'core_count': 6, 'thread_count': 12},
+			url='https://example.com/cpu-ryzen-7600',
+		)
+		
+		filtered = _filter_general_home_cpu_by_tier_table([entry, mainstream], 'low')
+		filtered_names = {str(p.name).lower() for p in filtered}
+		
+		self.assertIn('intel processor 300 box', filtered_names)
+		self.assertNotIn('amd ryzen 5 7600 box', filtered_names)
+
+	def test_general_home_cpu_core_ultra_270_over_285_priority(self):
+		"""新ルール: Core Ultra 270系が285系より優先される"""
+		ultra_270 = PCPart(
+			part_type='cpu',
+			name='Intel Core Ultra 5 270K BOX',
+			price=34980,
+			specs={'socket': 'LGA1851', 'core_count': 6, 'thread_count': 12},
+			url='https://example.com/cpu-ultra-270k',
+		)
+		ultra_285 = PCPart(
+			part_type='cpu',
+			name='Intel Core Ultra 5 285K BOX',
+			price=38980,
+			specs={'socket': 'LGA1851', 'core_count': 8, 'thread_count': 16},
+			url='https://example.com/cpu-ultra-285k',
+		)
+		
+		filtered = _filter_general_home_cpu_by_tier_table([ultra_270, ultra_285], 'middle')
+		filtered_names = {str(p.name).lower() for p in filtered}
+		
+		self.assertIn('intel core ultra 5 270k box', filtered_names)
+		self.assertNotIn('intel core ultra 5 285k box', filtered_names)
+
+	def test_general_home_cpu_270_285_priority_only_on_competition(self):
+		"""270/285 優先は、同時に残る競合時のみ適用される。"""
+		entry = PCPart(
+			part_type='cpu',
+			name='Intel Processor 300 BOX',
+			price=16480,
+			specs={'socket': 'LGA1700', 'core_count': 2, 'thread_count': 4},
+			url='https://example.com/cpu-processor-300',
+		)
+		ultra_270 = PCPart(
+			part_type='cpu',
+			name='Intel Core Ultra 7 270K BOX',
+			price=59800,
+			specs={'socket': 'LGA1851', 'core_count': 8, 'thread_count': 16},
+			url='https://example.com/cpu-ultra-270k',
+		)
+		ultra_285 = PCPart(
+			part_type='cpu',
+			name='Intel Core Ultra 9 285K BOX',
+			price=95599,
+			specs={'socket': 'LGA1851', 'core_count': 8, 'thread_count': 16},
+			url='https://example.com/cpu-ultra-285k',
+		)
+
+		filtered = _filter_general_home_cpu_by_tier_table([entry, ultra_270, ultra_285], 'low')
+		filtered_names = {str(p.name).lower() for p in filtered}
+
+		self.assertIn('intel processor 300 box', filtered_names)
+		self.assertNotIn('intel core ultra 7 270k box', filtered_names)
+		self.assertNotIn('intel core ultra 9 285k box', filtered_names)
+
+	def test_general_home_cpu_250_265_priority_only_on_competition(self):
+		"""250/265 優先は、同時に残る競合時のみ適用される。"""
+		entry = PCPart(
+			part_type='cpu',
+			name='Intel Processor 300 BOX',
+			price=16480,
+			specs={'socket': 'LGA1700', 'core_count': 2, 'thread_count': 4},
+			url='https://example.com/cpu-processor-300',
+		)
+		ultra_250 = PCPart(
+			part_type='cpu',
+			name='Intel Core Ultra 5 250K BOX',
+			price=41800,
+			specs={'socket': 'LGA1851', 'core_count': 6, 'thread_count': 12},
+			url='https://example.com/cpu-ultra-250k',
+		)
+		ultra_265 = PCPart(
+			part_type='cpu',
+			name='Intel Core Ultra 7 265K BOX',
+			price=47780,
+			specs={'socket': 'LGA1851', 'core_count': 8, 'thread_count': 16},
+			url='https://example.com/cpu-ultra-265k',
+		)
+
+		filtered_low = _filter_general_home_cpu_by_tier_table([entry, ultra_250, ultra_265], 'low')
+		filtered_low_names = {str(p.name).lower() for p in filtered_low}
+		self.assertIn('intel processor 300 box', filtered_low_names)
+		self.assertNotIn('intel core ultra 5 250k box', filtered_low_names)
+		self.assertNotIn('intel core ultra 7 265k box', filtered_low_names)
+
+	def test_general_home_cpu_middle_fallback_prefers_non_entry_when_mainstream_missing(self):
+		entry = PCPart(
+			part_type='cpu',
+			name='Intel Core Ultra 5 235 BOX',
+			price=43980,
+			specs={'socket': 'LGA1851', 'core_count': 6, 'thread_count': 12},
+			url='https://example.com/cpu-ultra-235',
+		)
+		performance = PCPart(
+			part_type='cpu',
+			name='Intel Core Ultra 7 270K BOX',
+			price=59800,
+			specs={'socket': 'LGA1851', 'core_count': 8, 'thread_count': 16},
+			url='https://example.com/cpu-ultra-270k',
+		)
+
+		filtered = _filter_general_home_cpu_by_tier_table([entry, performance], 'middle')
+		filtered_names = {str(p.name).lower() for p in filtered}
+
+		self.assertIn('intel core ultra 7 270k box', filtered_names)
+		self.assertNotIn('intel core ultra 5 235 box', filtered_names)
+
+	def test_general_cpu_forced_replacement_changes_265_to_250_plus(self):
+		selected_cpu = PCPart.objects.create(
+			part_type='cpu',
+			name='Intel  インテル® Core™ Ultra 7 プロセッサー 265KF',
+			price=54800,
+			specs={'socket': 'LGA1851', 'core_count': 20, 'thread_count': 20},
+			url='https://example.com/cpu-ultra-265kf',
+		)
+		replacement_250kf = PCPart.objects.create(
+			part_type='cpu',
+			name='Intel  インテル® Core™ Ultra 5 プロセッサー 250KF Plus',
+			price=44800,
+			specs={'socket': 'LGA1851', 'core_count': 14, 'thread_count': 14},
+			url='https://example.com/cpu-ultra-250kf-plus',
+		)
+
+		updated_parts, notes = _enforce_general_cpu_forced_replacements({'cpu': selected_cpu}, 'general')
+
+		self.assertEqual(updated_parts['cpu'].id, replacement_250kf.id)
+		self.assertTrue(notes)
+		self.assertIn('Intel Core Ultra 7 265シリーズ', notes[0])
+
+	def test_general_cpu_forced_replacement_changes_285k_to_270k_plus(self):
+		selected_cpu = PCPart.objects.create(
+			part_type='cpu',
+			name='Intel  インテル® Core™ Ultra 9 プロセッサー 285K',
+			price=99800,
+			specs={'socket': 'LGA1851', 'core_count': 24, 'thread_count': 24},
+			url='https://example.com/cpu-ultra-285k',
+		)
+		replacement_270k = PCPart.objects.create(
+			part_type='cpu',
+			name='Intel  インテル® Core™ Ultra 7 プロセッサー 270K Plus',
+			price=66800,
+			specs={'socket': 'LGA1851', 'core_count': 20, 'thread_count': 20},
+			url='https://example.com/cpu-ultra-270k-plus',
+		)
+
+		updated_parts, notes = _enforce_general_cpu_forced_replacements({'cpu': selected_cpu}, 'general')
+
+		self.assertEqual(updated_parts['cpu'].id, replacement_270k.id)
+		self.assertTrue(notes)
+		self.assertIn('Intel Core Ultra 9 285K', notes[0])
 
 
 class UsageConversionRegressionTests(APITestCase):
